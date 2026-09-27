@@ -33,28 +33,45 @@ export function pauseKind(s) {
   }
 }
 
-// 멈춤 원인별 운영자 안내 — 무엇이 일어났고, 무엇을 하면 되는지(재개하면 flow 가 어디부터 이어 가는지). 문구는 SDD §7 과 같다.
+// 멈춤 원인별 운영자 안내 — 🔄 9/27 황인재: 짧게. 제목 + 한 줄 + 할 일 2~3개(한 줄씩). flow 문구는 이 갈래들에서 화면에 안 보인다(HIDE_FLOW_MSG).
 export const GUIDE_KO = {
-  operator: { title: '일시 정지됨', what: '운영자 요청으로 그 자리에서 멈췄습니다.',
-    steps: ['재개 — 하던 동작을 이어서 합니다', '중단 — 이 용기를 격리 구역으로 보내고 다음 용기로 갑니다'] },
-  cable: { title: '케이블 이상 — 확인 필요', what: '무게를 재는 동안 값이 크게 떨렸습니다(그리퍼 케이블이 당겨지거나 걸린 것으로 봅니다). 그 자리에서 멈췄습니다.',
-    steps: ['케이블이 팽팽하거나 걸려 있지 않은지 확인하고 정리합니다', '로봇 손목을 가볍게 톡 칩니다(또는 재개) — 떨림을 다시 재고 정상이면 이어 갑니다', '계속 이상이면 중단 — 이 용기를 격리합니다'] },
-  tool_lost: { title: '툴 놓침 — 홀더에 다시 꽂기', what: '닦는 도중 수세미·솔이 그리퍼에서 빠졌습니다. 로봇은 즉시 멈췄습니다.',
-    steps: ['툴을 집어 홀더에 원래 방향으로 꽂습니다', '로봇 손목을 가볍게 톡 칩니다(또는 재개) — 툴을 다시 집고 닦기부터 이어 갑니다', '다시 집지 못하면 이 용기는 격리됩니다'] },
-  tool_fail: { title: '툴 집기 실패 — 홀더 확인', what: '홀더에서 수세미·솔을 집지 못했습니다(파지 폭이 기준과 다름). 툴은 홀더에 있고 로봇은 물러나 멈췄습니다. 용기는 스펀지 홈에 그대로입니다.',
-    steps: ['홀더에 툴이 원래 방향으로 제대로 꽂혀 있는지 확인하고 고쳐 꽂습니다', '로봇 손목을 가볍게 톡 칩니다(또는 재개) — 툴 집기부터 다시 합니다', '또는 중단 — 이 용기를 격리 구역으로 보냅니다'] },   // 🆕 E52
-  leftover: { title: '잔반이 남음 — 용기를 든 채 멈춤', what: '두 번 털어도 잔반이 50 g 넘게 남았습니다. 용기를 든 채 무게 자세에서 멈췄습니다. (E52 9/25 이후 flow 는 멈추지 않고 곧장 격리 구역으로 보냅니다 — 이 안내는 옛 flow 용)',
-    steps: ['잔반을 손으로 덜어냅니다(로봇은 멈춰 있습니다)', '재개 — 무게를 다시 재고 이어 갑니다', '또는 중단 — 이 용기를 격리 구역으로 보냅니다'] },
-  grip: { title: '집기 실패 · 미끄러짐', what: '용기를 놓쳤거나 파지 폭이 변했습니다.',
-    steps: ['용기가 어디 있는지 확인합니다', '재개 — 멈춘 단계부터 다시 합니다', '또는 중단 — 이 용기를 격리합니다'] },
-  rack_full: { title: '팔레트 가득 참', what: '넣을 칸이 없습니다.',
-    steps: ['팔레트를 식기세척기로 옮기고 새 팔레트를 놓습니다', '재개 — 적재부터 다시 합니다'] },
-  robot_error: { title: '로봇 오류 — 사람이 확인·처리', what: '로봇 오류로 그 자리에서 멈췄습니다. 로봇은 스스로 움직이지도, 격리 구역으로 가지도 않습니다 — 아래 문구(message)가 지금 몇 번째 신호를 기다리는지 알려 줍니다.',
-    steps: ['로봇과 주변을 확인합니다(팔·케이블이 걸려 있지 않은지) — 보호정지는 톡/재개 뒤 자동 복구를 시도하고, 안 되면 펜던트에서 해제',
-            '쥔 것이 있으면: 톡 1번(또는 재개) → 그리퍼만 열립니다 → 툴은 홀더에 원래 방향으로 꽂고, 용기는 받아 치웁니다(스펀지 홈에 용기가 있으면 그것도)',
-            '받아 치운 뒤 한 발 물러나 화면의 재개 버튼 → 곧게 위로 → HOME → 이 용기는 오류로 기록 · 다음 용기 (둘째 신호는 톡을 받지 않습니다 — 누르면 팔이 바로 움직입니다 · 빈손이면 첫 신호에 바로 이 단계)',
-            '톡이 안 잡히면 재개 버튼 · 그리퍼가 안 열리면 rig_release.py 또는 펜던트'] },   // 🔄 E52(9/25) 2단 신호 · 9/27 신호 2 = 재개 버튼만(황인재)
+  operator: { title: '일시 정지', what: '버튼으로 멈췄습니다.',
+    steps: ['재개 — 이어서 한다', '중단 — 이 용기를 격리한다'] },
+  cable: { title: '케이블 확인', what: '무게를 재는 중 케이블이 당겨졌습니다.',
+    steps: ['케이블을 정리한다', '손목을 톡 친다 (또는 재개)', '안 되면 중단'] },
+  tool_lost: { title: '툴 놓침', what: '닦는 중 수세미·솔이 빠졌습니다.',
+    steps: ['홀더에 다시 꽂는다', '손목을 톡 친다 (또는 재개)'] },
+  tool_fail: { title: '툴 집기 실패', what: '홀더에서 툴을 집지 못했습니다.',
+    steps: ['홀더의 툴을 바로 꽂는다', '손목을 톡 친다 (또는 재개)', '안 되면 중단'] },
+  leftover: { title: '잔반 남음', what: '두 번 털어도 잔반이 남았습니다.',
+    steps: ['잔반을 덜어낸다', '재개 — 무게를 다시 잰다', '또는 중단'] },
+  grip: { title: '집기 실패', what: '용기를 놓쳤거나 파지 폭이 변했습니다.',
+    steps: ['용기 위치를 확인한다', '재개 또는 중단'] },
+  rack_full: { title: '팔레트 가득', what: '넣을 칸이 없습니다.',
+    steps: ['새 팔레트로 바꾼다', '재개'] },
+  // 로봇 오류는 단계(신호 1 · 그리퍼 열림 · 빈손 · HOME 실패)마다 다른 안내 — robotErrorGuide 가 flow 문구의 열쇳말로 고른다(E52·E54)
+  robot_error: { title: '로봇 오류', what: '로봇이 멈췄습니다. 사람이 처리합니다.',
+    steps: ['로봇 주변을 확인한다', '손목을 톡 친다 (또는 재개)'] },
+  robot_error_hold: { title: '로봇 오류 — 쥔 것 있음', what: '그리퍼에 툴·용기가 있습니다.',
+    steps: ['로봇 주변을 확인한다', '톡 치면 (또는 재개) 그리퍼가 열린다', '받을 준비를 한다'] },
+  robot_error_release: { title: '로봇 오류 — 받아 주세요', what: '그리퍼가 열렸습니다.',
+    steps: ['툴·용기를 받아 치운다 (홈의 용기도)', '물러나서 재개를 누른다'] },
+  robot_error_empty: { title: '로봇 오류 — 빈손', what: '로봇이 멈췄습니다.',
+    steps: ['로봇 주변을 확인한다', '손목을 톡 친다 (또는 재개) → HOME'] },
+  robot_error_home: { title: '로봇 오류 — HOME 복귀 실패', what: '로봇이 HOME 으로 못 갔습니다.',
+    steps: ['펜던트로 팔을 안전한 곳으로 옮긴다', '재개를 누른다'] },
 };
+// flow 문구를 화면에 같이 보이지 않는 갈래 — 안내가 이미 그 내용이다(황인재 9/27 "글이 너무 길다")
+export const HIDE_FLOW_MSG = ['cable', 'tool_lost', 'tool_fail', 'robot_error'];
+
+export function robotErrorGuide(message) {
+  const m = message || '';
+  if (m.includes('그리퍼를 열었습니다')) return GUIDE_KO.robot_error_release;
+  if (m.includes('HOME 복귀 실패')) return GUIDE_KO.robot_error_home;
+  if (m.includes('빈손')) return GUIDE_KO.robot_error_empty;
+  if (m.includes('그리퍼에')) return GUIDE_KO.robot_error_hold;
+  return GUIDE_KO.robot_error;
+}
 
 const doneOf = (s, kind) => (kind === 'BOWL' ? s.done_bowl : s.done_cup) || 0;
 
@@ -175,7 +192,7 @@ export function alarm(d) {
   const s = d.state;
   if (!s) return null;
   const kind = pauseKind(s);
-  if (kind) return { level: kind === 'robot_error' ? 'error' : 'pause', kind, guide: GUIDE_KO[kind], code: s.last_code, message: s.message };
+  if (kind) return { level: kind === 'robot_error' ? 'error' : 'pause', kind, guide: kind === 'robot_error' ? robotErrorGuide(s.message) : GUIDE_KO[kind], code: s.last_code, message: s.message };
   if (s.last_code && s.last_code !== 'OK') return { level: 'warn', kind: null, guide: null, code: s.last_code, message: s.message };   // 재개해 진행 중 — 최근 원인만
   return null;
 }

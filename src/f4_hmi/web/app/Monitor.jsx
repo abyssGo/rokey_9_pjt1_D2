@@ -5,7 +5,7 @@ import { useHmi } from './lib/useHmi';
 import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
-  buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind,
+  buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트(황인재 9/21 · Claude 디자인 시안 승인). public/illust/ 에 있다
@@ -134,7 +134,7 @@ function Alarm({ d, step }) {
     return (
       <section className={`alarm ${a.level}`}>
         <div className="alarm-title">{a.level === 'error' ? '🚨 ' : ''}{g.title}{where}</div>
-        <div className="alarm-msg">{g.what}{a.message && a.kind !== 'operator' ? ` (flow: ${a.message})` : ''}</div>
+        <div className="alarm-msg">{g.what}{a.message && a.kind !== 'operator' && !HIDE_FLOW_MSG.includes(a.kind) ? ` (${a.message})` : ''}</div>
         <ol className="alarm-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
         {a.code && a.code !== 'OK' && a.kind !== 'cable' ? <div className="dim small">코드 {a.code} · {label}</div> : null}
       </section>

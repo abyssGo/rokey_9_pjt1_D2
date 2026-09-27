@@ -45,8 +45,12 @@ test('멈춤 원인 갈래 — 코드·문구로 8가지를 가른다', () => {
 test('알람 — 멈춤은 원인별 안내(제목·할 일)를 가지고, 로봇 오류만 붉은색', () => {
   const a = D.alarm(d(st({ step: 'PAUSED', last_code: 'TOOL_LOST' })));
   assert.equal(a.level, 'pause'); assert.equal(a.kind, 'tool_lost'); assert.match(a.guide.title, /툴 놓침/); assert.ok(a.guide.steps.length >= 2);
-  const re = D.alarm(d(st({ step: 'PAUSED', last_code: 'ROBOT_ERROR' })));
-  assert.equal(re.level, 'error'); assert.match(re.guide.steps.join(' '), /그리퍼만 열립니다/);   // 🆕 E52 2단 신호 안내
+  const re = D.alarm(d(st({ step: 'PAUSED', last_code: 'ROBOT_ERROR', message: 'x — 로봇 오류 · 그리퍼에 용기이(가) 있습니다.' })));
+  assert.equal(re.level, 'error'); assert.match(re.guide.title, /쥔 것 있음/); assert.match(re.guide.steps.join(' '), /그리퍼가 열린다/);   // 🆕 E52 신호 1
+  assert.match(D.robotErrorGuide('그리퍼를 열었습니다 — …').title, /받아 주세요/);      // 신호 2 = 재개 버튼(E54)
+  assert.match(D.robotErrorGuide('x — 로봇 오류 · 빈손.').title, /빈손/);
+  assert.match(D.robotErrorGuide('HOME 복귀 실패(1/3)').title, /HOME/);
+  assert.ok(D.HIDE_FLOW_MSG.includes('robot_error') && D.HIDE_FLOW_MSG.includes('cable'));
   assert.match(D.alarm(d(st({ step: 'PAUSED', last_code: 'TOOL_FAIL' }))).guide.title, /툴 집기 실패/);
   assert.equal(D.alarm(d(st({ step: 'PAUSED', last_code: 'ROBOT_ERROR', message: '케이블 …' }))).level, 'pause');
   assert.equal(D.alarm(d(st({ step: 'WIPE', last_code: 'TOOL_LOST' }))).level, 'warn');       // 재개해 진행 중 — 노란 경고
