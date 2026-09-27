@@ -1,8 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: 📚 협업 규칙 먼저 확인
-    url: https://github.com/hwang-injae/rokey_9_pjt1_D2/blob/main/CONTRIBUTING.md
-    about: 브랜치·커밋·PR·안전 규칙은 CONTRIBUTING.md 에 있습니다.
-  - name: 🚨 환경 오류 빠른 참조
-    url: https://github.com/hwang-injae/rokey_9_pjt1_D2/blob/main/CLAUDE.md
-    about: DR_init import 실패, 포트 12345 점유 등은 CLAUDE.md 6장 함정 표를 먼저 보세요.

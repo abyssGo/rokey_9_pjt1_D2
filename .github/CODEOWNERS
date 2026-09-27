@@ -1,5 +1,0 @@
-# CODEOWNERS — PreWash-Cell (D그룹 2조)
-# GitHub 규칙 "Require review from Code Owners" 와 함께 쓴다 → 여기 적힌 사람의 승인만 PR merge 조건을 만족한다.
-# 팀 결정(9/18): 승인은 황인재 1명. 에이전트가 먼저 규칙·main 병합·통합 테스트를 검토(CONTRIBUTING §4.1)한 뒤 승인/거절.
-# (참고) 코드 담당(9/19 오후): f1_handling·config/cell.yaml 한석형 @Hanseokhyung / f2_sense_flow·cobot_common/gripper.py·weigh.py 민범진 @zldzmfoq100-bot / f3_wipe·cobot_common/force.py(+패키지 정리·리뷰) 박진용 @abyssGo / f4_hmi·cobot_api·cobot_msgs·cobot_common/bootstrap.py·config.py·motion.py·prewash_bringup 황인재
-*   @hwang-injae
