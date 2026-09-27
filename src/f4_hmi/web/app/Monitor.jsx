@@ -404,7 +404,7 @@ function Stats({ d, onReplace }) {
       {spare(cs.soap, '세제', 'soap', '용기', 'soap')}
       {cs.waste && (
         <Row icon="tank" tone={cs.waste.level} title={<>잔반통{cs.waste.level !== 'ok' && <span className="tag">{cs.waste.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}{replaceBtn('waste_bin')}</>}
-          value={<Big v={(cs.waste.used_g / 1000).toFixed(1)} unit={cs.waste.max_g ? `/ ${Math.round(cs.waste.max_g / 1000)} kg` : 'kg'} cls={cs.waste.level} />}
+          value={<Big v={(cs.waste.used_g / 1000).toFixed(1)} unit={cs.waste.max_g ? `/ ${cs.waste.max_g >= 10000 ? Math.round(cs.waste.max_g / 1000) : (cs.waste.max_g / 1000).toFixed(1)} kg` : 'kg'} cls={cs.waste.level} />}
           sub={cs.waste.max_g ? '버린 잔반 무게 합 · 한도에 닿으면 일시 정지' : '한도 설정 없음'}>
           {cs.waste.max_g ? <Bar value={cs.waste.used_g} max={cs.waste.max_g} cls={cs.waste.level === 'ok' ? '' : cs.waste.level} /> : null}
         </Row>
