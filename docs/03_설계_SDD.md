@@ -432,7 +432,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 - 🔄 **9/22 밤 E35(황인재 · PR #85 · 박진용 요청 #83)**: `f1.tool(PICK)` 은 잡은 자리(홀더 안)에서 끝나고 빼내지 않는다 — `soap` 이 그 자리에서 비틀기·왕복 뒤 **스스로** 작업 위치(수세미 = HOME x·y·z / 솔 = HOME + z40·y140)로 z→x·y 직선 이동(#83). `f1.tool(RETURN)` 은 같은 프로그램이 집었으면 집은 자리 위 +100 → 곧게 내려 놓기 → 올라오기(역순 · 🟡 힘 감시 없음), 아니면 return 자세 + contact_down(옛 방식).
 - `wipe_bowl()` — ✅ **9/20 실기 확정 절차(결정기록 E6 → E13) · 9/21 E17 로 시작·끝 변경(PR #56)**: **HOME**(`cc.move_to('HOME')`) → HOME 바로 아래로 `fast_down_mm`(135 mm) 빠르게 → **`cc.contact_down` 으로 바닥 찾기**(시작 힘 대비 `cell.limits.contact_limit_n` 2 N · 최대 `find_max_mm`) → **순응만 ON**(`cc.compliance_on` — 찾은 자리 그대로, 더 누르지 않는다) → **바닥 나선 1회**(`cc.move_spiral` 2.8바퀴 · 반지름 = 벽 반지름 · `spiral_time_s` · 비틀기 없음) → **힘제어 ON**(`cc.force_on` `target_force_n` 1.5 N, 공중 기준값 보정) → **벽면 원호**(`cc.move_arc` 를 이어 붙여 나선과 **반대 방향** `turns`바퀴 + 손목 ±`twist_deg`) → `cc.force_release()`(힘제어만 끄고 순응 유지) → 그 높이에서 중심 복귀 → 순응 OFF → 곧게 올려 **HOME** 으로 돌아온다(F3 가 직접). 힘 로그 저장. (`SPONGE_BED_B.wash` 좌표는 쓰지 않는다)
   - **바닥은 찾고, 벽은 찾지 않는다**: 수세미가 물러 접촉 깊이가 실행마다 **12~17 mm 로 달라**(V-03 §G) 티칭 높이 하나로는 못 맞춘다 → 바닥은 `contact_down`. 반면 벽은 힘으로 잡히지 않아(로봇 순응보다 훨씬 무르고, 바닥 마찰 5~14 N 이 벽 신호 1~2 N 을 덮는다 · V-03 §3-C) **치수로 계산**한다: 벽 반지름 = (`bowl_inner_d_mm` − `tool.d_mm`) / 2 + `wall_press_mm`.
-  - **감시**(NFR-01): 시작 전 공중 기준값을 재고, 누르는 힘(기준 대비) > `limit_n`(10 N) 또는 옆 힘 > `lateral_max_n`(25 N) 이면 즉시 후퇴 → `FORCE_LIMIT`. 시간 상한 `duration_s` → `TIMEOUT`. 나선이 도는 동안에도 힘을 본다.
+  - **감시**(NFR-01): 시작 전 공중 기준값을 재고(공중 \|Fz\| > `air_force_max_n` **5 N** 이면 오류 → 로봇 오류 멈춤 · 🔄 E58 9/27: 3 → 5 N — 9/23 그릇 1 이 2.99 N · 점검값이지 힘 상한 아님), 누르는 힘(기준 대비) > `limit_n`(10 N) 또는 옆 힘 > `lateral_max_n`(25 N) 이면 즉시 후퇴 → `FORCE_LIMIT`. 시간 상한 `duration_s` → `TIMEOUT`. 나선이 도는 동안에도 힘을 본다.
   - 🚨 **나선 구간에는 힘제어를 켜지 않는다** — 나선은 툴 Z 축 모션이라 Z 힘제어와 **같은 방향**이고, 중급2 "힘 방향과 같은 방향의 모션 불가"에 걸려 9/20 실기에서 시작조차 하지 않았다. 벽면 원호는 X·Y 이동이라 함께 쓸 수 있다(폴리싱 예시).
   - 🚨 **나선은 TOOL 기준, 원호는 BASE 기준**이고 닦는 자세는 툴 Z 가 아래를 향한다(b≈180°) → **툴에서 반시계 = 베이스에서 시계**. 벽면을 "반대 방향"으로 돌리려면 나선이 실제로 돈 각도를 재서 그 반대로 준다(PR #43). TOOL·BASE 를 섞는 다른 동작(팔레트 기울임 등)에도 같은 함정이 있다.
   - 두산 이동(`move_spiral` · `move_arc` · `move_periodic` · `compliance_on` · `force_release`)은 `cobot_common/force.py`(박진용)에 공용 함수로 있고 `wipe.py` 는 `cc.*` 만 부른다(AGENTS §3 규칙 4). 이 셋에는 **일시정지 폴링이 없다**(`move_periodic` 과 같은 취급) → 일시정지는 구간이 끝난 뒤 다음 이동에서 먹고, 구간 사이에서 `cc.is_halted()` 를 본다.
@@ -460,7 +460,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 ---
 
 ## 6. 휴먼 인터페이스
-🔄 9/25 화면 완성(F4 · UT-F4 TC-11 · `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md` · 브랜치 `injae/20260925-F4-hmi-complete` · PR 대기). 화면 구성 표는 `src/f4_hmi/README.md`.
+🔄 9/25 화면 완성 · 9/27 기록 DB(F4-04) · 누적 KPI(F4-05) · 소모품 4줄 · 잔반통 한도 추가(E57)(F4 · UT-F4 TC-11 항목 1~16 · `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md` · HMI 브랜치는 tune2 에 합침 · PR 대기). 화면 구성 표는 `src/f4_hmi/README.md`.
 | 요소 | 동작 |
 |---|---|
 | 연결 표시 | 맨 위 점: `flow 연결됨` / `flow 연결 끊김 — 마지막 값`(2 s 이상 `/flow/state` 없음 · 버튼 전부 비활성 · 마지막 화면 유지) / `HMI 서버에 닿지 않는다` |
@@ -474,7 +474,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 | 진행 · 사이클 · 소모품 | 그릇/컵 수량 막대 · 반납 구역 남은 수·상태(`비었음`) · 격리 수 · 용기 1개 시간 · 수세미/세제 교체까지(임계 도달 시 색) · 🔄 E56(9/27): 소모품 칸 = **수세미(그릇 완료 수 / 100) · 솔(컵 완료 수 / 100) · 세제(세제 묻힌 용기 수 / 60)** — 교체 주기 `flow.consumables.sponge_max_uses 100` · 헹굼 담금 행은 제거 · 한도 초과는 표시만(멈추지 않음) |
 | 이력 | 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀 · 원인 · 시도 수) · 문제만 보기 필터. 🟡 케이블 이상으로 중단한 용기는 이벤트 코드가 ROBOT_ERROR 라 '로봇 오류'로 적힘(사유를 이벤트에 실으려면 flow 변경 · 시연 뒤) |
 | 소리 | 넛지(톡톡) 재개 요청 감지 비프(#93) · 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 · 🟡 소리는 9/29 준비 때 귀로 확인 |
-| 로봇 없이 확인 | `hmi_bridge` + 가짜 flow `fake_state_pub`(대본 8종: normal · paused · isolate · error · empty_zone · 🆕 tool_lost · leftover_remain · cable — 9/29 예외 ③④① 화면 연습) 또는 ros bag 재생(`_bags/0923_full_0.5`) · 한 번에 하나만(같은 토픽) |
+| 로봇 없이 확인 | `hmi_bridge` + 가짜 flow `fake_state_pub`(대본 9종: normal · paused · isolate · error · empty_zone · 🆕 tool_lost · leftover_remain · cable · tool_fail — 9/29 예외 ③④①⑨ 화면 연습) 또는 ros bag 재생(`_bags/0923_full_0.5`) · 한 번에 하나만(같은 토픽) |
 | 누적 KPI(F4-05 · 🔄 E57 9/27) | 이번 실행 / 오늘 / 전체 — 처리량 · 처리율 · 용기당 평균 시간 · 시간당 · 멈춤 수 · 잔반 g. 근거는 `prewash.db`(F4-04). 가짜 검증 ✅ · 🟡 실제 flow 기록은 9/29 |
 | 잔반통 교체(🔄 E57) | 마지막 교체 뒤 버린 잔반 합 ≥ 50 kg → 브리지가 정지 → "잔반통 교체" 카드 → **교체 완료** 버튼 → 재개. 소모품 4줄(수세미 · 솔 · 세제 · 잔반통)마다 교체 완료 버튼 · 시연 중엔 한도에 닿지 않음 |
 | 미구현(시연 뒤) | 격리 구역 비움 확인 버튼 · 노션 화면 gif(NOTE-02) — F4-04 · F4-05 는 9/27 구현(E57) |
