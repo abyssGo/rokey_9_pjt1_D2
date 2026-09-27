@@ -736,7 +736,7 @@ class Flow:
         else:
             self.done_cup += 1
         self.sponge_uses += 1
-        self.soap_dips += n['soap_dips']
+        self.soap_dips += 1                      # 🔄 9/27 황인재: 세제는 **용기당 1회**(세제 묻히는 행위 1번) — 담금 횟수(3)로 세지 않는다 · HMI 와 같은 기준
         self.rinse_dips += n['rinse_dips']
         # 🆕 FLOW-02 — 임계에 닿으면 알리기만 한다(멈추지 않는다: 용기를 든 채 서게 된다)
         self._guard(self.consumables.check,

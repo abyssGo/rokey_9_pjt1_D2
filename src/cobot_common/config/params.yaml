@@ -333,7 +333,7 @@ flow:                                 # ── flow 절 (민범진) ── 🟡 
                                       #    → f1.tool 재PICK(handle_failure) → 그 단계부터 다시. GRIP_FAIL 과 같은 결
     RACK_FULL: pause
     ROBOT_ERROR: pause
-  consumables: {sponge_max_uses: 100, soap_max_dips: 60}   # 🔄 9/27 황인재: 수세미·솔 교체 주기 **100회**(같은 값 · 근거 없이 임의 지정) · 세제 60 유지 · 헹굼 물은 세지 않는다(HMI 표시 제외)
+  consumables: {sponge_max_uses: 100, soap_max_dips: 60}   # 🔄 9/27 황인재: 수세미·솔 교체 주기 **100회**(같은 값 · 근거 없이 임의 지정) · 세제 60 = **용기 60개**(용기당 1회 · flow.soap_dips 도 +1) · 헹굼 물은 세지 않는다
   weigh_kinds: [BOWL, CUP]            # 🔄 9/22 저녁 황인재 결정: **E25 되돌림** — 컵도 무게 측정·잔반 버리기(그릇과 같은 흐름). WEIGH.CUP 새 자세 · 기준값 CUP 은 V-02 컵으로 다시
                                                  # 🆕 FLOW-05 (결정 E25 · 9/22): 무게 단계(move_to WEIGH · leftover_loop)를 **하는** 종류.
                                       #   🟡 **임시 건너뛰기다 — 시나리오가 바뀐 게 아니다**(민범진 9/22): 컵 무게 측정(기준값 · WEIGH 자세 · 놓침 판정)이
