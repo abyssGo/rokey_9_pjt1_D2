@@ -3,7 +3,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 ID | SDD-PREWASH-001 · **v3.0** (2026-09-18) — 실행 구조를 스크립트형으로 변경([DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md)) |
+| 문서 ID | SDD-PREWASH-001 · **v3.1** (2026-09-27) — v3.0(9/18 스크립트형 구조 · [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md)) + 동결 뒤 반영: §3.1 공중 점검 5 N(E58) · §6 운영 화면 9/25~27(E57) · §7 예외 처리 재설계(E42~E55) · 지정 좌표 하강 곧게(E44 · E50) |
 | 상위 | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) · [02_인터페이스_IRD.md](02_인터페이스_IRD.md) · 일정표(구글 드라이브 xlsx) |
 | 그림 | 🔄 9/23 **[images/system_architecture_pc.html](images/system_architecture_pc.html)**(Archify 대화형 · 명세 `.archify.json` · 캡처 `.png`) |
 
@@ -235,7 +235,7 @@ sequenceDiagram
   W->>B: dip('RINSE',2,'BOWL') · shake('RINSE',3,'BOWL')  — 🔄 E36(9/23 · #89): 담금 2회 → 곧게 위로 → 털기 자세 RINSE_SHAKE 에서 J4 스플라인 3회(빠르게). 컵은 재파지가 옆면(CUP_SIDE · E38) · 털기 자세 J6 0
   Note over W: 🔄 E30(9/22 19:0x · E25 되돌림): weigh_kinds [BOWL, CUP] — 컵도 잰다(PR #79). 원리는 그대로 — kind 가 params `flow.weigh_kinds` 에 없으면 WEIGH 두 단계(move_to WEIGH · leftover_loop)를 건너뛴다(컵은 액체만 · 잔반 없음 · PR #70 FLOW-05). RINSE 담금·물 털기는 컵도 한다
   W->>A: rack_place('RACK_B1','BOWL') · move_to('HOME', False)  — 그릇 B1·B2 손목 +180° 경유점 · 컵 C1·C2 뒤집어 적재 (9/23 리허설 ✅)
-  Note over W: 🔄 9/23 E41: 계획 = RET_B 2개 → RET_C 2개(반납 구역 자리 2개 · 슬롯 1 빈손이면 슬롯 2) · 배속 0.5 · 기준값은 실행 직전 1회 · weigh 는 항상 HOME 경유
+  Note over W: 🔄 9/23 E41: 계획 = RET_B 2개 → RET_C 2개(반납 구역 자리 2개 · 슬롯 1 빈손이면 슬롯 2) · 배속 0.5(→ E46 시연 1.0) · 기준값은 실행 직전 1회 · weigh 는 항상 HOME 경유
   W-->>H: /flow/event(DONE) · /flow/state (2 Hz, 통신 노드 스레드)
 ```
 
