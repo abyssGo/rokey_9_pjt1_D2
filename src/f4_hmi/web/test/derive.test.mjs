@@ -85,3 +85,18 @@ test('소모품 — 수세미는 그릇 수 · 솔은 컵 수 · 같은 한도 1
   assert.equal(c.soap.left, 0); assert.equal(c.soap.used, 190); assert.equal(c.rinse, undefined);
 });
 
+test('소모품 — DB 값(usage)이 있으면 그것을 쓰고 잔반통은 g/한도 · 잔반통 가득이면 일시 정지 카드는 잔반통 교체', () => {
+  const dd = d(st({ step: 'PAUSED', done_bowl: 1 }));
+  dd.usage = { sponge: { used: 40 }, brush: { used: 100 }, soap: { used: 10 }, waste_bin: { used_g: 48000 } };
+  dd.limits = { sponge: 100, brush: 100, soap: 60, waste_bin_g: 50000 };
+  dd.notices = { waste_full: false };
+  const c = D.consumables(dd);
+  assert.ok(c.fromDb); assert.equal(c.sponge.left, 60); assert.equal(c.brush.level, 'bad'); assert.equal(c.waste.left_g, 2000); assert.equal(c.waste.level, 'warn');
+  assert.equal(D.alarm(dd).kind, 'operator');
+  dd.notices = { waste_full: true };
+  assert.equal(D.alarm(dd).kind, 'waste_bin'); assert.match(D.alarm(dd).guide.title, /잔반통/);
+  const cards = D.kpiCards({ period: 'run', total: 4, done_bowl: 2, done_cup: 1, isolated: 1, error: 0, skipped: 0, success_pct: 75, avg_s_bowl: 70, avg_s_cup: 40, per_hour: null, pauses: 1, pause_s: 12, pause_top: 'tool_lost', leftover_pct: 50, waste_g: 92, runs: 1 });
+  assert.equal(cards.length, 6); assert.equal(cards[0].value, '3개'); assert.match(cards[4].sub, /툴 놓침/);
+  assert.equal(D.kpiCards(null).length, 0);
+});
+

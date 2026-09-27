@@ -6,6 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
+  kpiCards, PERIOD_KO,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트(황인재 9/21 · Claude 디자인 시안 승인). public/illust/ 에 있다
@@ -48,7 +49,7 @@ function playDoubleBeep() {
 }
 
 export default function Monitor() {
-  const { d, mode, press } = useHmi();
+  const { d, mode, press, replace, period, setPeriod } = useHmi();
   const [reply, setReply] = useState(null);
   // 일시 정지됐을 때 "어느 단계에서" 를 보여 주려고 기억한다 — flow 가 보내는 값(FlowState)에는 그 칸이 없다.
   // 같은 탭에서 새로고침해도 잊지 않게 탭 저장소(sessionStorage)에도 둔다. 멈춘 **뒤에** 새 탭으로 열면 모른다.
@@ -76,6 +77,12 @@ export default function Monitor() {
   }, [s?.step]);
 
   const can = buttons(d);
+  const ITEM_KO = { sponge: '수세미', brush: '솔', soap: '세제', waste_bin: '잔반통' };
+  async function onReplace(item) {
+    if (!window.confirm(`${ITEM_KO[item]}을(를) 새것으로 바꿨습니까? 사용량을 0부터 다시 셉니다.`)) return;
+    const r = await replace(item);
+    setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${r.message || ''}` });
+  }
   async function onPress(name) {
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -96,8 +103,9 @@ export default function Monitor() {
       <div className="grid">
         <Now d={d} last={lastRunning.current || null} />
         <Pallet d={d} />
-        <Stats d={d} />
+        <Stats d={d} onReplace={onReplace} />
       </div>
+      <Kpi d={d} period={period} setPeriod={setPeriod} />
       <History d={d} />
       <footer className="dim small">
         받는 방식: {mode} · 받은 상태 메시지 {d.received}건 · 점검용 <a href="/test">시험 페이지</a>
@@ -345,7 +353,7 @@ function Bar({ value, max, cls = '' }) {
   return <div className="bar"><i style={{ width: `${pct}%` }} className={cls} /></div>;
 }
 
-function Stats({ d }) {
+function Stats({ d, onReplace }) {
   const s = d.state || {};
   const zs = zones(d);
   const cy = cycle(d);
@@ -365,13 +373,14 @@ function Stats({ d }) {
       </Row>
     );
   };
-  const spare = (c, name, icon, every) => {
+  const replaceBtn = (item) => (cs.fromDb && onReplace ? <button className="btn mini" onClick={() => onReplace(item)}>교체 완료</button> : null);
+  const spare = (c, name, icon, every, item) => {
     if (!c) return <Row icon={icon} title={name} value={<Big v="-" />} />;
     if (c.max == null) return <Row icon={icon} title={name} value={<Big v={c.used} unit="회" />} sub="교체 한도 설정 없음" />;
     const blocks = c.max <= 30;
     return (
-      <Row icon={icon} tone={c.level} title={<>{name}{c.level !== 'ok' && <span className="tag">{c.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}</>}
-        value={<Big v={c.left} unit="회 남음" cls={c.level} />} sub={blocks ? null : `${every} ${c.max}회마다 간다`}>
+      <Row icon={icon} tone={c.level} title={<>{name}{c.level !== 'ok' && <span className="tag">{c.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}{replaceBtn(item)}</>}
+        value={<Big v={c.left} unit="회 남음" cls={c.level} />} sub={blocks ? null : `${every} ${c.max}회마다 간다 · 지금까지 ${c.used}회`}>
         {blocks
           ? <div className="blocks">{Array.from({ length: c.max }, (_, i) => <i key={i} className={i < c.left ? c.level : ''} />)}</div>
           : <Bar value={c.left} max={c.max} cls={c.level === 'ok' ? '' : c.level} />}
@@ -390,9 +399,41 @@ function Stats({ d }) {
         {cy && <div className="minibars">{cy.recent.map((v, i) => <i key={i} style={{ height: `${Math.max(12, (v / top) * 100)}%` }} className={i === cy.recent.length - 1 ? 'last' : ''} />)}</div>}
       </Row>
       <h2 className="gap">소모품 — 교체까지</h2>
-      {spare(cs.sponge, '수세미', 'sponge', '그릇')}
-      {spare(cs.brush, '솔', 'brush', '컵')}
-      {spare(cs.soap, '세제', 'soap', '용기')}
+      {spare(cs.sponge, '수세미', 'sponge', '그릇', 'sponge')}
+      {spare(cs.brush, '솔', 'brush', '컵', 'brush')}
+      {spare(cs.soap, '세제', 'soap', '용기', 'soap')}
+      {cs.waste && (
+        <Row icon="tank" tone={cs.waste.level} title={<>잔반통{cs.waste.level !== 'ok' && <span className="tag">{cs.waste.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}{replaceBtn('waste_bin')}</>}
+          value={<Big v={(cs.waste.used_g / 1000).toFixed(1)} unit={cs.waste.max_g ? `/ ${Math.round(cs.waste.max_g / 1000)} kg` : 'kg'} cls={cs.waste.level} />}
+          sub={cs.waste.max_g ? '버린 잔반 무게 합 · 한도에 닿으면 일시 정지' : '한도 설정 없음'}>
+          {cs.waste.max_g ? <Bar value={cs.waste.used_g} max={cs.waste.max_g} cls={cs.waste.level === 'ok' ? '' : cs.waste.level} /> : null}
+        </Row>
+      )}
+      <div className="dim tiny gap-top">{cs.fromDb ? '마지막 교체 완료 뒤부터 센다 · 껐다 켜도 이어진다(SQLite)' : '이번 실행에서 센 값(서버 기록 없음)'}</div>
+    </section>
+  );
+}
+
+// 🆕 F4-05 누적 KPI — DB(/api/kpi) 값 · 기간 전환(이번 실행 · 오늘 · 전체)
+function Kpi({ d, period, setPeriod }) {
+  const cards = kpiCards(d.kpi);
+  return (
+    <section className="card">
+      <div className="history-head">
+        <h2>누적 <span className="dim tiny">{d.kpi ? `${PERIOD_KO[d.kpi.period] || ''} · 용기 ${d.kpi.total}개 · 실행 ${d.kpi.runs}회` : '기록 없음(서버가 DB 없이 떠 있음)'}</span></h2>
+        <div className="tabs">{Object.keys(PERIOD_KO).map((p) => <button key={p} className={period === p ? 'on' : ''} onClick={() => setPeriod(p)}>{PERIOD_KO[p]}</button>)}</div>
+      </div>
+      {!cards.length ? <div className="dim">아직 값이 없다</div> : (
+        <div className="kpi-grid">
+          {cards.map((c) => (
+            <div key={c.label} className={`kpi ${c.tone || ''}`}>
+              <div className="dim small">{c.label}</div>
+              <div className="kpi-v">{c.value}</div>
+              <div className="dim tiny">{c.sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -439,7 +480,7 @@ function History({ d }) {
           </tbody>
         </table></div>
       )}
-      <div className="dim tiny gap-top">HMI 를 켠 뒤 받은 것만 보인다 — 껐다 켜도 남게 하는 저장은 다음 작업(F4-04)</div>
+      <div className="dim tiny gap-top">최근 50건 · 전체는 SQLite 기록(터미널 `ros2 run f4_hmi hmi_db dump events`)</div>
     </section>
   );
 }

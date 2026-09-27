@@ -10,7 +10,7 @@ import threading
 import time
 from collections import deque
 
-RECENT_EVENTS = 50              # SQLite(F4-04) 전까지 메모리에 들고 있는 최근 이벤트 수
+RECENT_EVENTS = 50              # 메모리에 들고 있는 최근 이벤트 수(화면 이력) — 전체는 SQLite(F4-04 · db.py)
 FORCE_FRESH_S = 0.5             # /cell/force 는 닦는 동안만 온다 → 이 시간 넘게 없으면 '지금은 닦지 않는다'(None)
 
 
@@ -32,6 +32,13 @@ class StateStore:
 
     def subscribe(self, fn):
         self._listeners.append(fn)
+
+    def preload_events(self, events):
+        """🆕 F4-04 — 켤 때 DB 의 최근 이력을 채운다(최근 것이 앞인 목록을 받는다). 화면이 켜자마자 지난 용기를 본다."""
+        with self._lock:
+            self._events.clear()
+            for e in reversed(list(events)[:RECENT_EVENTS]):
+                self._events.appendleft(dict(e))
 
     def _tell(self, kind, payload):
         for fn in list(self._listeners):                    # 락 밖에서 부른다 — 듣는 쪽이 snapshot() 을 불러도 막히지 않게

@@ -8,12 +8,26 @@ const POLL_MS = 500;
 const RETRY_MS = 2000;
 const MAX_EVENTS = 50;          // 화면에 들고 있는 최근 이벤트 수
 
-const EMPTY = { connected: false, server: true, state: null, events: [], plan: {}, received: 0, age_s: null, ready: false };
+const EXTRA_MS = 15000;         // 소모품·KPI(DB 값)를 다시 물어보는 간격 — 이벤트가 오면 바로 다시 본다
+const EMPTY = { connected: false, server: true, state: null, events: [], plan: {}, received: 0, age_s: null, ready: false, usage: null, kpi: null, notices: null, limits: null };
 
 export function useHmi() {
   const [d, setD] = useState(EMPTY);
   const [mode, setMode] = useState('연결 중');
+  const [period, setPeriod] = useState('run');       // KPI 기간 — run(이번 실행) · today · all
+  const periodRef = useRef('run');
+  periodRef.current = period;
   const ws = useRef(null);
+
+  // 🆕 F4-04·05 — 소모품·잔반통 사용량과 KPI 는 DB 에서 온다(/api/usage · /api/kpi). 실패하면 그냥 지난 값을 둔다
+  const fetchExtra = useCallback(async () => {
+    try {
+      const [u, k] = await Promise.all([fetch('/api/usage', { cache: 'no-store' }), fetch(`/api/kpi?period=${periodRef.current}`, { cache: 'no-store' })]);
+      if (u.ok) { const uj = await u.json(); setD((prev) => ({ ...prev, usage: uj.usage, notices: uj.notices, limits: uj.limits })); }
+      if (k.ok) { const kj = await k.json(); setD((prev) => ({ ...prev, kpi: kj })); }
+    } catch {}
+  }, []);
+  useEffect(() => { fetchExtra(); }, [period, fetchExtra]);
 
   useEffect(() => {
     let closed = false;
@@ -23,7 +37,7 @@ export function useHmi() {
     function connect() {
       const sock = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/state`);
       ws.current = sock;
-      sock.onopen = () => setMode('실시간');
+      sock.onopen = () => { setMode('실시간'); fetchExtra(); };
       sock.onmessage = (m) => {
         const msg = JSON.parse(m.data);
         if (msg.type === 'state') {                   // 첫 번째만 events·plan 이 온다 — 그 뒤엔 빠진 몸통이라 합친다
@@ -31,6 +45,7 @@ export function useHmi() {
           merge(body);
         } else if (msg.type === 'event') {
           setD((prev) => ({ ...prev, events: [msg.event, ...prev.events].slice(0, MAX_EVENTS) }));
+          fetchExtra();                                    // 용기가 끝났다 → 소모품·KPI 갱신
         } else if (msg.type === 'conn') {                // force·gripping 은 받지 않는다 — 9/21 황인재: 보내는 쪽이 없어 화면에서 뺐다
           setD((prev) => ({ ...prev, connected: msg.connected }));
         }
@@ -54,8 +69,9 @@ export function useHmi() {
 
     connect();
     const poll = setInterval(pollOnce, POLL_MS);
-    return () => { closed = true; clearTimeout(retry); clearInterval(poll); if (ws.current) ws.current.close(); };
-  }, []);
+    const extra = setInterval(fetchExtra, EXTRA_MS);
+    return () => { closed = true; clearTimeout(retry); clearInterval(poll); clearInterval(extra); if (ws.current) ws.current.close(); };
+  }, [fetchExtra]);
 
   // 버튼 → POST /api/{name}. X-PreWash 헤더: 이 PC 에서 연 다른 웹페이지가 몰래 누르지 못하게(F4-02b · E10 후속) — 서버가 아직 안 봐도 해가 없다
   const press = useCallback(async (name) => {
@@ -67,5 +83,16 @@ export function useHmi() {
     }
   }, []);
 
-  return { d, mode, press };
+  // 교체 완료 → POST /api/replace/{item} → 사용량 0 부터
+  const replace = useCallback(async (item) => {
+    try {
+      const r = await (await fetch(`/api/replace/${item}`, { method: 'POST', headers: { 'X-PreWash': '1' } })).json();
+      if (r.usage) setD((prev) => ({ ...prev, usage: r.usage, notices: r.notices || prev.notices }));
+      return r;
+    } catch {
+      return { ok: false, message: 'HMI 서버에 닿지 않는다' };
+    }
+  }, []);
+
+  return { d, mode, press, replace, period, setPeriod };
 }

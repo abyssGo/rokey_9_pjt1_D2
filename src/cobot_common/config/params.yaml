@@ -378,4 +378,5 @@ hmi:                                  # ── hmi 절 (황인재) ──
   state_rate_hz: 2                    # 화면 갱신 주기
   disconnect_after_s: 2.0             # /flow/state 가 이 시간 넘게 없으면 "연결 끊김"
   service_timeout_s: 1.0              # 버튼(/flow/start 등)을 누른 뒤 flow 의 대답을 기다리는 상한 — 넘으면 "flow 응답 없음" (F4-02)
-  db_path: prewash.db                 # SQLite 파일 (실행 위치 기준 상대경로)
+  db_path: prewash.db                 # SQLite 파일 (실행 위치 기준 상대경로) — F4-04 표 5개(events·runs·pauses·commands·replacements)
+  waste_bin_limit_g: 50000            # 🆕 9/27 황인재: 버린 잔반 누적이 이 값(50 kg)에 닿으면 HMI 가 일시 정지 → 잔반통 교체 → 교체 완료 → 재개

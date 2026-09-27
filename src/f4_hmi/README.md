@@ -61,3 +61,14 @@ soc && ros2 run f4_hmi fake_state_pub tool_lost --speed 0.5                     
 soc && ros2 bag play ~/rokey9_pjt1/_bags/0923_full_0.5 --topics /flow/state /flow/event --loop --rate 3   # 실제 9/23 실행 재생(버튼은 안 됨)
 ```
 🚨 가짜 flow 와 bag 재생, 실제 flow_node 는 **한 번에 하나만**(같은 토픽). UT-F4 TC-11 결과: `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md`.
+
+## 6. 🆕 기록(SQLite · F4-04) · 누적 KPI(F4-05) · 잔반통 한도 — 9/27 황인재 결정
+- 파일 하나: `params.yaml hmi.db_path`(기본 `prewash.db` · hmi_bridge 를 켠 폴더). 로봇 프로그램은 손대지 않는다 — 브리지가 듣는 값을 적는다(`db.py` · `recorder.py`).
+- 표 5개: `events`(용기 1개 = 1줄 · 시각·실행 번호·종류·구역·칸·결과·코드·시도·무게 전/후·소요·버린 잔반 g) · `runs`(시작 1번 = 1줄) · `pauses`(멈춤 1번 = 1줄 · 단계·원인·어떻게 풀렸나) · `commands`(버튼 1번 = 1줄) · `replacements`(교체 1번 = 1줄 · 수세미/솔/세제/잔반통).
+- 소모품 사용량 = **마지막 교체 뒤의 events** — 수세미 = 그릇 완료 수 · 솔 = 컵 완료 수 · 세제 = 완료 용기 수 · 잔반통 = 버린 잔반 g 합(잔반 판정이 난 그릇의 무게 전 − 후). 화면 소모품 칸의 **교체 완료** 버튼 → `POST /api/replace/{item}` → 0 부터.
+- 잔반통 한도 `hmi.waste_bin_limit_g`(50 kg): 누적이 닿으면 브리지가 `/flow/stop`(일시 정지 · 다음 용기 집기 전)을 보내고 화면에 "잔반통 교체" 카드 → 교체 완료 → 재개.
+- 화면 "누적" 칸(이번 실행 / 오늘 / 전체): 처리량 · 처리율 · 용기당 평균 · 시간당 · 멈춤(횟수·시간·잦은 원인) · 잔반 비율·버린 양. `GET /api/kpi?period=run|today|all`.
+- 터미널에서 보기: `ros2 run f4_hmi hmi_db tables` · `hmi_db dump events --limit 20` · `hmi_db dump pauses` · `hmi_db usage` · `hmi_db kpi --period today` · `hmi_db replace waste_bin`. (`--db 파일` 로 다른 파일)
+- 웹 주소: `/api/usage` · `/api/kpi` · `/api/db/{표}?limit=` · `/api/history?limit=`. 브리지를 기록 없이 띄운 시험 서버는 503.
+- 시험: `pytest src/f4_hmi/test/test_f4_db.py`(DB·기록자 · ROS 없이) · API 시험은 웹 부품 상자로 `~/venvs/hmi/bin/python -m pytest src/f4_hmi` · `node --test web/test/`.
+

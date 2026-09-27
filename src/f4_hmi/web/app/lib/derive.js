@@ -43,6 +43,7 @@ export const GUIDE_KO = {
   leftover: { title: '잔반 남음', steps: ['잔반 덜어내기', '재개 (또는 중단)'] },
   grip: { title: '집기 실패', steps: ['용기 위치 확인', '재개 (또는 중단)'] },
   rack_full: { title: '팔레트 가득', steps: ['새 팔레트로 교체', '재개'] },
+  waste_bin: { title: '잔반통 교체', steps: ['잔반통 비우기', '소모품 칸의 교체 완료 누르기', '재개'] },   // 🆕 9/27 F4-05 잔반통 한도(hmi.waste_bin_limit_g)
   // 🔄 9/27 황인재: 로봇 오류는 설계한 예외가 아니라 컨트롤러 오류를 받는 그물 — 화면에서 별도 예외로 내세우지 않고 **일반 멈춤 카드**(주황)로만 보인다
   robot_error: { title: '멈춤 — 로봇 확인', steps: ['로봇·주변 확인', '재개 — 쥔 것이 있으면 그리퍼 열림', '받아 치우고 다시 재개'] },
   robot_error_release: { title: '멈춤 — 받아 주세요', steps: ['받아서 치우기 (홈의 용기도)', '물러나서 재개'] },
@@ -166,21 +167,35 @@ function remain(used, max) {
   const level = left === 0 ? 'bad' : left <= Math.max(1, Math.round(max * 0.15)) ? 'warn' : 'ok';
   return { used, max, left, level };
 }
+function wasteRemain(usedG, limitG) {
+  if (usedG == null) return null;
+  if (!limitG) return { used_g: usedG, max_g: null, left_g: null, level: 'ok' };
+  const left = Math.max(0, limitG - usedG);
+  const level = left === 0 ? 'bad' : left <= limitG * 0.15 ? 'warn' : 'ok';
+  return { used_g: usedG, max_g: limitG, left_g: left, level };
+}
 export function consumables(d) {
   const s = d.state || {};
   const c = (d.plan && d.plan.consumables) || {};
+  if (d.usage) {   // 🆕 F4-04: DB 기준(마지막 교체 뒤) — HMI·flow 를 껐다 켜도 이어진다. 한도는 서버가 준다(limits)
+    const L = d.limits || {};
+    return { fromDb: true,
+      sponge: remain(d.usage.sponge.used, L.sponge ?? c.sponge_max_uses), brush: remain(d.usage.brush.used, L.brush ?? c.sponge_max_uses),
+      soap: remain(d.usage.soap.used, L.soap ?? c.soap_max_dips), waste: wasteRemain(d.usage.waste_bin.used_g, L.waste_bin_g) };
+  }
   // 🔄 9/27 황인재: 수세미·솔은 같은 교체 주기(sponge_max_uses · 100회) · 툴마다 따로 센다 — 그릇 완료 수 = 수세미 사용, 컵 완료 수 = 솔 사용
   //    (flow 의 sponge_uses 는 둘을 합친 수라 화면엔 안 쓴다) · 헹굼 물은 세지 않는다(표시 제외)
   //    🔄 9/27 황인재: 세제는 담금 횟수(용기당 3)가 아니라 **세제 묻히는 행위 1회 = 용기 1개** — 완료 용기 수(그릇+컵)로 센다 · 한도 soap_max_dips(60) = 용기 60개
-  return { sponge: remain(s.done_bowl, c.sponge_max_uses), brush: remain(s.done_cup, c.sponge_max_uses),
-           soap: remain((s.done_bowl || 0) + (s.done_cup || 0), c.soap_max_dips) };
+  return { fromDb: false, sponge: remain(s.done_bowl, c.sponge_max_uses), brush: remain(s.done_cup, c.sponge_max_uses),
+           soap: remain((s.done_bowl || 0) + (s.done_cup || 0), c.soap_max_dips), waste: null };
 }
 
 // 알람 — 멈춤(PAUSED)이면 원인 갈래(pauseKind)로 붉은색(로봇 오류)/주황(그 밖) · 운전 중이면 마지막 코드가 정상이 아닐 때 노란 경고
 export function alarm(d) {
   const s = d.state;
   if (!s) return null;
-  const kind = pauseKind(s);
+  let kind = pauseKind(s);
+  if (kind === 'operator' && d.notices && d.notices.waste_full) kind = 'waste_bin';   // 🆕 잔반통이 차서 HMI 가 보낸 일시 정지
   if (kind) return { level: 'pause', kind, guide: kind === 'robot_error' ? robotErrorGuide(s.message) : GUIDE_KO[kind], code: s.last_code, message: s.message };   // 🔄 9/27 로봇 오류도 주황(별도 예외 X)
   if (s.last_code && s.last_code !== 'OK') return { level: 'warn', kind: null, guide: null, code: s.last_code, message: s.message };   // 재개해 진행 중 — 최근 원인만
   return null;
@@ -203,3 +218,21 @@ export function clock(stamp) {
   const t = new Date(stamp * 1000);
   return [t.getHours(), t.getMinutes(), t.getSeconds()].map((v) => String(v).padStart(2, '0')).join(':');
 }
+
+// 🆕 F4-05 KPI — /api/kpi 응답을 화면 칸 6개로. 값이 없으면 '-'
+export const PAUSE_KO = { operator: '일시 정지', cable: '케이블', tool_lost: '툴 놓침', tool_fail: '툴 집기 실패', leftover: '잔반 남음', grip: '집기 실패', rack_full: '팔레트 가득', robot_error: '로봇 확인', waste_bin: '잔반통' };
+export const PERIOD_KO = { run: '이번 실행', today: '오늘', all: '전체' };
+export function kpiCards(k) {
+  if (!k) return [];
+  const n = (v, unit = '') => (v == null ? '-' : `${v}${unit}`);
+  const kg = (g) => (g == null ? '-' : g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${Math.round(g)} g`);
+  return [
+    { label: '처리량', value: n(k.done_bowl + k.done_cup, '개'), sub: `그릇 ${k.done_bowl} · 컵 ${k.done_cup}` },
+    { label: '처리율', value: n(k.success_pct, '%'), sub: `격리 ${k.isolated} · 오류 ${k.error} · 건너뜀 ${k.skipped}`, tone: k.success_pct != null && k.success_pct < 90 ? 'warn' : '' },
+    { label: '용기당 평균', value: `${n(k.avg_s_bowl, 's')} / ${n(k.avg_s_cup, 's')}`, sub: '그릇 / 컵' },
+    { label: '시간당', value: n(k.per_hour, '개'), sub: k.per_hour == null ? '5분 넘게 돌면 계산' : '완료 기준' },
+    { label: '멈춤', value: n(k.pauses, '회'), sub: k.pauses ? `${Math.round(k.pause_s)}초 · 잦은 원인 ${PAUSE_KO[k.pause_top] || k.pause_top || '-'}` : '없음', tone: k.pauses ? 'warn' : '' },
+    { label: '잔반', value: n(k.leftover_pct, '%'), sub: `그릇 중 잔반 있던 비율 · 버린 양 ${kg(k.waste_g)}` },
+  ];
+}
+
