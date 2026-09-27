@@ -1,0 +1,12 @@
+# 잔반 남음 — 두 번 털어도 50 g 넘게 남아 용기를 든 채 멈춤(LEFTOVER_REMAIN → pause · E42 9/23). 사람이 잔반을 덜어내고 재개하면
+# 무게를 다시 재고 이어 간다. (중단을 누르면 격리 — 화면에서 중단 버튼도 시험해 볼 수 있다: fake 는 격리 이벤트를 내고 다음 용기로.)
+# 화요일 예외 ④ 의 화면 연습용.
+title: 잔반 남음 — 털어도 남아 멈춤 → 덜어내고 재개
+items:
+  - {kind: BOWL, zone: RET_B, rack_slot: RACK_B1}
+  - kind: BOWL
+    zone: RET_B
+    rack_slot: RACK_B2
+    fail: {at: SHAKE, code: LEFTOVER_REMAIN, action: pause_retry, message: '', hold_s: 12.0}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C1}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C2}

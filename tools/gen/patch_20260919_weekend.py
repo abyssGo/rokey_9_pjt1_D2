@@ -13,7 +13,7 @@ from livesheet import SID, load, timeline
 import gen_todo
 
 ID = 'AH'
-VERSION = 'v24.2'
+VERSION = 'v24.7'
 OUT = 'prewash_일정표_0919s.xlsx'
 def S(*xs): return [tuple(x.split()) for x in xs]          # S('9/20 오전','9/20 오후')
 
@@ -3080,6 +3080,72 @@ EDIT.update({
 HISTORY192 = ['v24.2', '✅ 결정', 'INT-4b, DEMO-01', '황인재 9/24 19:57: E47 떨림 상한 80 · E48 넛지 15 N·2번 통일(코드 F4 · 9/29 실기) · E39 종결 대용품 94 g 1개 임의 용기 + 오전 무게 확인 ⓪', '황인재 9/24 19:57', 'H']
 
 
+
+
+# ---------------------------------------------------------------- 9/24 21:08 황인재 결정(F4 창): 홈 B 변경 안 함(E49) · 기본 배속은 9/29 1.0 뒤(E46 보류) · 컵 재파지 순응 하강 제거(E50) · E48 코드 tune2
+H0924c = '황인재 9/24 21:08'
+EDIT.update({
+ 'INT-4b':   dict(note_add=H0924c + ': **E49** 홈 B 179.7 변경 안 함(스펀지 절단으로 해결) · **E46 보류** 배속 기본값은 화요일 **⑧ 1.0 배속 통합 1바퀴** 뒤 결정 · **E50** 컵 재파지 순응 하강 제거(`regrip_watch_mm 0` · 곧게 + 15 mm 완충 · RINSE 84 → ≈45 s · 🟡 컵 실기 · 실패 시 45) · **E48 2번 치기 코드 완료**(tune2 a293b17 · 공용 감지기 taps/window · 530 통과) → 화요일 ③④ 는 **tune2 코드로 실기**(F4 작업 폴더) → 통과하면 PR(실기 결과) → merge → v1.0-demo.1 · 대본 갱신됨(⓪ 94 g · ③④ 2번 · ④ 80 g · §3-2 재파지 곧게 · ⑧ 1.0)'),
+ 'DEMO-01':  dict(note_add=H0924c + ': 시연 코드 = 화요일 오전 실기 통과분(tune2 merge 시 `v1.0-demo.1`) · 통과 못 하면 `v1.0-demo`(8874dfc)'),
+})
+HISTORY193 = ['v24.3', '✅ 결정', 'INT-4b, DEMO-01', '황인재 9/24 21:08(F4 창): E49 홈 B 변경 안 함 · E46 기본 배속 보류(9/29 1.0 1바퀴 뒤) · E50 컵 재파지 순응 하강 제거(🟡 9/29) · E48 2번 치기 코드 tune2 완료 → 화요일 tune2 코드로 실기', '황인재 9/24 21:08', 'H']
+
+
+
+
+# ---------------------------------------------------------------- 9/24 23:11 황인재(PM 창): 배속 장치는 내 설계 아님 — 화요일 1.0 검증 통과면 시연도 1.0(E40 갱신)
+H0924d = '황인재 9/24 23:11'
+EDIT.update({
+ 'DEMO-01':  dict(note_add=H0924d + ': **시연 배속 = 화요일 ⑧ 1.0 통합 1바퀴 통과 시 1.0**(E40 의 0.5 갱신 · 배속 장치는 코드만 두고 시연에서 안 씀) · 실패하면 0.5 · 대용품 94 g 1개'),
+ 'INT-4b':   dict(note_add=H0924d + ': ⑧ 1.0 통합 1바퀴 = **시연 배속 결정 시험**(통과 → 1.0 · 실패 → 0.5) — 18:07 솔 반납 SAFE_STOP(완충 전) 재현 여부 · 툴 반납·적재 곧게 놓기 충격 · 컵 재파지 곧게(E50) 를 1.0 에서 본다 · 순서는 0.3 → 0.5 → 1.0'),
+})
+HISTORY194 = ['v24.4', '✅ 결정', 'DEMO-01, INT-4b', '황인재 9/24 23:11: 화요일 1.0 통합 1바퀴 통과면 시연 배속 1.0(E40 갱신 · 배속 장치는 두되 안 씀) · 실패면 0.5', '황인재 9/24 23:11', 'H']
+
+
+
+
+# ---------------------------------------------------------------- 9/24 23:40 황인재 21:5x 확정(F4 창): 화요일 검증 = 전체 흐름 2번 · 1.0 · tune2 코드 (E51)
+H0924e = '황인재 9/24 21:5x · PM 23:40'
+EDIT.update({
+ 'INT-4b':   dict(owner='H(전원)', task='INT-4b 9/29 오전 검증 — 단독 rig 없이 **전체 흐름 2번**(코드 tune2 = main + E48 넛지 2번 + E50 컵 재파지 곧게 · 배속 1.0 · 로봇 ≈30분 + 준비 10분): ① 기본 흐름 1회(그릇 2·컵 2·94 g 1개 · 손 안 댐 · 동결 확인 · E50 첫 실기) ② 예외 6개 1회(그릇 2 · 컵 구역 비움 · 그릇 2 에 94 g 테이프 고정): 케이블 흔들기→톡톡 2번 · 세제에서 정지→재개 · 나선에서 수세미 빼기→TOOL_LOST→2번 톡톡→재PICK · 그릇 2 잔반 남음 멈춤→대용품 제거→재개 · 세제(수세미 든 채) 정지→중단(HOME→반납→격리→HOME) · 컵 구역 빈손→SKIPPED→HOME',
+                  note_add=H0924e + ': **E51 확정** — 준비 10분(브링업 · bag · 기준값 2종 · 94 g 그릇·컵 각 1회 ≥ 65 g → 1개 확정) → 1회 기본(≈14분 · 통과 = 무정지 완주 + 알람 없음 + 파지 폭 정상 · 1.0 완주 E46 · E44 · #104 · E50 · 잔반 루프 · 떨림 80) → 2회 예외 6개(≈12분). 뺀 것: 컵 잔반 중단 · GRIP_FAIL · 세제 펌프 · 0.3/0.5 바퀴 · 단독 rig. 실패 대응: E50→45 · E48→1번 · 1.0→0.5 · 나머지는 시연 배치로 회피. 담당: 버튼 황인재 · 케이블 민범진 · 수세미 빼기 박진용 · 대용품 한석형 · E-Stop 1명 · 기록 PM. 대본 §1-2 갱신됨(PR "열어" 대기). 통과 → PR(실기 결과) → merge → v1.0-demo.1'),
+ 'REH-02':   dict(note_add=H0924e + ': 9/29 오전 = **INT-4b 의 1회 기본 흐름이 리허설을 겸한다**(별도 0.3/0.5 바퀴 없음 · 1.0) · 좌표 재현 10분은 준비 10분에 포함(브링업 · bag · 기준값 2종 · 94 g 읽기)'),
+ 'DEMO-01':  dict(note_add=H0924e + ': **시연 배속 1.0 확정**(화요일 통과 시 그대로 동결 · 배속 장치는 시연 뒤 삭제) · 시연 코드 = 화요일 통과분 v1.0-demo.1(실패 항목은 되돌린 설정으로)'),
+ 'NEW-01b':  dict(note_add=H0924e + ': 세제 펌프는 화요일 검증 2번에서 **제외**(황인재 21:5x) — 구매 뒤 단독 확인만 · 시연 포함은 별도 결정'),
+})
+HISTORY195 = ['v24.5', '✅ 결정', 'INT-4b, REH-02, DEMO-01, NEW-01b', '황인재 9/24 21:5x(F4 창): E51 화요일 검증 = 전체 흐름 2번(기본 1회 + 예외 6개 1회) · 1.0 · tune2 코드 · 준비 10분 · 시연 배속 1.0 확정 · 펌프는 검증에서 제외', '황인재 9/24 21:5x', 'H']
+
+
+
+
+# ---------------------------------------------------------------- 9/24 23:48 황인재 22:1x(F4 창): 넛지는 1번만(2번 치기 철회 · 15 N 유지)
+H0924f = '황인재 9/24 22:1x · PM 23:48'
+EDIT.update({
+ 'INT-4b':   dict(note_add=H0924f + ': **E48 변경 — 넛지 횟수 1번**(2번 치기 철회 · 힘 15 N 통일 유지 · tune2 `nudge_taps 1` d306742 · 530 통과 · taps 코드는 남김). 예외 ①③ 은 톡톡 1번으로 · 실패 대응 목록에서 "E48→1번" 제거'),
+})
+HISTORY196 = ['v24.6', '✅ 결정', 'INT-4b', '황인재 9/24 22:1x(F4 창): 넛지는 1번만 쳐도 재개(2번 철회 · 15 N 유지) — tune2 설정 1 · 대본 갱신', '황인재 9/24 22:1x', 'H']
+
+
+
+
+# ---------------------------------------------------------------- 09/25 13:48 황인재: 추석 순서 = ① HMI 완성(F4) → ② 문서·아키텍처 최신화(PM) → ③ PPT · 끝난 행 닫기
+H0925 = '황인재 09/25 13:48'
+EDIT.update({
+ 'INT-4':    dict(slots=S('9/24~28 오전', '9/24~28 오후'), status='진행 중', note_add=H0925 + ': **추석 1순위 — HMI 완성(F4)**: 시작·일시 정지·재개·중단 버튼 · 단계 카드 · "일시 정지됨 — 단계" 문구(케이블·툴 놓침·잔반 멈춤 안내) · 용기별 이력 · 넛지 비프 · 끊김 표시 (되면 팔레트 그림·소모품 바) · 확인 = bag `_bags/0923_full_0.5` 재생 + fake_state_pub · 실제 flow_node 연결은 9/29 준비 10분 · 완료 뒤 PM 이 문서·아키텍처 최신화 시작'),
+ 'UT-F4':    dict(slots=S('9/24~28 저녁'), note_add=H0925 + ': INT-4 와 함께(TC-11 · bag 재생으로)'),
+ 'DOC-05':   dict(note_add=H0925 + ': 순서 ② — **HMI 완성 뒤** as-built·결과표·아키텍처(HMI 화면 포함) 최신화(PM) · 최종 수치는 9/29 저녁'),
+ 'DOC-02':   dict(note_add=H0925 + ': 순서 ③ — 문서 최신화 뒤 PPT(강사 5장 양식 · 원문 양식은 황인재가 _upload 에)'),
+ 'ARCH-01':  dict(status='완료', prog='1.0', note_add=H0925 + ': ✅ 9/23 Archify 로 다시 그림(동결 판 · 카드 4개 · 9/24 예외 처리 카드) — 남은 것은 DOC-05 에서 HMI 화면 반영'),
+ 'INT-4c':   dict(status='완료', prog='1.0', note_add=H0925 + ': ✅ 0.5 기준 17분 39초(9/23 20:14 · 단계별 표) · 1.0 값은 9/29 INT-4b 기본 흐름에서'),
+ 'INT-4d':   dict(status='완료', prog='1.0', note_add=H0925 + ': ✅ 원본 영상 17분(9/23 · 황인재 촬영 · 노션은 드라이브 링크로) · v1.0-demo 태그(9/24) · 동결(E45)'),
+ 'FIX-01':   dict(status='완료', prog='1.0', note_add=H0925 + ': ✅ 9/23 튜닝 1~3차(PR #105) + hotfix #101 로 마감'),
+ 'V-24':     dict(status='완료', prog='1.0', note_add=H0925 + ': ✅ 즉시 정지·재개는 9/23 통합 실기·리허설에서 확인(정지 버튼 · 넛지 재개) · 남은 건 HMI 버튼 연결(INT-4)'),
+ 'F1-04':    dict(status='완료', prog='1.0', note_add=H0925 + ': ✅ rack_place 4칸 실기(9/23 리허설 3회) · E44 로 순응 삽입·RACK_JAM 판정은 제거'),
+ 'SAFE-01':  dict(note_add=H0925 + ': 노션 안전표 값 확인(박진용) — E44·E47·E48·E50 반영본으로 갱신 필요(SDD §7·§8 · 추석)'),
+})
+HISTORY197 = ['v24.7', '📅 일정', 'INT-4, UT-F4, DOC-05, DOC-02, ARCH-01, INT-4c, INT-4d, FIX-01, V-24, F1-04, SAFE-01', '황인재 09/25 13:48: 추석 순서 ① HMI 완성(F4) → ② 문서·아키텍처(PM) → ③ PPT · 끝난 행 6개 완료 처리', '황인재 09/25 13:48', 'H']
+
+
 def main(out):
     gen_todo.EASY.update(EASY)
     for _t in DELETE: EDIT.pop(_t, None); MOVE.pop(_t, None)
@@ -3180,7 +3246,7 @@ def main(out):
             ru.rows[k] = n
     # 7) 변경이력
     h = b.sheet('변경이력')
-    for hist in (HISTORY, HISTORY2, HISTORY3, HISTORY4, HISTORY5, HISTORY6, HISTORY7, HISTORY8, HISTORY9, HISTORY10, HISTORY11, HISTORY12, HISTORY13, HISTORY14, HISTORY15, HISTORY16, HISTORY17, HISTORY18, HISTORY19, HISTORY20, HISTORY21, HISTORY22, HISTORY23, HISTORY24, HISTORY25, HISTORY26, HISTORY27, HISTORY28, HISTORY29, HISTORY30, HISTORY31, HISTORY32, HISTORY33, HISTORY34, HISTORY35, HISTORY36, HISTORY37, HISTORY38, HISTORY39, HISTORY40, HISTORY41, HISTORY42, HISTORY43, HISTORY44, HISTORY45, HISTORY46, HISTORY47, HISTORY48, HISTORY49, HISTORY50, HISTORY51, HISTORY52, HISTORY53, HISTORY54, HISTORY55, HISTORY56, HISTORY57, HISTORY58, HISTORY59, HISTORY60, HISTORY61, HISTORY62, HISTORY63, HISTORY64, HISTORY65, HISTORY66, HISTORY67, HISTORY68, HISTORY69, HISTORY70, HISTORY71, HISTORY72, HISTORY73, HISTORY74, HISTORY75, HISTORY76, HISTORY77, HISTORY78, HISTORY79, HISTORY80, HISTORY81, HISTORY82, HISTORY83, HISTORY84, HISTORY85, HISTORY86, HISTORY87, HISTORY88, HISTORY89, HISTORY90, HISTORY91, HISTORY92, HISTORY93, HISTORY94, HISTORY95, HISTORY96, HISTORY97, HISTORY98, HISTORY99, HISTORY100, HISTORY101, HISTORY102, HISTORY103, HISTORY104, HISTORY105, HISTORY106, HISTORY107, HISTORY108, HISTORY109, HISTORY110, HISTORY111, HISTORY112, HISTORY113, HISTORY114, HISTORY115, HISTORY116, HISTORY117, HISTORY118, HISTORY119, HISTORY120, HISTORY121, HISTORY122, HISTORY123, HISTORY124, HISTORY125, HISTORY126, HISTORY127, HISTORY128, HISTORY129, HISTORY130, HISTORY131, HISTORY132, HISTORY133, HISTORY134, HISTORY135, HISTORY136, HISTORY137, HISTORY138, HISTORY139, HISTORY140, HISTORY141, HISTORY142, HISTORY143, HISTORY144, HISTORY145, HISTORY146, HISTORY147, HISTORY148, HISTORY149, HISTORY150, HISTORY151, HISTORY152, HISTORY153, HISTORY154, HISTORY155, HISTORY156, HISTORY157, HISTORY158, HISTORY159, HISTORY160, HISTORY161, HISTORY162, HISTORY163, HISTORY164, HISTORY165, HISTORY166, HISTORY167, HISTORY168, HISTORY169, HISTORY170, HISTORY171, HISTORY172, HISTORY173, HISTORY174, HISTORY175, HISTORY176, HISTORY177, HISTORY178, HISTORY179, HISTORY180, HISTORY181, HISTORY182, HISTORY183, HISTORY184, HISTORY185, HISTORY186, HISTORY187, HISTORY188, HISTORY189, HISTORY190, HISTORY191, HISTORY192):
+    for hist in (HISTORY, HISTORY2, HISTORY3, HISTORY4, HISTORY5, HISTORY6, HISTORY7, HISTORY8, HISTORY9, HISTORY10, HISTORY11, HISTORY12, HISTORY13, HISTORY14, HISTORY15, HISTORY16, HISTORY17, HISTORY18, HISTORY19, HISTORY20, HISTORY21, HISTORY22, HISTORY23, HISTORY24, HISTORY25, HISTORY26, HISTORY27, HISTORY28, HISTORY29, HISTORY30, HISTORY31, HISTORY32, HISTORY33, HISTORY34, HISTORY35, HISTORY36, HISTORY37, HISTORY38, HISTORY39, HISTORY40, HISTORY41, HISTORY42, HISTORY43, HISTORY44, HISTORY45, HISTORY46, HISTORY47, HISTORY48, HISTORY49, HISTORY50, HISTORY51, HISTORY52, HISTORY53, HISTORY54, HISTORY55, HISTORY56, HISTORY57, HISTORY58, HISTORY59, HISTORY60, HISTORY61, HISTORY62, HISTORY63, HISTORY64, HISTORY65, HISTORY66, HISTORY67, HISTORY68, HISTORY69, HISTORY70, HISTORY71, HISTORY72, HISTORY73, HISTORY74, HISTORY75, HISTORY76, HISTORY77, HISTORY78, HISTORY79, HISTORY80, HISTORY81, HISTORY82, HISTORY83, HISTORY84, HISTORY85, HISTORY86, HISTORY87, HISTORY88, HISTORY89, HISTORY90, HISTORY91, HISTORY92, HISTORY93, HISTORY94, HISTORY95, HISTORY96, HISTORY97, HISTORY98, HISTORY99, HISTORY100, HISTORY101, HISTORY102, HISTORY103, HISTORY104, HISTORY105, HISTORY106, HISTORY107, HISTORY108, HISTORY109, HISTORY110, HISTORY111, HISTORY112, HISTORY113, HISTORY114, HISTORY115, HISTORY116, HISTORY117, HISTORY118, HISTORY119, HISTORY120, HISTORY121, HISTORY122, HISTORY123, HISTORY124, HISTORY125, HISTORY126, HISTORY127, HISTORY128, HISTORY129, HISTORY130, HISTORY131, HISTORY132, HISTORY133, HISTORY134, HISTORY135, HISTORY136, HISTORY137, HISTORY138, HISTORY139, HISTORY140, HISTORY141, HISTORY142, HISTORY143, HISTORY144, HISTORY145, HISTORY146, HISTORY147, HISTORY148, HISTORY149, HISTORY150, HISTORY151, HISTORY152, HISTORY153, HISTORY154, HISTORY155, HISTORY156, HISTORY157, HISTORY158, HISTORY159, HISTORY160, HISTORY161, HISTORY162, HISTORY163, HISTORY164, HISTORY165, HISTORY166, HISTORY167, HISTORY168, HISTORY169, HISTORY170, HISTORY171, HISTORY172, HISTORY173, HISTORY174, HISTORY175, HISTORY176, HISTORY177, HISTORY178, HISTORY179, HISTORY180, HISTORY181, HISTORY182, HISTORY183, HISTORY184, HISTORY185, HISTORY186, HISTORY187, HISTORY188, HISTORY189, HISTORY190, HISTORY191, HISTORY192, HISTORY193, HISTORY194, HISTORY195, HISTORY196, HISTORY197):
         if not has(h, 'A', hist[0]):
             k = h.first_empty(); n = h.rows[k - 1].clone()
             for c, v in zip('ABCDEF', hist): n.set(c, v)

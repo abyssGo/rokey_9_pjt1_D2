@@ -164,7 +164,7 @@ class FakeFlow(Node):
         st = self.state_now()
         if st['step'] != 'PAUSED':
             res.success, res.message = False, f"PAUSED 가 아닙니다 (현재 {st['step']})"
-        elif st['last_code'] == ROBOT_ERROR:
+        elif st['last_code'] == ROBOT_ERROR and '케이블' not in (st.get('message') or ''):   # 케이블 이상 멈춤은 코드가 ROBOT_ERROR 라도 중단을 받는다(flow.handle_cable_tight)
             res.success, res.message = False, '로봇 오류로 멈춘 상태에서는 중단할 수 없습니다 — 사람이 복구해야 합니다'
         elif self.scene.item < 0:
             res.success, res.message = False, '접을 용기가 없습니다'

@@ -1,0 +1,13 @@
+# 툴 집기 실패 — 두 번째 그릇에서 홀더의 수세미를 집지 못해 멈춤(TOOL_FAIL → pause · E52 9/25). 용기는 스펀지 홈에, 툴은 홀더에 그대로.
+# 사람이 홀더를 확인해 고쳐 꽂고 톡(넛지) 또는 재개하면 flow 가 툴 집기부터 다시 한다(RETRY_STEP). 격리는 하지 않는다.
+# 실제 flow 의 문구를 그대로 넣었다(handle_failure · TOOL_FAIL). 화요일 예외 ⑦ 의 화면 연습용.
+title: 툴 집기 실패 — 홀더 확인 → 톡 → 다시 집고 이어감
+items:
+  - {kind: BOWL, zone: RET_B, rack_slot: RACK_B1}
+  - kind: BOWL
+    zone: RET_B
+    rack_slot: RACK_B2
+    fail: {at: SOAP, code: TOOL_FAIL, action: pause_retry, hold_s: 12.0,
+           message: '툴 집기 실패 — 홀더의 수세미·솔이 원래 방향으로 제대로 꽂혔는지 확인한 뒤 톡 1번(또는 재개) → 툴 집기부터 다시 합니다'}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C1}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C2}

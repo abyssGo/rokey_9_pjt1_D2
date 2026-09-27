@@ -1,8 +1,10 @@
-# 오류 — 닦는 도중 로봇 오류(ROBOT_ERROR → pause). 사람이 복구해야 하는 상황. 화면의 붉은 알람·"운영자 복구 필요" 안내를 볼 때.
-title: 오류 — 닦는 중 ROBOT_ERROR 로 멈춤
+# 오류 — 헹굼 도중 로봇 오류(ROBOT_ERROR → pause · 용기를 쥔 채). 화면의 붉은 알람·2단 신호 안내를 볼 때(E52·E54).
+title: 오류 — 헹굼 중 ROBOT_ERROR 로 멈춤(용기 쥔 채)
 pause_hold_s: 15.0
 items:
   - {kind: BOWL, zone: RET_B, rack_slot: RACK_B1}
   - kind: BOWL
     zone: RET_B
-    fail: {at: WIPE, code: ROBOT_ERROR, action: pause, message: 'wipe_bowl: 후퇴 실패 — 로봇 위치를 알 수 없다. 사람이 확인해야 한다'}
+    # 🔄 9/27 E52·E54: 실제 flow._robot_error_pause 의 **신호 1 단계** 문구 그대로(쥔 것 = 용기). 가짜 flow 는 2단을 못 흉내 내서 hold_s 뒤 ERROR 로 넘어간다.
+    fail: {at: RINSE, code: ROBOT_ERROR, action: pause,
+           message: 'f2.dip: 드라이버 응답 없음 — 로봇 오류 · 그리퍼에 용기이(가) 있습니다. 로봇과 주변을 확인한 뒤 톡 1번(또는 재개) → 그리퍼만 열립니다 — 받을 준비를 하세요.'}

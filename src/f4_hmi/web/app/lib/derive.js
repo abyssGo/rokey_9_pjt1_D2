@@ -14,7 +14,50 @@ export const CODE_KO = {                             // cobot_api CODES (IRD §2
   OK: '정상', GRIP_FAIL: '집기 실패', EMPTY_ZONE: '빈 구역', LEFTOVER: '잔반 있음', LEFTOVER_REMAIN: '잔반이 남음',
   SEAT_FAIL: '안착 실패', TOOL_FAIL: '툴 집기 실패', FORCE_LIMIT: '힘 상한 초과', TIMEOUT: '시간 초과',
   RACK_JAM: '적재 걸림', RACK_FULL: '팔레트 가득 참', ROBOT_ERROR: '로봇 오류', STOPPED: '멈춤',
+  TOOL_LOST: '툴 놓침',                              // 🆕 E37(9/23) — 닦는 중 수세미·솔이 그리퍼에서 빠짐
 };
+
+// 멈춤(PAUSED)의 원인 갈래 — flow 가 보내는 last_code 와 message 로 가른다(F4 9/25 · 시연 예외 6개에 맞춤).
+//   'cable' 만 message 로 본다: 케이블 이상은 코드가 아니라 flow 가 last_code=ROBOT_ERROR 에 케이블 안내 문구를 얹어 보낸다(flow.handle_cable_tight).
+export function pauseKind(s) {
+  if (!s || s.step !== 'PAUSED') return null;
+  if ((s.message || '').includes('케이블')) return 'cable';
+  switch (s.last_code) {
+    case 'ROBOT_ERROR': return 'robot_error';
+    case 'TOOL_LOST': return 'tool_lost';
+    case 'TOOL_FAIL': return 'tool_fail';         // 🆕 E52(9/25) — 홀더에서 못 집음 → 멈춤(격리 X) · 홀더 확인 → 톡
+    case 'LEFTOVER_REMAIN': return 'leftover';
+    case 'GRIP_FAIL': return 'grip';
+    case 'RACK_FULL': return 'rack_full';
+    default: return 'operator';                      // 일시 정지 버튼 · 빈 구역 뒤 HOME 실패 등
+  }
+}
+
+// 멈춤 원인별 운영자 안내 — 🔄 9/27 황인재 2차: **제목 + 할 일 2~3줄, 각 줄 몇 단어.** 설명 문장 없음(what 은 비워 둔다 · 있으면 한 줄).
+//    설명·근거는 SDD §7 · 대본에. 로봇 오류는 신호 1(확인 → 톡/재개) · 신호 2(받아 치움 → 재개) · HOME 실패 세 장만(경우를 합쳤다).
+export const GUIDE_KO = {
+  operator: { title: '일시 정지', steps: ['재개 — 이어서', '중단 — 이 용기 격리'] },
+  cable: { title: '케이블 확인', steps: ['케이블 정리', '손목 톡 (또는 재개)'] },
+  tool_lost: { title: '툴 놓침', steps: ['홀더에 다시 꽂기', '손목 톡 (또는 재개)'] },
+  tool_fail: { title: '툴 집기 실패', steps: ['홀더에 툴 바로 꽂기', '손목 톡 (또는 재개)'] },
+  leftover: { title: '잔반 남음', steps: ['잔반 덜어내기', '재개 (또는 중단)'] },
+  grip: { title: '집기 실패', steps: ['용기 위치 확인', '재개 (또는 중단)'] },
+  rack_full: { title: '팔레트 가득', steps: ['새 팔레트로 교체', '재개'] },
+  waste_bin: { title: '잔반통 교체', steps: ['잔반통 비우기', '소모품 칸의 교체 완료 누르기', '재개'] },   // 🆕 9/27 F4-05 잔반통 한도(hmi.waste_bin_limit_g)
+  // 🔄 9/27 황인재: 로봇 오류는 설계한 예외가 아니라 컨트롤러 오류를 받는 그물 — 화면에서 별도 예외로 내세우지 않고 **일반 멈춤 카드**(주황)로만 보인다
+  robot_error: { title: '멈춤 — 로봇 확인', steps: ['로봇·주변 확인', '재개 — 쥔 것이 있으면 그리퍼 열림', '받아 치우고 다시 재개'] },
+  robot_error_release: { title: '멈춤 — 받아 주세요', steps: ['받아서 치우기 (홈의 용기도)', '물러나서 재개'] },
+  robot_error_home: { title: '멈춤 — HOME 복귀 실패', steps: ['펜던트로 팔 옮기기', '재개'] },
+};
+// flow 문구를 화면에 같이 보이지 않는 갈래 — 안내가 이미 그 내용이다(황인재 9/27 "글이 너무 길다")
+export const HIDE_FLOW_MSG = ['cable', 'tool_lost', 'tool_fail', 'robot_error'];
+
+export function robotErrorGuide(message) {
+  const m = message || '';
+  if (m.includes('그리퍼를 열었습니다')) return GUIDE_KO.robot_error_release;   // 신호 2 — 받아 치운 뒤 재개 버튼(E54)
+  if (m.includes('HOME 복귀 실패')) return GUIDE_KO.robot_error_home;
+  return GUIDE_KO.robot_error;                                                   // 신호 1 — 쥔 것 유무와 관계없이 같은 할 일
+}
 
 const doneOf = (s, kind) => (kind === 'BOWL' ? s.done_bowl : s.done_cup) || 0;
 
@@ -27,7 +70,7 @@ export function buttons(d) {
     start: c && step === 'IDLE',
     stop: c && RUNNING.includes(step),
     resume: c && step === 'PAUSED',
-    abort: c && step === 'PAUSED' && s.last_code !== 'ROBOT_ERROR',   // 로봇 오류면 사람이 복구한다 — 중단(격리)으로 덮지 않는다
+    abort: c && step === 'PAUSED' && pauseKind(s) !== 'robot_error',   // 로봇 오류면 사람이 복구한다 — 중단(격리)으로 덮지 않는다. 케이블 이상은 코드가 ROBOT_ERROR 여도 중단 가능(flow.handle_cable_tight)
   };
 }
 
@@ -124,19 +167,37 @@ function remain(used, max) {
   const level = left === 0 ? 'bad' : left <= Math.max(1, Math.round(max * 0.15)) ? 'warn' : 'ok';
   return { used, max, left, level };
 }
+function wasteRemain(usedG, limitG) {
+  if (usedG == null) return null;
+  if (!limitG) return { used_g: usedG, max_g: null, left_g: null, level: 'ok' };
+  const left = Math.max(0, limitG - usedG);
+  const level = left === 0 ? 'bad' : left <= limitG * 0.15 ? 'warn' : 'ok';
+  return { used_g: usedG, max_g: limitG, left_g: left, level };
+}
 export function consumables(d) {
   const s = d.state || {};
   const c = (d.plan && d.plan.consumables) || {};
-  return { sponge: remain(s.sponge_uses, c.sponge_max_uses), soap: remain(s.soap_dips, c.soap_max_dips), rinse: s.rinse_dips };
+  if (d.usage) {   // 🆕 F4-04: DB 기준(마지막 교체 뒤) — HMI·flow 를 껐다 켜도 이어진다. 한도는 서버가 준다(limits)
+    const L = d.limits || {};
+    return { fromDb: true,
+      sponge: remain(d.usage.sponge.used, L.sponge ?? c.sponge_max_uses), brush: remain(d.usage.brush.used, L.brush ?? c.sponge_max_uses),
+      soap: remain(d.usage.soap.used, L.soap ?? c.soap_max_dips), waste: wasteRemain(d.usage.waste_bin.used_g, L.waste_bin_g) };
+  }
+  // 🔄 9/27 황인재: 수세미·솔은 같은 교체 주기(sponge_max_uses · 100회) · 툴마다 따로 센다 — 그릇 완료 수 = 수세미 사용, 컵 완료 수 = 솔 사용
+  //    (flow 의 sponge_uses 는 둘을 합친 수라 화면엔 안 쓴다) · 헹굼 물은 세지 않는다(표시 제외)
+  //    🔄 9/27 황인재: 세제는 담금 횟수(용기당 3)가 아니라 **세제 묻히는 행위 1회 = 용기 1개** — 완료 용기 수(그릇+컵)로 센다 · 한도 soap_max_dips(60) = 용기 60개
+  return { fromDb: false, sponge: remain(s.done_bowl, c.sponge_max_uses), brush: remain(s.done_cup, c.sponge_max_uses),
+           soap: remain((s.done_bowl || 0) + (s.done_cup || 0), c.soap_max_dips), waste: null };
 }
 
-// 알람 — 로봇 오류(붉은색) > 일시 정지 > 경고(주황)
+// 알람 — 멈춤(PAUSED)이면 원인 갈래(pauseKind)로 붉은색(로봇 오류)/주황(그 밖) · 운전 중이면 마지막 코드가 정상이 아닐 때 노란 경고
 export function alarm(d) {
   const s = d.state;
   if (!s) return null;
-  if (s.last_code === 'ROBOT_ERROR') return { level: 'error', code: s.last_code, message: s.message };
-  if (s.step === 'PAUSED') return { level: 'pause', code: s.last_code, message: s.message };
-  if (s.last_code && s.last_code !== 'OK') return { level: 'warn', code: s.last_code, message: s.message };
+  let kind = pauseKind(s);
+  if (kind === 'operator' && d.notices && d.notices.waste_full) kind = 'waste_bin';   // 🆕 잔반통이 차서 HMI 가 보낸 일시 정지
+  if (kind) return { level: 'pause', kind, guide: kind === 'robot_error' ? robotErrorGuide(s.message) : GUIDE_KO[kind], code: s.last_code, message: s.message };   // 🔄 9/27 로봇 오류도 주황(별도 예외 X)
+  if (s.last_code && s.last_code !== 'OK') return { level: 'warn', kind: null, guide: null, code: s.last_code, message: s.message };   // 재개해 진행 중 — 최근 원인만
   return null;
 }
 
@@ -157,3 +218,21 @@ export function clock(stamp) {
   const t = new Date(stamp * 1000);
   return [t.getHours(), t.getMinutes(), t.getSeconds()].map((v) => String(v).padStart(2, '0')).join(':');
 }
+
+// 🆕 F4-05 KPI — /api/kpi 응답을 화면 칸 6개로. 값이 없으면 '-'
+export const PAUSE_KO = { operator: '일시 정지', cable: '케이블', tool_lost: '툴 놓침', tool_fail: '툴 집기 실패', leftover: '잔반 남음', grip: '집기 실패', rack_full: '팔레트 가득', robot_error: '로봇 확인', waste_bin: '잔반통' };
+export const PERIOD_KO = { run: '이번 실행', today: '오늘', all: '전체' };
+export function kpiCards(k) {
+  if (!k) return [];
+  const n = (v, unit = '') => (v == null ? '-' : `${v}${unit}`);
+  const kg = (g) => (g == null ? '-' : g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${Math.round(g)} g`);
+  return [
+    { label: '처리량', value: n(k.done_bowl + k.done_cup, '개'), sub: `그릇 ${k.done_bowl} · 컵 ${k.done_cup}` },
+    { label: '처리율', value: n(k.success_pct, '%'), sub: `격리 ${k.isolated} · 오류 ${k.error} · 건너뜀 ${k.skipped}`, tone: k.success_pct != null && k.success_pct < 90 ? 'warn' : '' },
+    { label: '용기당 평균', value: `${n(k.avg_s_bowl, 's')} / ${n(k.avg_s_cup, 's')}`, sub: '그릇 / 컵' },
+    { label: '시간당', value: n(k.per_hour, '개'), sub: k.per_hour == null ? '5분 넘게 돌면 계산' : '완료 기준' },
+    { label: '멈춤', value: n(k.pauses, '회'), sub: k.pauses ? `${Math.round(k.pause_s)}초 · 잦은 원인 ${PAUSE_KO[k.pause_top] || k.pause_top || '-'}` : '없음', tone: k.pauses ? 'warn' : '' },
+    { label: '잔반', value: n(k.leftover_pct, '%'), sub: `그릇 중 잔반 있던 비율 · 버린 양 ${kg(k.waste_g)}` },
+  ];
+}
+

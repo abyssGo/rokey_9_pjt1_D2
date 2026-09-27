@@ -62,7 +62,7 @@ def _item(s, kind, x, y, st, n):
     else:
         if st == 'done':
             s.shadow(x, y, FLOOR, 36, op=.45)
-        container(s, 'CUP', x, y, FLOOR + lift)
+        container(s, 'CUP', x, y, FLOOR + lift, upside_down=True)      # 🆕 9/27 황인재: 팔레트의 컵은 뒤집어 얹는다
         X, Y = s.P(x, y, FLOOR + lift + CUP['h'])
     if st == 'now':
         s.raw('</g>')

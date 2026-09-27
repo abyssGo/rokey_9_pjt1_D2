@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 
 STEPS = ('PICK', 'WEIGH', 'SHAKE', 'SEAT', 'SOAP', 'WIPE', 'RINSE', 'RACK')
-ACTIONS = ('isolate', 'next_zone', 'pause')
+ACTIONS = ('isolate', 'next_zone', 'pause', 'pause_retry')   # 🆕 9/25 pause_retry = 멈춘 뒤 **그 단계부터 다시** 이어 완료(TOOL_LOST·LEFTOVER_REMAIN·케이블 이상 · 실제 flow 의 RETRY_STEP)
 DEFAULTS_FILE = '_defaults.yaml'
 OK = 'OK'
 
@@ -141,12 +141,26 @@ def build(scn: dict) -> list:
                     st.update(step='ISOLATE', isolated=st['isolated'] + 1)
                     spent += float(step_s['ISOLATE'])
                     add(step_s['ISOLATE'], event=event('ISOLATED', fail['code']))
+                elif fail['action'] == 'pause_retry':               # 🆕 9/25 멈춤 → (사람이 손을 쓴 뒤) 그 단계부터 다시 → 완료(E42·E37·케이블)
+                    was_gripping = scenes[-1].gripping
+                    st.update(step='PAUSED')
+                    add(fail.get('hold_s', scn['pause_hold_s']), gripping=was_gripping)
+                    spent += float(fail.get('hold_s', scn['pause_hold_s']))
+                    if fail.get('resume_message'):                  # 재개 직후 flow 가 잠깐 보내는 문구(케이블: '재개 요청 감지 …' → HMI 비프)
+                        st.update(step=step, last_code=OK, message=fail['resume_message'])
+                        add(float(fail.get('resume_s', 1.5)), wiping=wiping)
+                        spent += float(fail.get('resume_s', 1.5))
+                    st.update(step=step, last_code=OK, message='')
+                    add(full, wiping=wiping)                        # 그 단계부터 다시
+                    spent += full
+                    fail = None                                     # 이 용기는 정상 완료로 이어 간다(다시 실패하지 않음)
                 else:                                               # pause — 사람이 볼 때까지 멈춘다(ROBOT_ERROR · RACK_FULL)
                     was_gripping = scenes[-1].gripping
                     st.update(step='PAUSED')
                     add(fail.get('hold_s', scn['pause_hold_s']), gripping=was_gripping)
                     halted = True
-                break
+                if fail is not None:
+                    break
             if step == 'SOAP':
                 st['soap_dips'] += int(counts['soap_dips'])
             elif step == 'WIPE':

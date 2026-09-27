@@ -1,0 +1,19 @@
+# 케이블 이상 — 무게를 재는 동안 떨림이 상한(80 g)을 넘어 그 자리에서 멈춤(#93). flow 는 코드 ROBOT_ERROR 에 케이블 안내 문구를 얹어 보내고,
+# 사람이 톡(넛지) 또는 재개하면 '재개 요청 감지 …' 문구(→ 화면 비프)를 잠깐 보낸 뒤 떨림을 다시 재고 이어 간다(flow.handle_cable_tight).
+# 화면은 message 의 '케이블' 로 로봇 오류가 아닌 '케이블 이상' 멈춤으로 보여 주고, 중단 버튼도 살려 둔다. 화요일 예외 ① 의 화면 연습용.
+title: 케이블 이상 — 무게 재는 중 떨림 → 톡톡 재개
+items:
+  - kind: BOWL
+    zone: RET_B
+    rack_slot: RACK_B1
+    fail:
+      at: WEIGH
+      code: ROBOT_ERROR
+      action: pause_retry
+      message: '케이블 상태를 확인해주세요. 확인 후 로봇을 가볍게 톡톡 두드려 주세요.'
+      resume_message: '재개 요청 감지 — 케이블 상태를 재확인하고 있습니다...'
+      resume_s: 2.0
+      hold_s: 12.0
+  - {kind: BOWL, zone: RET_B, rack_slot: RACK_B2}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C1}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C2}

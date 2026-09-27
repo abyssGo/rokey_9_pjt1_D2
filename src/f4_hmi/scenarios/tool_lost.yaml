@@ -1,0 +1,12 @@
+# 툴 놓침 — 첫 그릇을 닦는 도중 수세미가 그리퍼에서 빠져 즉시 멈춤(TOOL_LOST → pause · E37). 사람이 홀더에 다시 꽂고 톡(넛지) 또는 재개하면
+# flow 가 툴을 다시 집고 닦기부터 이어 간다(RETRY_STEP). 실제 flow 는 이때 message 를 비워 둔다 → 화면은 last_code 로 안내 문구를 고른다.
+# 화요일 예외 ③ 의 화면 연습용. 재개 버튼을 누르면 멈춤이 바로 풀린다(안 누르면 hold_s 뒤).
+title: 툴 놓침 — 닦는 중 수세미가 빠짐 → 다시 집고 이어감
+items:
+  - kind: BOWL
+    zone: RET_B
+    rack_slot: RACK_B1
+    fail: {at: WIPE, code: TOOL_LOST, action: pause_retry, message: '', hold_s: 12.0}
+  - {kind: BOWL, zone: RET_B, rack_slot: RACK_B2}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C1}
+  - {kind: CUP,  zone: RET_C, rack_slot: RACK_C2}
