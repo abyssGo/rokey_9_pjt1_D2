@@ -3,12 +3,12 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 ID | IRD-PREWASH-001 · **v3.0** (2026-09-18) |
+| 문서 ID | IRD-PREWASH-001 · **v3.1** (2026-09-27) — v3.0(9/18) + 실패 정책 §8 갱신(E42 · E52 · E54 · E55) · 코드 `TOOL_LOST` 추가(E37) |
 | 구조 | **스크립트형(9/18 저녁 결정)**: `flow_node`(메인 프로그램)가 f1·f2·f3의 **파이썬 함수**를 차례로 부른다. 기능 사이에 ROS 서비스는 없다. ROS 통신은 flow ↔ HMI와 그리퍼·두산 드라이버뿐이다. 배경은 [TS-01](troubleshooting/TS-01_두산API_초기화_실행기_교착.md), 결정은 [회의록 DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md) |
 | 확정 상태 | ✅ 확정: PC 2대 · **노드 2개(`flow_node`·`hmi_bridge`)** · F1↔F3 경계(툴 픽업 F1 / 세제 담금 F3) · 닦기 분리(`wipe_bowl`/`wipe_cup`) · `place`가 안착 놓기 · 복귀는 `move_to('HOME')` · 파지 힘 2단계 · 설정 파일 2개. **🟡 미확정**: §2 반납 구역·`EMPTY_ZONE`, §3 `pick` 탐색·재파지(V-15 뒤), §6~7 HMI·`FlowState`/`FlowEvent` 필드·추가 토픽(F4-00 뒤), §8 실패 정책, §9 YAML 키 규칙 → **DSN-03** |
 | 상위 | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) §5.4 |
-| 정본 파일 | **함수 약속** [`src/cobot_api/cobot_api/contracts.py`](../src/cobot_api/cobot_api/contracts.py) · **메시지** [interfaces/](interfaces/) 의 `*.msg`(→ `src/cobot_msgs`). 이 문서와 파일이 다르면 **파일이 정본** |
-| 변경 규칙 | 함수 이름·인자·반환 필드·코드, 메시지 필드의 추가·삭제·타입 변경은 `.github/ISSUE_TEMPLATE/interface_change.md` 이슈 → 4명 확인 → PR. 혼자 바꾸지 않는다. |
+| 정본 파일 | **함수 약속** [`src/cobot_api/cobot_api/contracts.py`](../src/cobot_api/cobot_api/contracts.py) · **메시지** `src/cobot_msgs/msg/*.msg`. 이 문서와 파일이 다르면 **파일이 정본** |
+| 변경 규칙 | 함수 이름·인자·반환 필드·코드, 메시지 필드의 추가·삭제·타입 변경은 이슈 → 4명 확인 → PR. 혼자 바꾸지 않는다. |
 
 🚨 **이 문서가 4명 동시 개발의 약속이다.** 이 약속이 있어서 남의 코드가 없어도 내 함수를 만들고 시험할 수 있다. v2.1의 서비스 12개가 **같은 이름·같은 인자·같은 반환 필드의 함수 12개**로 바뀌었을 뿐 내용은 같다.
 

@@ -98,13 +98,13 @@
 ## 5. 실행 방법
 
 ### 요구 환경
-- Ubuntu 24.04 · ROS 2 Jazzy · Python 3.12 · Node.js 20(화면 빌드) · 두산 ROS 2 드라이버 워크스페이스(`~/ws_cobot_pjt/ws_dsr` · 교육 과정 배포본, 아래에서는 `$DSR_WS`)
+- Ubuntu 24.04 · ROS 2 Jazzy · Python 3.12 · Node.js 20(화면 빌드) · 두산 ROS 2 드라이버 워크스페이스(`~/ws_cobot_pjt/ws_dsr` · 교육 과정 배포본)
 - 실기: M0609 컨트롤러(192.168.1.100 · Dart Platform 2.12) · RG2(Modbus/TCP 192.168.1.1) · `ROS_DOMAIN_ID=60`
 
 ### 설치 · 빌드 · 자동 시험
 ```bash
 git clone https://github.com/hwang-injae/rokey_9_pjt1_D2.git rokey_pjt01_ws && cd rokey_pjt01_ws
-source $DSR_WS/install/setup.bash                       # 두산 드라이버
+source ~/ws_cobot_pjt/ws_dsr/install/setup.bash        # 두산 드라이버(새 터미널마다 · 아래 명령 전부 이 뒤에)
 colcon build --symlink-install && source install/setup.bash   # 패키지 8개
 python3 -m pytest -q src                                # 자동 시험(로봇 없이)
 cd src/f4_hmi/web && npm install && npm run build && cd -   # 운영 화면(PC-B 에서 한 번)
@@ -117,7 +117,7 @@ ros2 launch prewash_bringup prewash_mock.launch.py      # 메인 프로그램 + 
 ```bash
 ros2 run f4_hmi hmi_bridge                              # 터미널 1: 화면 서버
 ros2 run f4_hmi fake_state_pub normal                   # 터미널 2: 가짜 흐름 대본(normal · paused · isolate · error · empty_zone · tool_lost · leftover_remain · cable · tool_fail)
-ros2 run f4_hmi hmi_db kpi                              # 기록 DB 조회(tables · dump · usage · kpi · replace · export)
+ros2 run f4_hmi hmi_db kpi                              # 기록 DB 조회(tables · dump · usage · kpi · replace · export) — 기록 DB · KPI · tool_fail 대본은 9/29 통합 반영분
 ```
 
 ### 가상 로봇(RViz)
@@ -129,7 +129,7 @@ python3 src/cobot_common/test/rig_coords.py --from 1                            
 
 ### 실제 로봇 — 담당자만 · 로봇 프로그램은 한 번에 하나
 ```bash
-ros2 launch m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 model:=m0609   # 터미널 1: 실기 브링업
+ros2 launch m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 port:=12345 model:=m0609   # 터미널 1: 실기 브링업
 ros2 service call /dsr01/dsr_controller2/tcp/get_current_tcp dsr_msgs2/srv/GetCurrentTcp      # → GripperDA_v1 이 아니면 움직이지 않는다
 PREWASH_VEL_SCALE=0.3 python3 src/f2_sense_flow/test/rig_f2.py empty --kind BOWL -n 1        # 빈 그릇 기준값(실행 직전 1회 · 컵도)
 ```
