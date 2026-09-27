@@ -392,7 +392,7 @@ function Stats({ d }) {
       <h2 className="gap">소모품 — 교체까지</h2>
       {spare(cs.sponge, '수세미', 'sponge', '그릇')}
       {spare(cs.brush, '솔', 'brush', '컵')}
-      {spare(cs.soap, '세제', 'soap', '비눗물은')}
+      {spare(cs.soap, '세제', 'soap', '용기')}
     </section>
   );
 }

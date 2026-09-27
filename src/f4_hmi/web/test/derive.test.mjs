@@ -77,11 +77,11 @@ test('다음 할 일 — 멈춤은 재개 또는 중단 · 적재 뒤는 다음 
 });
 
 test('소모품 — 수세미는 그릇 수 · 솔은 컵 수 · 같은 한도 100 · 헹굼은 없다(황인재 9/27)', () => {
-  const dd = d(st({ done_bowl: 90, done_cup: 100, soap_dips: 30 }));
+  const dd = d(st({ done_bowl: 90, done_cup: 100, soap_dips: 570 }));   // soap_dips(담금 수)는 안 쓴다 — 세제 = 용기 수 190
   dd.plan.consumables = { sponge_max_uses: 100, soap_max_dips: 60 };
   const c = D.consumables(dd);
   assert.equal(c.sponge.left, 10); assert.equal(c.sponge.level, 'warn');
   assert.equal(c.brush.left, 0); assert.equal(c.brush.level, 'bad');
-  assert.equal(c.soap.left, 30); assert.equal(c.rinse, undefined);
+  assert.equal(c.soap.left, 0); assert.equal(c.soap.used, 190); assert.equal(c.rinse, undefined);
 });
 
