@@ -38,6 +38,7 @@ def main():
     import uvicorn
     from .app import create_app
     from .db import HmiDb
+    from .paths import ws_path
     from .recorder import Recorder
     from .ros_link import RosLink
     from .state_store import StateStore
@@ -53,7 +54,7 @@ def main():
              + ('이 PC 에서만 접속된다 — 태블릿에서 보려면 params.yaml 의 hmi.host 를 0.0.0.0 으로' if local_only
                 else f'🚨 같은 망의 누구나 접속·버튼 조작이 된다(hmi.host={host}) → http://<이 PC 의 IP>:{port}') + ')')
     # 🆕 F4-04·05(황인재 9/27): SQLite 기록 + 잔반통 한도 — 파일은 실행 위치의 hmi.db_path. 지난 이력 50건을 화면에 미리 채운다
-    db = HmiDb(hmi.get('db_path', 'prewash.db'), leftover_threshold_g=float((cfg.get('f2') or {}).get('leftover_threshold_g', 50)))
+    db = HmiDb(ws_path(hmi.get('db_path', 'prewash.db')), leftover_threshold_g=float((cfg.get('f2') or {}).get('leftover_threshold_g', 50)))
     recorder = Recorder(db, command=link.call, waste_limit_g=float(hmi.get('waste_bin_limit_g', 50000)), log=log)
     store.preload_events(db.recent_events(50))
     store.subscribe(recorder.on_store)

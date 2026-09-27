@@ -200,3 +200,14 @@ def test_api_usage_kpi_replace_and_db(tmp_path):
     assert client.get('/api/history?limit=5').json()['events'][0]['kind'] == 'BOWL'
     plain = TestClient(create_app(StateStore(2.0), cfg, web_dir=tmp_path))
     assert plain.get('/api/usage').status_code == 503                    # 기록 없이 띄운 서버(시험)는 503
+
+
+def test_ws_path_resolves_relative_to_workspace_root(tmp_path, monkeypatch):
+    """🆕 9/27 — 홈에서 켜도 DB 는 워크스페이스의 파일(황인재: 홈에 생긴 DB 와 F4 폴더의 빈 DB 가 달랐다)."""
+    from f4_hmi import paths
+    monkeypatch.chdir(tmp_path)
+    assert paths.ws_path('prewash.db') == paths.WS_ROOT / 'prewash.db'
+    assert (paths.WS_ROOT / 'src' / 'f4_hmi').is_dir()
+    assert paths.ws_path('/tmp/x.db') == __import__('pathlib').Path('/tmp/x.db')
+    assert paths.ws_path('~/y.db').is_absolute()
+

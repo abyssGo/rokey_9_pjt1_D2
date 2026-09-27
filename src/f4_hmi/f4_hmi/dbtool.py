@@ -7,7 +7,7 @@
     ros2 run f4_hmi hmi_db kpi --period today          KPI (run · today · all)
     ros2 run f4_hmi hmi_db replace sponge              교체 완료를 기록한다(화면 버튼과 같다)
     ros2 run f4_hmi hmi_db export --dir records        표 5개를 CSV 파일로(엑셀·LibreOffice 로 연다)
-파일 위치는 params.yaml hmi.db_path(실행 위치 기준 · 기본 prewash.db) — --db 로 바꿀 수 있다.
+파일 위치는 params.yaml hmi.db_path(**워크스페이스 루트 기준** · 기본 <ws>/prewash.db) — --db 로 바꿀 수 있다.
 """
 import argparse
 import csv
@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 from .db import HmiDb, ITEMS, TABLES
+from .paths import ws_path
 
 
 def _cfg_db_path():
@@ -48,7 +49,7 @@ def main(argv=None):
     r = sub.add_parser('replace'); r.add_argument('item', choices=ITEMS); r.add_argument('--note', default='터미널에서')
     e = sub.add_parser('export'); e.add_argument('--dir', default='records'); e.add_argument('--limit', type=int, default=100000)
     a = p.parse_args(argv)
-    db = HmiDb(a.db or _cfg_db_path())
+    db = HmiDb(ws_path(a.db or _cfg_db_path()))            # 어디서 실행하든 워크스페이스의 파일
     print(f'# {db.path}')
     if a.cmd == 'tables':
         for t in TABLES:
