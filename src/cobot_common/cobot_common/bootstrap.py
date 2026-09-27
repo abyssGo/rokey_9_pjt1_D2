@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""실행 뼈대 — SDD §3.2 · TS-01. 바탕: docs/troubleshooting/ts01_repro/virtual/s4_script.py (9/18 Virtual 확인)
+"""실행 뼈대 — SDD §3.2 · TS-01. 바탕: docs/troubleshooting/ts01_repro/virtual/s4_script.py (Virtual 에서 확인)
 
     import cobot_common as cc
 
@@ -19,6 +19,8 @@ Ctrl+C 처리 (flow_node·rig 는 signal.signal 을 따로 걸지 않는다 — 
     rclpy 기본 처리기는 Ctrl+C 때 컨텍스트를 먼저 닫아 버려 정지 명령을 보낼 수 없다. 그래서 init 이
     rclpy 처리기를 끄고, 신호가 오면 ⓐ 두산 API 가 돌리는 실행기를 깨워 ⓑ 메인 스레드에 KeyboardInterrupt 를
     일으킨다. finally 의 shutdown() 이 move_stop(정지) → 실행기 종료 → rclpy.shutdown() 순으로 끝낸다.
+
+표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import atexit
 import signal
@@ -31,7 +33,7 @@ ROBOT_ID = 'dsr01'                  # 두산 드라이버 네임스페이스 (AG
 ROBOT_MODEL = 'm0609'
 _SRV_PROBE = 'dsr_controller2/system/get_robot_mode'    # 브링업이 떠 있는지 보는 서비스
 _SRV_STOP = 'dsr_controller2/motion/move_stop'          # 설치된 DSR_ROBOT2 에는 stop() 이 없어 직접 부른다
-_STOP_MODE = 1                      # DR_QSTOP(Stop Category 2). 안전 담당(박진용) 확인 대상
+_STOP_MODE = 1                      # DR_QSTOP(Stop Category 2). 제한: motion.py 와 같은 값(두 파일) · 값 확인은 실기 기록 참조
 _DRIVER_WAIT_S = 10.0               # 브링업 대기 상한
 _STOP_WAIT_S = 2.0                  # 정지 명령 응답 상한
 _JOIN_WAIT_S = 2.0                  # 통신 노드 스레드 종료 대기 상한
@@ -163,7 +165,7 @@ def dsr():
 
 # ------------------------------------------------------------------ 내부
 def _init_dsr(name):
-    """DSR 전용 노드를 DR_init 에 넣은 **뒤에** DSR_ROBOT2 를 import 한다 (TS-01 증상 A)."""
+    """DSR 전용 노드를 DR_init 에 넣은 뒤에 DSR_ROBOT2 를 import 한다 (TS-01 증상 A)."""
     global _dsr_node, _dsr_mod, _stop_client
     import rclpy
     try:
@@ -184,7 +186,7 @@ def _init_dsr(name):
     _dsr_node.destroy_client(probe)
     _stop_client = _dsr_node.create_client(MoveStop, _SRV_STOP)
 
-    import DSR_ROBOT2               # 🚨 반드시 노드를 넣은 뒤. 모듈 맨 위로 올리지 않는다
+    import DSR_ROBOT2               # 주의: 반드시 노드를 넣은 뒤. 모듈 맨 위로 올리지 않는다
     _dsr_mod = DSR_ROBOT2
 
 
@@ -210,7 +212,7 @@ def _call_setup_io(node, robot):
 
 
 def _spin_io():
-    """통신 노드 실행기를 돌린다. 콜백 하나가 예외를 내도 **스레드는 죽지 않는다** — 로그를 남기고 계속 돈다.
+    """통신 노드 실행기를 돌린다. 콜백 하나가 예외를 내도 스레드는 죽지 않는다 — 로그를 남기고 계속 돈다.
 
     rclpy 실행기는 콜백 예외를 spin() 밖으로 다시 던진다. 여기서 끝내 버리면 프로세스는 살아 있는데
     /flow/state 가 멈추고 start·stop·resume 이 응답하지 않는다(메인 스레드는 로봇을 계속 움직이는데 정지 버튼이 안 먹는다).

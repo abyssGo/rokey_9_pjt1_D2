@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
-"""움직이기 전 문지기 — 컨트롤러의 툴·TCP 이름이 우리 좌표의 전제와 같은지 (민범진 · 9/22 · TS-07).
+"""움직이기 전 문지기 — 컨트롤러의 툴·TCP 이름이 우리 좌표의 전제와 같은지 (민범진 · TS-07).
 
-왜: 9/22 11:22 실기에서 저울 자세로 가던 그릇이 **바닥에 닿았다.** 코드·좌표는 아침에 6번 성공한 것과
+왜: 실기에서 저울 자세로 가던 그릇이 바닥에 닿았다. 코드·좌표는 같은 날 아침에 6번 성공한 것과
     같았다. 원인은 다른 팀원이 펜던트에서 TCP 설정을 풀어 둔 것 — cell.yaml 의 posx 는 전부
-    TCP `GripperDA_v1`(Z 208 mm) 기준이라, TCP 가 풀리면 같은 명령이 **208 mm 아래**를 향한다.
+    TCP `GripperDA_v1`(Z 208 mm) 기준이라, TCP 가 풀리면 같은 명령이 208 mm 아래를 향한다.
     여러 사람이 한 로봇을 쓰는 이상 남의 설정 실수가 내 실기를 깨뜨릴 수 있다 → 내 프로그램이
-    **움직이기 전에** 확인하고 다르면 시작을 거부한다.
+    움직이기 전에 확인하고 다르면 시작을 거부한다.
 
 무엇: /dsr01/dsr_controller2/tool/get_current_tool · tcp/get_current_tcp 로 지금 이름을 읽어
       params.yaml flow.preflight 의 기대 이름과 비교한다. 로봇은 움직이지 않는다(조회만).
-      기대 이름의 정본은 cell.yaml 머리말(ENV-05 · 황인재 기록) — 여기는 그것을 확인하는 데만 쓴다.
+      기대 이름의 정본은 cell.yaml 머리말(ENV-05) — 여기는 그것을 확인하는 데만 쓴다.
 
 쓰는 곳: flow_node.main (robot=True 일 때) · rig_f2 · rig_int12 · rig_weigh_probe — cc.init 직후, 첫 이동 전.
-🆕 9/22 오후: **첫 이동 자체**도 여기서 한다(go_home_safely) — 낮은 자세에서 HOME 으로 가다 테이블을 쓴 충돌 때문.
-🚨 통신 노드의 실행기가 다른 스레드에서 돌고 있어야 동기 호출(call)이 돌아온다 — cc.init 뒤에만 부른다(gripper._send 와 같은 조건).
+첫 이동 자체도 여기서 한다(go_home_safely) — 낮은 자세에서 HOME 으로 가다 테이블을 쓴 충돌 때문.
+주의: 통신 노드의 실행기가 다른 스레드에서 돌고 있어야 동기 호출(call)이 돌아온다 — cc.init 뒤에만 부른다(gripper._send 와 같은 조건).
+
+표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 __all__ = ['PreflightError', 'check_controller', 'require_controller', 'warn_if_cable_tight', 'go_home_safely']
 
@@ -77,7 +79,7 @@ def require_controller(node, cfg, log=None):
         if log:
             log.warn('flow.preflight 가 없다 — 툴·TCP 이름을 확인하지 않고 움직인다 (TS-07)')
         return {}
-    if _is_virtual():                                    # 🆕 9/22 — 에뮬레이터의 툴·TCP 이름은 실기 등록값과 다르다 → 가상에서는 건너뛴다
+    if _is_virtual():                                    # 에뮬레이터의 툴·TCP 이름은 실기 등록값과 다르다 → 가상에서는 건너뛴다
         if log:
             log.warn('Virtual 컨트롤러 — 툴·TCP 이름 확인을 건너뛴다 (실기 등록값과 다르다 · TS-07 은 실기용)')
         return {}
@@ -94,7 +96,7 @@ def require_controller(node, cfg, log=None):
     return {k: v for k, (_, v) in got.items()}
 
 
-# ────────────────────────────────── 🔗 케이블 장력 (9/22 황인재 V-02 원인)
+# ────────────────────────────────── 케이블 장력 (V-02 무게 편차의 원인)
 def _read_fz():
     """툴 힘 Fz(BASE · N) 한 번 — 시험에서 바꿔 끼운다."""
     from cobot_common.bootstrap import dsr
@@ -106,10 +108,10 @@ def _read_fz():
 
 
 def warn_if_cable_tight(cfg, log=None):
-    """움직이기 **전에** 정지 상태에서 Fz 를 몇 번 읽어 흔들림(10~90 % 폭 · g)을 본다 → 넘으면 경고(멈추지 않는다).
+    """움직이기 전에 정지 상태에서 Fz 를 몇 번 읽어 흔들림(10~90 % 폭 · g)을 본다 → 넘으면 경고(멈추지 않는다).
 
     설정 flow.preflight.cable: {samples: 8, gap_s: 0.7, max_spread_g: 60}. 없거나 samples 0 이면 건너뛴다.
-    왜: 그리퍼 케이블이 팽팽하면 팔이 서 있어도 힘센서가 ±25 g 넘게 오르내린다(9/22). 문지기 뒤 HOME 에서 약 6 s —
+    왜: 그리퍼 케이블이 팽팽하면 팔이 서 있어도 힘센서가 ±25 g 넘게 오르내린다(실기). 문지기 뒤 HOME 에서 약 6 s —
         시작할 때 한 번이라 공정 시간은 안 든다. 무게를 잴 때마다의 검사는 cobot_common.weigh 가 같은 기준으로 한다.
     → (spread_g, samples) 또는 건너뛰면 (None, [])
     """
@@ -118,14 +120,14 @@ def warn_if_cable_tight(cfg, log=None):
     n = int(cab.get('samples') or 0)
     if n <= 0 or _is_virtual():
         return None, []
-    gap = float(cab.get('gap_s') or 0.7)
+    gap = float(cab.get('gap_s') or 0.7)                 # 읽기 간격(없으면 0.7 s)
     limit = cab.get('max_spread_g')
     vals = []
     for i in range(n):
         if i:
             time.sleep(gap)
         try:
-            vals.append(-_read_fz() * 101.97)            # 무게 g (−Fz · weigh.py 와 같은 부호)
+            vals.append(-_read_fz() * 101.97)            # 무게 g (−Fz · N → g 환산 101.97 · weigh.py 와 같은 부호)
         except Exception as e:                            # noqa: BLE001 — 못 읽으면 검사만 건너뛴다
             if log:
                 log.warn(f'케이블 확인 — 힘을 못 읽었다({e!r}) · 건너뛴다')
@@ -141,7 +143,7 @@ def warn_if_cable_tight(cfg, log=None):
     return spread, vals
 
 
-# ────────────────────────────────── 🚨 첫 이동 — 낮은 자세에서 HOME 으로 (9/22 테이블 충돌)
+# ────────────────────────────────── 주의: 첫 이동 — 낮은 자세에서 HOME 으로 (테이블 충돌 뒤 추가)
 def _cc():
     """cobot_common 모듈 — 시험에서 바꿔 끼운다(늦게 import 해서 드라이버 없이도 이 파일을 읽을 수 있게)."""
     import cobot_common
@@ -149,17 +151,17 @@ def _cc():
 
 
 def go_home_safely(kind=None, log=None, carrying=True):
-    """HOME 으로 간다 — 낮은 자세면 **곧게 위로 빠져나온 뒤에** 간다 (cc.safe_retreat → cc.move_to('HOME')).
+    """HOME 으로 간다 — 낮은 자세면 곧게 위로 빠져나온 뒤에 간다 (cc.safe_retreat → cc.move_to('HOME')).
 
-    🚨 왜 (9/22 17:27 실기 충돌): f2.dip · f2.shake 는 **수조 안 자세**에서 끝난다
+    주의: 왜 (실기 충돌): f2.dip · f2.shake 는 수조 안 자세에서 끝난다
        (cell.stations.RINSE 끝점 z = −13.6 mm — 받침면보다 아래). 그 자리에서 cc.move_to('HOME') 을
-       부르면 **관절 이동**이라 팔이 테이블 높이를 가로지르며 그리퍼가 상판을 쓸었다
-       → 충돌 → 비상정지 → **툴 전원이 끊겨 그리퍼 드라이버(OnRobotRGControllerServer)까지 죽었다**
+       부르면 관절 이동이라 팔이 테이블 높이를 가로지르며 그리퍼가 상판을 쓸었다
+       → 충돌 → 비상정지 → 툴 전원이 끊겨 그리퍼 드라이버(OnRobotRGControllerServer)까지 죽었다
        (`/onrobot/sendCommand 가 안 보인다` 로 드러난다).
        흐름(flow)에서는 헹굼 다음이 f1.rack_place 라 그 함수가 먼저 곧게 올라오지만,
-       **시험대는 직전에 어디 있었는지 모른다**(dip 을 돌리고 이어서 다른 시험대를 띄운다) → 시작할 때마다 여기서 올라온다.
+       시험대는 직전에 어디 있었는지 모른다(dip 을 돌리고 이어서 다른 시험대를 띄운다) → 시작할 때마다 여기서 올라온다.
 
-    어떻게: cc.safe_retreat() — 힘·순응을 끄고 **XY 는 그대로 Z 만** cell.limits.safe_z_mm(235)까지 올린다.
+    어떻게: cc.safe_retreat() — 힘·순응을 끄고 XY 는 그대로 Z 만 cell.limits.safe_z_mm(235)까지 올린다.
             이미 그 위면 움직이지 않는다. 새 설정을 만들지 않고 팀이 정한 후퇴 높이를 그대로 쓴다(AGENTS §3 규칙 6).
     """
     cc = _cc()

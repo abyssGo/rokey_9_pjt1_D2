@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """hmi_bridge 의 ROS 쪽 귀 — 토픽 4개를 듣고 StateStore 에 넣는다. 별도 스레드에서 spin 한다(웹 서버와 섞지 않는다).
 
-콜백은 **값 저장만** 한다(SDD §3.2 규칙 ③과 같은 원칙). 두산 API 를 쓰지 않으므로 cobot_common.init() 을 부르지 않는다.
+콜백은 값 저장만 한다(SDD §3.2 규칙 ③과 같은 원칙). 두산 API 를 쓰지 않으므로 cobot_common.init() 을 부르지 않는다.
 버튼: call('start'|'stop'|'resume'|'abort') → flow 의 /flow/<이름>(std_srvs/Trigger)을 부르고 {ok, message, latency_ms} 를 돌려준다.
     웹 서버의 작업 스레드에서 불린다. 요청은 call_async 로 보내고 응답은 이 파일의 ROS 스레드가 받는다 → 상한 시간만큼만 기다린다.
 """
@@ -30,7 +30,11 @@ COMMANDS = ('start', 'stop', 'resume', 'abort')         # /flow/<이름> — IRD
 
 
 class RosLink:
+    """ROS 노드 'hmi_bridge' — 구독 4개(/flow/state · /flow/event · /cell/force · /cell/gripping)와
+    서비스 클라이언트 4개(/flow/start·stop·resume·abort)를 들고 별도 스레드에서 spin 한다."""
+
     def __init__(self, store, service_timeout_s=1.0):
+        """store: StateStore(콜백이 값을 넣는 곳) · service_timeout_s: 버튼(서비스) 응답을 기다리는 상한(s)."""
         self.store = store
         self._timeout = float(service_timeout_s)
         self._clients = {}
@@ -40,6 +44,7 @@ class RosLink:
         self._stopping = False
 
     def start(self):
+        """rclpy 초기화 → 노드·구독·클라이언트 생성 → spin 스레드(hmi_ros · daemon) 시작. Ctrl+C 처리는 uvicorn 에 맡긴다."""
         rclpy.init(signal_handler_options=SignalHandlerOptions.NO)      # Ctrl+C 는 웹 서버(uvicorn)가 받는다
         self.node = rclpy.create_node('hmi_bridge')
         n, s = self.node, self.store
@@ -55,6 +60,7 @@ class RosLink:
         self._thread.start()
 
     def _spin(self):
+        """스레드 본체 — 콜백 하나가 예외를 내도 로그만 남기고 다시 spin 한다."""
         while rclpy.ok() and not self._stopping:
             try:
                 self._executor.spin()
@@ -86,7 +92,7 @@ class RosLink:
         return answer(res.success, res.message) if res is not None else answer(False, 'flow 응답을 읽지 못했다')
 
     def stop(self):
-        """순서가 중요하다: 듣기를 멈추고 → **스레드가 끝나기를 기다린 뒤** → 노드·rclpy 를 닫는다.
+        """순서가 중요하다: 듣기를 멈추고 → 스레드가 끝나기를 기다린 뒤 → 노드·rclpy 를 닫는다.
         스레드가 spin 중인 채로 닫으면 프로그램이 끝날 때 'terminate called' 로 비정상 종료한다."""
         self._stopping = True
         if self._executor is not None:

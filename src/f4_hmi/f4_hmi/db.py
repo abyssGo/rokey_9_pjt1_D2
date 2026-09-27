@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-"""SQLite 기록(F4-04) — HMI 서버가 적는 표 5개. ROS·웹 부품을 모른다(그래서 어디서나 시험된다). 파일은 params.yaml hmi.db_path.
+"""SQLite 기록 — HMI 서버가 적는 표 5개. ROS·웹 부품을 모른다(그래서 어디서나 시험된다). 파일은 params.yaml hmi.db_path.
 
     events        용기 1개 = 1줄  (/flow/event 그대로 + 실행 번호 + 버린 잔반 g)
     runs          시작 버튼 1번(한 회차) = 1줄
     pauses        멈춤 1번 = 1줄  (상태가 PAUSED 로 들어갔다 나올 때 · 원인 갈래 · 어떻게 풀렸나)
     commands      버튼 1번 = 1줄
-    replacements  소모품·잔반통 교체 1번 = 1줄 — **사용량은 마지막 교체 뒤의 events 로 계산**한다(usage) → HMI 를 껐다 켜도 이어진다
+    replacements  소모품·잔반통 교체 1번 = 1줄 — 사용량은 마지막 교체 뒤의 events 로 계산한다(usage) → HMI 를 껐다 켜도 이어진다
 
-    황인재 9/27: 수세미 = 그릇 완료 수 · 솔 = 컵 완료 수 · 세제 = 완료 용기 수(용기당 1회) · 잔반통 = 버린 잔반 g 합.
-    버린 잔반 = 무게 전 − 무게 후, **잔반 판정(전 > leftover_threshold_g)이 났을 때만**(털지 않았으면 0).
+    사용량 셈: 수세미 = 그릇 완료 수 · 솔 = 컵 완료 수 · 세제 = 완료 용기 수(용기당 1회) · 잔반통 = 버린 잔반 g 합.
+    버린 잔반 = 무게 전 − 무게 후, 잔반 판정(전 > leftover_threshold_g)이 났을 때만(털지 않았으면 0).
+표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import sqlite3
 import threading
@@ -39,7 +40,10 @@ def _now():
 
 
 class HmiDb:
+    """표 5개를 가진 SQLite 파일 하나 — 연결 1개를 락으로 지켜 ROS 스레드(기록)와 웹 스레드(조회)가 같이 쓴다."""
+
     def __init__(self, path, leftover_threshold_g=50.0, now=_now):
+        """path: 파일 경로 · leftover_threshold_g: 잔반 판정 기준(g) — 이보다 무거웠던 그릇만 버린 잔반을 센다 · now: 시각 함수(시험용)."""
         self.path = str(path)
         self.leftover_threshold_g = float(leftover_threshold_g)
         self._now = now
@@ -50,11 +54,13 @@ class HmiDb:
             self._con.executescript(_SCHEMA)
 
     def close(self):
+        """연결을 닫는다."""
         with self._lock:
             self._con.close()
 
     # ------------------------------------------------------------------ 적기
     def add_event(self, ev: dict, run_id=None, ts=None) -> int:
+        """events 1줄 — 버린 잔반(waste_g) = 무게 전 − 후, 잔반 판정이 났고 건너뜀이 아닐 때만. 새 줄의 id 를 돌려준다."""
         before = float(ev.get('weight_before_g') or 0.0)
         after = float(ev.get('weight_after_g') or 0.0)
         waste = max(0.0, before - after) if (before > self.leftover_threshold_g and ev.get('result') != 'SKIPPED') else 0.0
@@ -69,12 +75,14 @@ class HmiDb:
             return int(cur.lastrowid)
 
     def start_run(self, ts=None) -> int:
+        """runs 1줄(시작 시각) — run_id 를 돌려준다."""
         with self._lock:
             cur = self._con.execute('INSERT INTO runs (started_at) VALUES (?)', (ts or self._now(),))
             self._con.commit()
             return int(cur.lastrowid)
 
     def end_run(self, run_id, state: dict, ts=None):
+        """회차 끝 — 완료·격리 수는 마지막 state 에서, 오류·건너뜀 수는 그 회차의 events 에서 센다."""
         with self._lock:
             n = self._con.execute('SELECT result, COUNT(*) c FROM events WHERE run_id=? GROUP BY result', (run_id,)).fetchall()
             by = {r['result']: r['c'] for r in n}
@@ -84,6 +92,7 @@ class HmiDb:
             self._con.commit()
 
     def open_pause(self, run_id, step, kind, code, ts=None) -> int:
+        """pauses 1줄 시작(멈춘 단계·원인 갈래·코드) — pause_id 를 돌려준다."""
         with self._lock:
             cur = self._con.execute('INSERT INTO pauses (run_id, started_at, step, kind, code) VALUES (?,?,?,?,?)',
                                     (run_id, ts or self._now(), step or '', kind or '', code or ''))
@@ -91,6 +100,7 @@ class HmiDb:
             return int(cur.lastrowid)
 
     def close_pause(self, pause_id, resolved, ts=None):
+        """멈춤 끝 — 끝 시각·걸린 초·풀린 방법(resolved: resume / abort / nudge)을 적는다."""
         end = ts or self._now()
         with self._lock:
             row = self._con.execute('SELECT started_at FROM pauses WHERE id=?', (pause_id,)).fetchone()
@@ -104,12 +114,14 @@ class HmiDb:
             self._con.commit()
 
     def add_command(self, name, ok, message='', latency_ms=None, ts=None):
+        """commands 1줄 — 버튼 1번과 flow 의 대답."""
         with self._lock:
             self._con.execute('INSERT INTO commands (ts, name, ok, message, latency_ms) VALUES (?,?,?,?,?)',
                               (ts or self._now(), name, 1 if ok else 0, message or '', latency_ms))
             self._con.commit()
 
     def add_replacement(self, item, note='', ts=None):
+        """replacements 1줄 — 교체 완료. item 은 ITEMS 중 하나."""
         if item not in ITEMS:
             raise ValueError(f'모르는 교체 항목 {item!r} — {ITEMS} 중 하나')
         with self._lock:
@@ -118,6 +130,7 @@ class HmiDb:
 
     # ------------------------------------------------------------------ 읽기
     def _last_replacement(self, item):
+        """item 의 마지막 교체 시각(없으면 '')."""
         row = self._con.execute('SELECT ts FROM replacements WHERE item=? ORDER BY id DESC LIMIT 1', (item,)).fetchone()
         return row['ts'] if row else ''
 
@@ -135,12 +148,14 @@ class HmiDb:
             return out
 
     def recent_events(self, limit=50) -> list:
+        """최근 events(최근 것이 앞) — 화면 이력용(stamp 초 단위 포함)."""
         with self._lock:
             rows = self._con.execute('SELECT * FROM events ORDER BY id DESC LIMIT ?', (int(limit),)).fetchall()
             return [self._event_view(r) for r in rows]
 
     @staticmethod
     def _event_view(r) -> dict:
+        """events 줄 → 화면용 dict(ts 를 stamp 초로도 넣는다)."""
         d = dict(r)
         try:
             d['stamp'] = datetime.fromisoformat(d['ts']).timestamp()          # 화면(clock())이 초 단위 stamp 를 쓴다
@@ -149,6 +164,7 @@ class HmiDb:
         return d
 
     def dump(self, table, limit=200) -> list:
+        """표 내용(최근 것이 앞) — 터미널(hmi_db)·/api/db 용."""
         if table not in TABLES:
             raise ValueError(f'모르는 표 {table!r} — {TABLES} 중 하나')
         with self._lock:
