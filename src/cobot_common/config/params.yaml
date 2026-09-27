@@ -214,7 +214,9 @@ f3:                                   # ── f3 절 (박진용) ── 값의 
     home_acc_deg_s2: 40.0             #   가속도 (그대로) — rig_v03 home_acc_deg_s2
     fast_vel_mm_s: 220.0              # 빠른 하강 속도 (× vel_scale → 66 mm/s) — 박진용 지시(9/22): 컵과 같은 방식(vel_scale 적용)으로 맞추고 값도 올림
     fast_acc_mm_s2: 440.0             #   가속도 (× vel_scale) — 컵과 같은 배율(2배)로 맞춤. rig_v03 원값(200/200, 가속 미적용)에서 변경
-    air_force_max_n: 3.0              # 빠른 하강 뒤 공중 |Fz| 가 이보다 크면 중단(툴 무게·접촉 확인) — rig_v03 air_force_max_n
+    air_force_max_n: 5.0              # 빠른 하강 뒤 공중 |Fz| 가 이보다 크면 중단(툴 무게·접촉 확인) — rig_v03 air_force_max_n
+                                      # 🔄 9/28 E58(황인재): 3.0 → 5.0. 9/23 저녁 그릇 1 이 공중 2.99 N(0.01 N 차)이라 정상 흐름이 로봇 오류로 멈출 수 있었다.
+                                      #    시작 전 점검값이지 닦기 힘 상한(limit_n 10 N)이 아니다 — 젖은 수세미 무게·센서 흐름 여유. 화요일 1회차 로그로 확인.
     find_max_mm: 30.0                 # 바닥을 찾으며 더 내려갈 수 있는 최대 — rig_v03 contact_max_depth_mm
     find_limit_n: 3.0                 # 🔸 바닥 판정 힘(공중 기준 대비) — **그릇 전용** 3 N (박진용 9/21). cell.limits.contact_limit_n(2 N)을 쓰지 않는다
                                       #   찾는 법은 rig_v03 그대로: cc.contact_down(3 mm 걸음 · 걸음 끝마다 확인) — 판정 힘만 2 → 3 N
