@@ -309,7 +309,7 @@ hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db
 ```
 좌표·힘·횟수는 전부 여기에 둔다. 코드에 숫자를 쓰지 않는다. 경로는 항상 패키지 기준 상대경로.
 
-**실제 파일(INF-04, PR #5)**: `cell.yaml`은 위 키 골격에 **값이 전부 비어 있다(null)** — 한석형이 티칭·검증 결과로 채운다(비어 있는 키는 `cobot_common.config.unfilled(cc.cfg())`, `init()`이 개수를 경고로 알린다). `params.yaml`의 `f1`·`f2`·`flow` 절은 위 예시 값, **`f3` 절은 박진용 실측 초안**(`wipe_bowl.radius_mm: [2, 9]` · `wipe_cup.insert_depth_mm: 90`, [CELL-02a 기록](test_logs/20260918_CELL-02a_용기치수측정.md))으로 들어갔다. 값의 주인은 각 절 주인이다.
+**실제 파일(INF-04, PR #5)**: `cell.yaml`은 위 키 골격에 **값이 전부 비어 있다(null)** — 한석형이 티칭·검증 결과로 채운다(비어 있는 키는 `cobot_common.config.unfilled(cc.cfg())`, `init()`이 개수를 경고로 알린다). `params.yaml`의 `f1`·`f2`·`flow` 절은 위 예시 값, **`f3` 절은 박진용 실측 초안**(`wipe_bowl.radius_mm: [2, 9]` · `wipe_cup.insert_depth_mm: 90`, CELL-02a 기록(과정 기록 · git 이력))으로 들어갔다. 값의 주인은 각 절 주인이다.
 
 **추가된 키(PR #8·#9, 민범진 — 자기 절)**: `f2.weigh_settle_s`(재기 전 정지 대기) · `f2.weigh_reset_timeout_s`(0점 재설정 응답 상한 3 s, TS-03) · `flow.leftover_max_rounds`(`f2.leftover_loop(kind, N)`의 N, 기본 2 — flow가 넘기는 인자라 flow 절) · `flow.counts.soap_dips`·`rinse_dips`·`rinse_shakes`(용기 1개당 `soap`·`dip`·`shake`에 넘기는 횟수 3·1·3 — 코드에 있던 숫자를 뺐다) · `flow.done_hold_s`(plan 완료 뒤 `DONE`을 유지하는 시간, 발행 주기보다 길어야 HMI가 완료를 본다) · `flow.state_pub_hz`(`/flow/state` 발행 주기 2 Hz — 화면 갱신 주기 `hmi.state_rate_hz`와 **다른 값**) · `flow.step_delay_s`(기능 함수 사이 대기, 시험용·운전은 0) · `flow.records_path`(기록 CSV, 상대경로).
 
