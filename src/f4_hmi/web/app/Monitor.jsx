@@ -171,7 +171,7 @@ function StepBar({ d, paused }) {
   const at = paused || step;                         // 일시 정지 중이면 멈춘 단계를 가리킨다
   const idx = FLOW.indexOf(at);
   const finished = step === 'DONE';
-  const broken = !!s && pauseKind(s) === 'robot_error';        // 케이블 이상 멈춤은 코드가 ROBOT_ERROR 여도 로봇 오류(붉은 카드)가 아니다
+  const broken = false;                                         // 🔄 9/27 황인재: 로봇 오류를 별도 예외로 보이지 않는다 — 붉은 단계 카드 없음(멈춤 카드는 주황 하나)
   // 좁은 화면(태블릿)에서는 단계 줄이 옆으로 밀린다 — 지금 단계 카드가 가운데 오게 줄만 민다(화면 전체는 움직이지 않는다)
   const bar = useRef(null);
   useEffect(() => {
@@ -242,7 +242,7 @@ function Now({ d, last }) {
   if (!s) { pill = '연결 대기'; tone = 'idle'; title = '대기'; art = 'PICK'; desc = 'flow 의 방송을 기다린다'; }
   else if (step === 'IDLE') { pill = '대기'; tone = 'idle'; title = '대기'; art = 'PICK'; desc = '시작을 누르면 반납 구역부터 차례로 처리한다'; num = 0; }
   else if (step === 'DONE') { pill = '완료'; tone = 'idle'; title = '완료'; art = 'RACK'; desc = '계획한 용기를 모두 처리했다 — 팔레트를 확인한다'; num = 0; }
-  else if (step === 'PAUSED' && pauseKind(s) === 'robot_error') { pill = '로봇 오류 — 복구 필요'; tone = 'error'; }   // flow 는 로봇 오류에서 멈춰(PAUSED) 사람을 기다린다
+  else if (step === 'PAUSED' && pauseKind(s) === 'robot_error') { pill = '멈춤 — 로봇 확인'; tone = 'paused'; }   // 🔄 9/27 일반 멈춤과 같은 색
   else if (step === 'PAUSED') { pill = { cable: '멈춤 — 케이블 확인', tool_lost: '멈춤 — 툴 놓침', tool_fail: '멈춤 — 툴 집기 실패', leftover: '멈춤 — 잔반 남음', grip: '멈춤 — 집기 실패', rack_full: '멈춤 — 팔레트 가득' }[pauseKind(s)] || '일시 정지'; tone = 'paused'; }
   else if (step === 'ERROR') { pill = '오류'; tone = 'error'; }
   else if (step === 'ISOLATE') { pill = '격리 중'; tone = 'isolate'; num = '!'; }

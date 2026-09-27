@@ -43,9 +43,10 @@ export const GUIDE_KO = {
   leftover: { title: '잔반 남음', steps: ['잔반 덜어내기', '재개 (또는 중단)'] },
   grip: { title: '집기 실패', steps: ['용기 위치 확인', '재개 (또는 중단)'] },
   rack_full: { title: '팔레트 가득', steps: ['새 팔레트로 교체', '재개'] },
-  robot_error: { title: '로봇 오류', steps: ['로봇·주변 확인', '손목 톡 (또는 재개)', '쥔 것이 있으면 그리퍼가 열림 — 받을 준비'] },
-  robot_error_release: { title: '로봇 오류 — 받아 주세요', steps: ['받아서 치우기 (홈의 용기도)', '물러나서 재개'] },
-  robot_error_home: { title: '로봇 오류 — HOME 실패', steps: ['펜던트로 팔 옮기기', '재개'] },
+  // 🔄 9/27 황인재: 로봇 오류는 설계한 예외가 아니라 컨트롤러 오류를 받는 그물 — 화면에서 별도 예외로 내세우지 않고 **일반 멈춤 카드**(주황)로만 보인다
+  robot_error: { title: '멈춤 — 로봇 확인', steps: ['로봇·주변 확인', '재개 — 쥔 것이 있으면 그리퍼 열림', '받아 치우고 다시 재개'] },
+  robot_error_release: { title: '멈춤 — 받아 주세요', steps: ['받아서 치우기 (홈의 용기도)', '물러나서 재개'] },
+  robot_error_home: { title: '멈춤 — HOME 복귀 실패', steps: ['펜던트로 팔 옮기기', '재개'] },
 };
 // flow 문구를 화면에 같이 보이지 않는 갈래 — 안내가 이미 그 내용이다(황인재 9/27 "글이 너무 길다")
 export const HIDE_FLOW_MSG = ['cable', 'tool_lost', 'tool_fail', 'robot_error'];
@@ -180,7 +181,7 @@ export function alarm(d) {
   const s = d.state;
   if (!s) return null;
   const kind = pauseKind(s);
-  if (kind) return { level: kind === 'robot_error' ? 'error' : 'pause', kind, guide: kind === 'robot_error' ? robotErrorGuide(s.message) : GUIDE_KO[kind], code: s.last_code, message: s.message };
+  if (kind) return { level: 'pause', kind, guide: kind === 'robot_error' ? robotErrorGuide(s.message) : GUIDE_KO[kind], code: s.last_code, message: s.message };   // 🔄 9/27 로봇 오류도 주황(별도 예외 X)
   if (s.last_code && s.last_code !== 'OK') return { level: 'warn', kind: null, guide: null, code: s.last_code, message: s.message };   // 재개해 진행 중 — 최근 원인만
   return null;
 }
