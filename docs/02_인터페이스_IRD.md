@@ -136,13 +136,14 @@ f1.pick('RET_B', 'BOWL') → f1.move_to('WEIGH', True, 'BOWL') → f2.leftover_l
 | 코드 | 처리 |
 |---|---|
 | `EMPTY_ZONE` | 구역 종료 → 다음 구역 (기록 SKIPPED) |
-| `LEFTOVER_REMAIN` | 🔄 E42(황인재 9/23): **PAUSED** → 사람이 resume(다시 잰다) / abort(HOME → ISOLATE → 다음 용기). 정책 isolate 는 이송 없이 기록만 남겨(flow.handle_failure) 든 용기를 떨어뜨린다 — 시연 뒤 물리 격리를 넣으면 isolate 로 |
+| `LEFTOVER_REMAIN` | 🔄 E52(황인재 9/25 · tune2 · 🟡 9/29): **ISOLATE** — 사람 없이 위로 → HOME → ISOLATE → HOME → 다음 용기(정리 함수 통일 · E42 의 "기록만" 빈틈 닫힘). main 동결판은 E42 PAUSED |
 | `SEAT_FAIL` | ISOLATE 후 다음 용기 (🟡 위와 같은 빈틈 · 시연 범위 밖 E28) |
-| `FORCE_LIMIT` `TIMEOUT` `RACK_JAM` `TOOL_FAIL` | 후퇴 후 재시도 1회 → ISOLATE |
+| `FORCE_LIMIT` `TIMEOUT` `RACK_JAM` | 후퇴 후 재시도 1회 → ISOLATE — 🔄 E52(tune2): 격리 = 정리 함수 통일(위로 → HOME → 툴 반납 → 홈 용기 재파지 → ISOLATE → HOME · abort 와 같은 길) |
+| `TOOL_FAIL` | 🔄 E52(황인재 9/25 · tune2): **PAUSED** → 홀더 확인 → 넛지/resume → 툴 집기부터 다시(ISOLATE 안 함). main 동결판은 retry:1 → ISOLATE |
 | `TOOL_LOST` | 🆕 9/23 E37(9/22 회의 합의 · 황인재 승인): F3 가 닦는 중 폭 재확인으로 툴(수세미·솔) 놓침을 감지해 돌려준다 → flow 는 **정지(PAUSED)** → 사람이 홀더에 다시 넣고 재개 신호(넛지·HMI) → `f1.tool(kind, PICK)` 재호출 → F3 함수 재실행(GRIP_FAIL 정책 E12 와 같은 패턴 · 격리 아님) · 새 기능 NEW-02a 와 한 흐름 |
 | `GRIP_FAIL` (f2: 털기·담금 중 미끄러짐 · 무게로 본 빈손) | ✅ **PAUSED + HMI 알림 → 사람이 확인**(황인재 9/20 17:25). 놓쳤다면 용기가 손에 없을 수 있어 격리 동작이 의미 없고, 떨어진 용기를 다음 동작이 칠 수 있다. 확인 뒤 `resume` = 그 단계부터 다시 / `abort` = 그 용기를 접고 다음 용기 |
 | `RACK_FULL` | PAUSED + HMI 알림 → 팔레트 교체 후 **resume = 실패한 단계(적재)부터 다시** / **abort = 그 용기를 격리**하고 다음 용기 |
-| `ROBOT_ERROR` (기능 함수에서 새어 나온 예외 포함) | 그 자리 정지 → PAUSED + 알림 → **사람이 복구**(SDD §7). `abort`는 거부, 복구 뒤 `resume`하면 다음 용기부터(그 용기는 `ERROR`로 기록) |
+| `ROBOT_ERROR` (기능 함수에서 새어 나온 예외 포함) | 그 자리 정지 → PAUSED + 알림 → **사람이 복구**(SDD §7). `abort`는 거부, 복구 뒤 `resume`하면 다음 용기부터(그 용기는 `ERROR`로 기록) 🔄 E52(9/25 · tune2): 격리 이동 없음 · 쥔 것이 있으면 2단(신호 1 → release 만 → 사람 수거 → 화면 재개 버튼(E54 · 톡 X) → 위로 → HOME → ERROR 기록 → 다음 용기) · 첫 신호만 넛지 허용 |
 | 일시 정지 버튼 | **즉시** 그 자리에서 멈춤 → PAUSED (안착 탐색·그리퍼·무게 대기는 그 동작을 마친 뒤) → **재개**(하던 동작을 이어서) 또는 **중단**(`abort` — 격리 후 다음 용기) |
 
 ## 9. 설정 파일 (IR-07) — 파일 2개

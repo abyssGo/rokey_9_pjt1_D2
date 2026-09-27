@@ -52,7 +52,7 @@ PC-A ↔ 컨트롤러는 두산 전용 TCP(DDS 아님). PC-A ↔ PC-B는 ROS 2 D
 | `/dsr01/joint_states` | `sensor_msgs/msg/JointState` | dsr_controller2 → 모니터링 | PC-A |
 | dsr_controller2 ↔ 컨트롤러 | 두산 전용 TCP, 포트 12345 | | PC-A ↔ 컨트롤러 |
 | 브라우저 ↔ hmi_bridge | HTTP `GET /` · `POST /api/start|stop|resume|abort` · `GET /api/state` · `GET /api/history` · WS `/ws/state` (JSON) | | PC-B 내부 또는 LAN |
-| hmi_bridge → prewash.db | SQLite `events`(FlowEvent 필드 그대로) · `state_log` | | PC-B 내부 |
+| hmi_bridge → prewash.db | SQLite 🔄 E57(9/27) 표 5개: `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`(소모품 교체) | | PC-B 내부 |
 
 `/dsr01/*`·`/onrobot/*`의 정확한 이름·필드는 [두산 ROS 2 매뉴얼(jazzy)](https://doosanrobotics.github.io/doosan-robotics-ros-manual/jazzy/services/motion_services.html)과 설치본으로 확인한다. 우리 코드는 `cobot_common`을 통해서만 부르므로 이름이 달라도 한 곳만 고친다.
 
@@ -242,7 +242,7 @@ sequenceDiagram
 ### 4.2 데이터 사전
 - 기능 함수·메시지: IRD §3~7 (정본 `src/cobot_api/cobot_api/contracts.py` · `docs/interfaces/*.msg`)
 - `records.csv`(PC-A) 열: `ts, kind, zone_id, attempts, rack_slot, weight_before_g, weight_after_g, leftover_rounds, seat_offset_mm, wipe_duration_s, force_log_path, result, code, duration_s`
-- `prewash.db`(PC-B, SQLite): 표 `events`(FlowEvent 필드 + `id`, `received_at`) · `state_log`(step, kind, zone_id, stamp, 1 Hz 샘플)
+- `prewash.db`(PC-B, SQLite · **워크스페이스 루트 `<ws>/prewash.db`** · 어디서 켜도 같은 파일): 🔄 E57(9/27 · F4-04) 표 5개 — `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`. 소모품 사용량 = 마지막 교체 뒤 events. CLI `ros2 run f4_hmi hmi_db tables|dump|usage|kpi|replace|export`(export = CSV 5개) · GUI `sqlitebrowser prewash.db`
 - 힘 로그 `force_YYYYMMDD_HHMMSS.csv`: `t, fx, fy, fz, target`
 
 ### 4.3 설정 파일 스키마 — `config/cell.yaml`(공용) + `config/params.yaml`(기능별 절)
@@ -299,13 +299,13 @@ f3:                                                                 # ── f3 
 flow:                                                               # ── flow 절 (민범진) ──
   plan: [{zone: RET_B, kind: BOWL, count: 2}, {zone: RET_C, kind: CUP, count: 2}]
   rack_order: {BOWL: [RACK_B1, RACK_B2], CUP: [RACK_C1, RACK_C2]}
-  policy: {EMPTY_ZONE: next_zone, LEFTOVER_REMAIN: pause, SEAT_FAIL: isolate,
-           FORCE_LIMIT: retry:1->isolate, TIMEOUT: retry:1->isolate, RACK_JAM: retry:1->isolate, TOOL_FAIL: retry:1->isolate,
+  policy: {EMPTY_ZONE: next_zone, LEFTOVER_REMAIN: isolate, SEAT_FAIL: isolate,      # 🔄 E52(9/25 · tune2): LEFTOVER_REMAIN isolate · TOOL_FAIL pause — main 동결판은 pause · retry:1->isolate
+           FORCE_LIMIT: retry:1->isolate, TIMEOUT: retry:1->isolate, RACK_JAM: retry:1->isolate, TOOL_FAIL: pause,
            RACK_FULL: pause, ROBOT_ERROR: pause}
   consumables: {sponge_max_uses: 20, soap_max_dips: 60}
   use_mock: []                       # 가짜 모듈로 바꿀 기능. 예: [f1, f3] · 전부 mock 이면 드라이버 없이 돈다 (런치 인자 use_mock 이 덮어씀)
   mock: {fail_on: []}                # 실패 주입. 예: ["place:SEAT_FAIL", "rack_place:RACK_JAM"]
-hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db}   # ── hmi 절 (황인재) ──
+hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db, waste_bin_limit_g: 50000}   # ── hmi 절 (황인재) · E57 잔반통 한도 50 kg ──
 ```
 좌표·힘·횟수는 전부 여기에 둔다. 코드에 숫자를 쓰지 않는다. 경로는 항상 패키지 기준 상대경로.
 
@@ -346,7 +346,7 @@ stateDiagram-v2
   WEIGH --> SHAKE: LEFTOVER
   WEIGH --> SEAT: ok
   SHAKE --> WEIGH: 재측정 (≤max_rounds)
-  SHAKE --> PAUSED: LEFTOVER_REMAIN (E42 · 사람이 재개 / 중단→격리)
+  SHAKE --> ISOLATE: LEFTOVER_REMAIN (E52 · 사람 없이 위로→HOME→격리→HOME · main 동결판은 E42 PAUSED)
   SEAT --> SOAP: ok
   SEAT --> ISOLATE: SEAT_FAIL
   SOAP --> WIPE
@@ -364,9 +364,10 @@ stateDiagram-v2
   NEXT_ZONE --> PICK: 다음 구역
   NEXT_ZONE --> DONE: 구역 없음
   state "any" as ANY
-  ANY --> PAUSED: stop / ROBOT_ERROR
+  ANY --> PAUSED: stop / ROBOT_ERROR / TOOL_FAIL(E52)
+  PAUSED --> PICK: ROBOT_ERROR 2단 (E52 · 신호 1 → 그리퍼만 열기 → 사람 수거 → 재개 버튼(E54 · 톡 X) → 위로 → HOME → ERROR 기록 → 다음 용기)
   PAUSED --> (이전 상태): resume (하던 동작을 이어서 · 실패한 단계부터 다시)
-  PAUSED --> ISOLATE: abort (사람이 문제라고 판단 — 툴 반납 → 격리 → HOME → 다음 용기, ROBOT_ERROR 에서는 거부)
+  PAUSED --> ISOLATE: abort (사람이 문제라고 판단 — 위로 → HOME → 툴 반납 → 홈 용기 재파지 → 격리 → HOME → 다음 용기 · E52 정리 함수 통일, ROBOT_ERROR 에서는 거부)
 ```
 - 각 전이에서 `/flow/state` 발행(2 Hz 타이머 + 전이 즉시), 용기 종료 시 `/flow/event` + CSV 1행.
 - ✅ **정지 방식(황인재 9/20)** — 목적: 문제가 생겼을 때 **바로 멈췄다가, 사람이 보고 문제없으면 이어서** 하기. ① **일시 정지**(`/flow/stop`): 통신 노드가 두산 `move_pause`를 불러 **이동 도중 즉시** 멈춘다 — 이동 함수(`motion.py`)를 비동기 이동(`amovej`/`amovel`) + `check_motion` 폴링으로 바꿔야 성립한다(V-24a 시험: 동기 이동 중에는 `move_pause`가 이동이 끝난 뒤에야 처리된다 · 비동기에서는 0.13 s에 멈추고 `move_resume`으로 같은 동작이 이어진다). 호출하는 쪽(F1·F2·F3)의 코드는 바뀌지 않는다. ② **재개**(`/flow/resume`): 하던 이동을 이어서. ③ **중단**(`/flow/abort`): 그 용기를 접고(툴 반납 → 격리 → HOME) 다음 용기. ④ 🚨 **먹는 범위(구현 #34 기준으로 정정)**: 이동 함수를 거치는 모든 이동에서 즉시 멈춘다 — **접촉 하강·닦기의 걸음(`move_rel`)도 걸음 도중에 멈춘다**(순응·힘제어는 켜진 채 그 자리에 선다). 끝난 뒤에야 멈추는 것은 `move_periodic`(안착 탐색)·그리퍼·무게 대기뿐이다. 힘이 걸린 채 멈추는 동작은 Virtual에서 시험할 수 없었으므로 **9/22 오전 실기(V-24, 황인재 + 박진용)에서 확인**하고, 문제가 있으면 그 구간에서는 일시 정지를 미루게 한다. ⑤ 되돌아갈 자리: 9/22 오전까지 실기 확인이 안 되면 아래의 "단계 사이 정지"만으로 시연한다(서비스 이름이 같아 HMI는 그대로).
@@ -443,7 +444,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 
 ### 5.5 hmi_bridge (황인재) — 시스템 모니터
 - 구조: FastAPI(uvicorn) + rclpy 스레드. rclpy는 별도 스레드에서 `spin`, `/flow/*` 서비스 호출은 요청 스레드를 막지 않게 실행(HMI는 두산 API를 쓰지 않으므로 TS-01과 무관). WebSocket이 `/flow/state`·`/flow/event`를 브라우저에 밀어준다.
-- SQLite(`db.py`): `/flow/event` 수신마다 `events` INSERT, 1 Hz로 `state_log` INSERT. `GET /api/history`가 최근 N건 반환.
+- SQLite(`db.py`): `/flow/event` 수신마다 `events` INSERT · 실행 시작/끝 `runs` · 멈춤 `pauses`(원인 · 풀린 방법) · 버튼 `commands` · 교체 완료 `replacements`(🔄 E57 9/27). `GET /api/history`가 최근 N건 반환. **잔반통 한도**: 마지막 교체 뒤 버린 잔반 합 ≥ `hmi.waste_bin_limit_g`(50 kg) 이면 브리지가 `/flow/stop` → "잔반통 교체" 카드 → 교체 완료 버튼 → 재개(로봇 코드 무변경).
 - 화면 구성(강의 HMI 요소 반영):
   | 영역 | 내용 |
   |---|---|
@@ -459,30 +460,39 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 ---
 
 ## 6. 휴먼 인터페이스
+🔄 9/25 화면 완성(F4 · UT-F4 TC-11 · `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md` · 브랜치 `injae/20260925-F4-hmi-complete` · PR 대기). 화면 구성 표는 `src/f4_hmi/README.md`.
 | 요소 | 동작 |
 |---|---|
-| 시작 | IDLE에서만 활성. plan 순서대로 처리 |
-| 일시 정지 · 재개 · 중단 | 일시 정지 = 즉시 멈춤 → PAUSED(힘제어·접촉 구간은 그 동작을 마친 뒤). PAUSED에서 **재개**(이어서) 또는 **중단**(격리 후 다음 용기)만 활성. 일시 정지는 항상 표시 |
-| 재개 | PAUSED에서 이전 상태로 |
-| 격리 알림 | 격리 구역이 차면 경고, 비움 확인 버튼 |
-| 팔레트 만재 | RACK_FULL → PAUSED → 팔레트 교체 후 **재개**(적재부터 다시) 또는 **중단**(그 용기 격리) |
-| 소모품 | 임계 도달 시 경고 |
-| 연결 | 끊김 시 버튼 비활성 + 빨간 표시 |
+| 연결 표시 | 맨 위 점: `flow 연결됨` / `flow 연결 끊김 — 마지막 값`(2 s 이상 `/flow/state` 없음 · 버튼 전부 비활성 · 마지막 화면 유지) / `HMI 서버에 닿지 않는다` |
+| 시작 | IDLE 에서만 활성. plan 순서대로 처리 |
+| 일시 정지 | 항상 표시 · 운전 중에만 활성 = 즉시 멈춤 → PAUSED(힘제어·접촉 구간은 그 동작을 마친 뒤 — §5.1) |
+| 재개 · 중단 | PAUSED 에서만. **재개** = 멈춘 단계부터 이어서 · **중단** = 그 용기를 접고(HOME → 툴 반납 → 격리 → HOME · E11) 다음 용기. 로봇 오류(ROBOT_ERROR) 멈춤에서는 중단 비활성 — 단 **케이블 이상**(코드는 ROBOT_ERROR + '케이블' 문구)은 중단 가능(`flow.handle_cable_tight` 와 일치). 🔄 E52(9/25 · tune2 · HMI 370eb72): 로봇 오류 멈춤은 **2단 안내** — 신호 1(톡 15 N 1번 또는 재개) → 그리퍼만 열림 → 사람이 받음 → **화면 재개 버튼**(E54 9/27 · 두 번째 신호는 톡 아님) → 위로 → HOME → 이 용기 오류 기록 · 빈손이면 신호 1번(톡 또는 재개) · 로봇 오류도 첫 신호는 넛지 허용 · 갈래 `tool_fail` 추가(홀더 확인 → 톡 → 다시 집기). 누르면 flow 의 대답 문구를 그대로 보여 준다(응답 ≤ 1 s · TC-11) |
+| 멈춤 안내(알람 상자) | PAUSED 면 **원인별** 제목 + 무슨 일 + 할 일 1~3 + 코드(§7 문구): 운영자 정지 · 케이블 이상(주황 · 붉지 않음) · 툴 놓침(홀더에 다시 꽂고 넛지/재개) · 잔반 남음(E42 · 덜고 재개 / 중단) · 집기 실패 · 팔레트 가득 · 로봇 오류(🔄 E55 9/27: 별도 붉은 카드 없이 일반 멈춤 카드 주황 `멈춤 — 로봇 확인` · 중단 비활성) · 툴 집기 실패(E52 · 홀더 확인) · 안내는 모두 짧게(제목 + 할 일 2~3줄 · 9/27) · HTML no-store |
+| 단계 표시줄 | 8단계 그림 카드 + 격리 · 지금 = 파랑 · 멈춤 = 주황(멈춘 단계를 기억) · 로봇 오류 = 붉음 |
+| 지금 하는 일 | 큰 그림 · 한 줄 설명 · 이번 용기 경과 · 몇 번째 · 다음 할 일 · 상태 알약(`진행 중` · `일시 정지` · `멈춤 — 툴 놓침` …) |
+| 팔레트 | 4칸 입체 그림(넣는 순서 ① 그릇 1 → ④ 컵 2 · `flow.rack_order`) · 가득 차면 교체 안내(RACK_FULL → PAUSED → 교체 후 재개 / 중단) · 누적 · 컵은 **뒤집혀 얹힌** 그림(E38 · 9/27) |
+| 진행 · 사이클 · 소모품 | 그릇/컵 수량 막대 · 반납 구역 남은 수·상태(`비었음`) · 격리 수 · 용기 1개 시간 · 수세미/세제 교체까지(임계 도달 시 색) · 🔄 E56(9/27): 소모품 칸 = **수세미(그릇 완료 수 / 100) · 솔(컵 완료 수 / 100) · 세제(세제 묻힌 용기 수 / 60)** — 교체 주기 `flow.consumables.sponge_max_uses 100` · 헹굼 담금 행은 제거 · 한도 초과는 표시만(멈추지 않음) |
+| 이력 | 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀 · 원인 · 시도 수) · 문제만 보기 필터. 🟡 케이블 이상으로 중단한 용기는 이벤트 코드가 ROBOT_ERROR 라 '로봇 오류'로 적힘(사유를 이벤트에 실으려면 flow 변경 · 시연 뒤) |
+| 소리 | 넛지(톡톡) 재개 요청 감지 비프(#93) · 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 · 🟡 소리는 9/29 준비 때 귀로 확인 |
+| 로봇 없이 확인 | `hmi_bridge` + 가짜 flow `fake_state_pub`(대본 8종: normal · paused · isolate · error · empty_zone · 🆕 tool_lost · leftover_remain · cable — 9/29 예외 ③④① 화면 연습) 또는 ros bag 재생(`_bags/0923_full_0.5`) · 한 번에 하나만(같은 토픽) |
+| 누적 KPI(F4-05 · 🔄 E57 9/27) | 이번 실행 / 오늘 / 전체 — 처리량 · 처리율 · 용기당 평균 시간 · 시간당 · 멈춤 수 · 잔반 g. 근거는 `prewash.db`(F4-04). 가짜 검증 ✅ · 🟡 실제 flow 기록은 9/29 |
+| 잔반통 교체(🔄 E57) | 마지막 교체 뒤 버린 잔반 합 ≥ 50 kg → 브리지가 정지 → "잔반통 교체" 카드 → **교체 완료** 버튼 → 재개. 소모품 4줄(수세미 · 솔 · 세제 · 잔반통)마다 교체 완료 버튼 · 시연 중엔 한도에 닿지 않음 |
+| 미구현(시연 뒤) | 격리 구역 비움 확인 버튼 · 노션 화면 gif(NOTE-02) — F4-04 · F4-05 는 9/27 구현(E57) |
 
 ## 7. 예외·오류 처리
 | 코드 | 발생 | 처리 | 표시 |
 |---|---|---|---|
 | `EMPTY_ZONE` | 탐색 최대 횟수까지 파지 실패 | 구역 종료, 다음 구역 (SKIPPED 기록) | 정보 |
-| `LEFTOVER_REMAIN` | 털기 후에도 임계 초과 | 🔄 E42(9/23): **멈춤(PAUSED)** → 사람이 재개(다시 잰다) / 중단(HOME → 격리) — 정책 isolate 갈래는 로봇을 옮기지 않아(기록만) 든 용기를 떨어뜨리므로 시연은 pause | 경고 |
+| `LEFTOVER_REMAIN` | 털기 후에도 임계 초과 | 🔄 E52(9/25 · tune2 · 🟡 9/29 ④): **격리(isolate)** — 사람 없이 위로 → HOME → 격리 → HOME → 다음 용기(#90/#103 경로 · 정리 함수 통일). E42(9/23)의 pause 는 정책 isolate 가 기록만 남기던 빈틈 때문이었고 E52 로 닫힘 — main 동결판은 아직 pause | 경고 |
 | `SEAT_FAIL` | 탐색 한도 초과 | 격리 | 경고 |
-| `TOOL_FAIL` | 툴 폭 범위 밖(툴 없음) | 재시도 1회 → 격리 | 경고 |
+| `TOOL_FAIL` | 툴 폭 범위 밖(툴 없음) | 🔄 E52(9/25 · tune2): **멈춤(PAUSED)** — 격리 없이 홀더 확인 → 톡 15 N 1번(또는 재개) → 툴 집기부터 다시(툴 놓침 뒤 재PICK 실패도 같음). main 동결판은 재시도 1회 → 격리 | 경고 |
 | `GRIP_FAIL` | f2: 털기·담금 전후 그리퍼 폭이 `slip_tol_mm` 넘게 변함(미끄러짐) · 무게가 `min_net_g` 아래(빈손) | ✅ **PAUSED + 알림 → 사람이 확인**(황인재 9/20 — `params.yaml` `flow.policy.GRIP_FAIL: pause`). pick 안의 헛잡음은 지금처럼 F1 이 다음 시도로 소화 | 오류 |
-| `FORCE_LIMIT` / `TIMEOUT` | 닦기·삽입·하강 | 즉시 후퇴 → 재시도 1회 → 격리 | 경고 |
+| `FORCE_LIMIT` / `TIMEOUT` | 닦기·삽입·하강 | 즉시 후퇴 → 재시도 1회 → 격리 — 🔄 E52(9/25 · tune2): 격리는 **정리 함수 하나**(위로 → HOME → 툴 반납 → 스펀지 홈에 용기가 있으면 다시 집고 HOME → 격리 → HOME · 중단 버튼과 같은 길 · 기록 코드는 원인 유지) — E42 가 지적한 "기록만" 빈틈 닫힘 | 경고 |
 | `RACK_JAM` | 삽입 걸림 | 후퇴 → 재시도 1회 → 격리 — 🔄 E44(9/23): 적재를 감시 없이 곧게 놓으므로 **시연 코드에서는 발생하지 않는다**(걸리면 컨트롤러 충돌 감지 → `ROBOT_ERROR`) | 경고 |
 | `RACK_FULL` | 칸 소진 | PAUSED + 알림 | 오류 |
 | `TOOL_LOST` 🆕 E37(9/23) | 닦는 중(soap · wipe) 그리퍼 폭이 기준에서 `slip_tol_mm` 넘게 벗어남(툴 놓침 · f3 감시 스레드가 `halt`) | **그 자리 정지 → PAUSED + 알림** → 사람이 툴을 홀더에 넣고 **넛지(15 N · 1번 · E48) 또는 HMI 재개** → 로봇 STANDBY 확인 → `f1.tool(PICK)` 재호출(집은 자리로 곧장) → 놓친 단계부터 이어감(PR #99). 격리 아님 | 경고 |
 | 케이블 이상(코드 아님 · 🆕 #93) | 무게 재기 표본의 떨림이 `f2.limits.max_weigh_spread_g`(**80 g** · E47) 초과 → `CableTightError` | **PAUSED + 알림**(케이블 확인 요청) → 사람이 케이블 정리 → 톡톡(넛지) 또는 HMI 재개 → 떨림 재검증(10 표본) → 정상이면 **안전정지(SAFE_STOP) 자동 해제**(`set_robot_control` · PR #102 · E43) → 그 단계부터 이어감 · 이상이면 계속 대기 | 경고 |
-| `ROBOT_ERROR` | dsr 오류·충돌 정지·기능 함수에서 새어 나온 예외 | ✅ **그 자리 정지 → PAUSED + 알림, 사람이 복구**(황인재 9/20). 명령이 아직 나가면 `safe_retreat()`를 한 번만 시도한다. 🚨 **단 `cc.MoveIncomplete` 는 예외다 — 후퇴(`safe_retreat`)도 하지 않는다**(9/21 추가): 그 오류는 "로봇이 어디 있는지 모른다"는 뜻이라 어떤 자동 이동도 위험하다(9/21 08:40 실기: 6번 관절 163° 회전으로 **케이블이 꼬인 채** 멈췄는데 도구가 자동으로 HOME 으로 가려 했다). 힘·순응은 끄되(모션이 아니다) **움직이지 않고** 사람에게 넘긴다. 힘 상한(`ForceLimitError`)은 로봇이 정상이라는 뜻이므로 설계대로 후퇴한다 — 구분해서 처리한다. 🚨 두산 `DR_Error`(우리 코드가 두산 함수에 잘못된 인자를 넘긴 경우 — 설치된 `DSR_ROBOT2.py`의 896곳이 전부 인자 타입·값 오류)가 나면 두산 코드가 그 프로세스의 `rclpy.shutdown()`을 불러 **같은 프로그램에서는 더 이상 명령을 못 보낸다** → 운영자가 새 프로세스로 `src/cobot_common/test/release_force.py`(남은 힘·순응 끄기)를 실행 → 셀 재시작. 예방은 Virtual 연속 3회 시험(§3.2 ⑧) | 오류 |
+| `ROBOT_ERROR` | dsr 오류·충돌 정지·기능 함수에서 새어 나온 예외 | ✅ **그 자리 정지 → PAUSED + 알림, 사람이 복구**(황인재 9/20). 🔄 **E52(9/25 · tune2)**: 격리 구역으로 가지 않는다(위치를 모를 수 있다). 쥔 것이 있으면 **2단** — 신호 1(톡 15 N 1번 또는 재개 버튼) → 그리퍼만 열기(팔 안 움직임) → 사람이 받아 처리(툴은 홀더에 · 스펀지 홈 용기도) → **신호 2 = 화면 재개 버튼만**(E54 9/27 · 톡 아님 — 손이 로봇에 닿은 채 팔이 움직이지 않게 · 받는 사람이 물러난 뒤 누른다) → 곧게 위로 → HOME → 이 용기 ERROR 기록 → 다음 용기. 빈손이면 신호 1번(톡 또는 재개) — 기록이 빈손이라도 그리퍼 폭 ≤ 100 mm 면 쥔 것으로 본다(55fe450). 힘을 못 읽으면 첫 신호도 재개 버튼만 기다린다. 🔄 **E55(9/27)**: 이 2단 절차는 화요일 시험·발표에서 **제외** — 코드는 안전망으로 유지. 신호 2 뒤의 이동은 사람이 로봇 상태를 보고 주는 것이므로 아래 MoveIncomplete 규칙과 어긋나지 않는다. 명령이 아직 나가면 `safe_retreat()`를 한 번만 시도한다. 🚨 **단 `cc.MoveIncomplete` 는 예외다 — 후퇴(`safe_retreat`)도 하지 않는다**(9/21 추가): 그 오류는 "로봇이 어디 있는지 모른다"는 뜻이라 어떤 자동 이동도 위험하다(9/21 08:40 실기: 6번 관절 163° 회전으로 **케이블이 꼬인 채** 멈췄는데 도구가 자동으로 HOME 으로 가려 했다). 힘·순응은 끄되(모션이 아니다) **움직이지 않고** 사람에게 넘긴다. 힘 상한(`ForceLimitError`)은 로봇이 정상이라는 뜻이므로 설계대로 후퇴한다 — 구분해서 처리한다. 🚨 두산 `DR_Error`(우리 코드가 두산 함수에 잘못된 인자를 넘긴 경우 — 설치된 `DSR_ROBOT2.py`의 896곳이 전부 인자 타입·값 오류)가 나면 두산 코드가 그 프로세스의 `rclpy.shutdown()`을 불러 **같은 프로그램에서는 더 이상 명령을 못 보낸다** → 운영자가 새 프로세스로 `src/cobot_common/test/release_force.py`(남은 힘·순응 끄기)를 실행 → 셀 재시작. 예방은 Virtual 연속 3회 시험(§3.2 ⑧) | 오류 |
 | 통신 끊김 | `/flow/state` 2 s 이상 없음 | HMI 버튼 비활성, 빨간 표시 | 오류 |
 공통: 어떤 실패에서도 툴은 홀더에 반납, 로봇은 안전 높이. GRIP_FAIL은 `pick` 내부 재탐색으로 소화.
 🔄 **E44(9/23 · 황인재)**: 놓기·팔레트 적재·툴 반납은 **힘 감시 없이** 티칭/집은 자리로 곧게 내려가 놓고 마지막 15 mm 만 30 mm/s 로 완충한다(`f1.insert_approach_mm 0` · `tool_return_depth_mm 0` · `land_slow_mm 15`) — 삽입 걸림·홀더 밀림 판정이 없고 컨트롤러 충돌 감지가 마지막 보호. 값을 양수로 두면 예전 감시 갈래로 돌아간다. 위 예외 중 흐름 안 실기가 없는 것(빈 구역 · 잔반 과다 멈춤 · 툴 놓침 · 케이블 · 버튼)은 **9/29 오전 INT-4b 대본**으로 확인하고 통과한 것만 시연에 넣는다(E45).

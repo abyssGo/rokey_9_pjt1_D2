@@ -13,7 +13,7 @@ from livesheet import SID, load, timeline
 import gen_todo
 
 ID = 'AH'
-VERSION = 'v24.7'
+VERSION = 'v25.6'
 OUT = 'prewash_일정표_0919s.xlsx'
 def S(*xs): return [tuple(x.split()) for x in xs]          # S('9/20 오전','9/20 오후')
 
@@ -3146,6 +3146,92 @@ EDIT.update({
 HISTORY197 = ['v24.7', '📅 일정', 'INT-4, UT-F4, DOC-05, DOC-02, ARCH-01, INT-4c, INT-4d, FIX-01, V-24, F1-04, SAFE-01', '황인재 09/25 13:48: 추석 순서 ① HMI 완성(F4) → ② 문서·아키텍처(PM) → ③ PPT · 끝난 행 6개 완료 처리', '황인재 09/25 13:48', 'H']
 
 
+
+
+# ---------------------------------------------------------------- 09/25 14:08 HMI 완성(F4) → 문서·아키텍처 최신화(PM · 순서 ②) · 결과표 신설
+P0925 = 'PM 09/25 14:08'
+EDIT.update({
+ 'INT-4':    dict(status='완료', prog='0.9', note_add=P0925 + ': ✅ **HMI 화면 완성(F4 9/25)** — 버튼 4 · 단계 카드 · 멈춤 원인별 안내 7갈래 · 팔레트 그림 · 수량·소모품 · 이력 · 끊김 · 넛지 비프 · 풀림 두 음 · 가짜 flow 대본 8종(tool_lost·leftover_remain·cable 추가) · 브랜치 injae/20260925-F4-hmi-complete(PR "열어" 대기) · 🟡 실제 flow_node 연결 + 소리는 9/29 준비 10분'),
+ 'UT-F4':    dict(status='완료', prog='0.9', note_add=P0925 + ': ✅ TC-11 — pytest f4 25 · node 8 · npm build · 브라우저 12항목(툴 놓침·케이블 멈춤 안내 · 중단→ISOLATED · 정지→재개 · 끊김 · 빈 구역 SKIPPED · 응답 1~2 ms) · 소리 🟡 · 기록 docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md'),
+ 'DOC-05':   dict(prog='0.7', note_add=P0925 + ': 순서 ② 진행 — SDD §6 HMI 표(9/25 화면) · README §2·§3·§4-2·§5 · 리마인드 · 아키텍처(브라우저 화면 sublabel · 동결 카드) 재생성 · **`docs/04_결과_결과표.md` 신설**(AC-1~7 현황 · 사이클 타임 단계별 · 무게 · 힘 · 사고와 교훈 · 남은 🟡) → 9/29 저녁 1.0 수치·예외 결과 채우면 완료'),
+ 'NOTE-02':  dict(note_add=P0925 + ': 화면 gif 는 시연 뒤(F4) — 화면 구성 표는 src/f4_hmi/README.md'),
+})
+HISTORY198 = ['v24.8', '✅ 완료', 'INT-4, UT-F4, DOC-05, NOTE-02', 'PM 09/25 14:08: HMI 화면 완성(F4 · UT-F4 TC-11 · PR 대기) → 문서·아키텍처 최신화(SDD §6 · README · 아키텍처 · 결과표 04 신설) · 순서 ③ PPT 는 양식 원문 뒤', '황인재 9/25', 'H']
+
+
+
+# ---------------------------------------------------------------- 09/26 07:1x E52 예외 처리 재설계(황인재 9/25 F4 창) → 화요일 2회차 예외 7개 + 빈 시작 · 로봇 시간 ≈33분
+H0925e = '황인재 9/25(F4 창) · PM 09/26 07:1x'
+EDIT.update({
+ 'INT-4b':   dict(note_add=H0925e + ': **E52 예외 처리 재설계** — 로봇 오류 2단(그 자리 멈춤 · 격리 이동 없음 · 신호 1 → 그리퍼만 열기 → 사람 수거 → 신호 2 → 위로 → HOME · 넛지 재개 허용) · 잔반 남음 pause→isolate 되돌림(사람 없이 HOME→격리) · 툴 집기 실패 retry→pause(홀더 확인 → 톡 → 다시 집기) · 힘 상한·시간 초과·중단 정리 함수 통일(위로→HOME→툴 반납→홈 용기 재파지→격리→HOME · E42 빈틈 닫힘) · 코드 tune2 21e10e7(536 통과 · 실기 🟡) · HMI 370eb72 · 대본 645340a. **2회차 = 예외 7개(≈15분)**: ① 케이블 ② 정지/재개 ③ 툴 놓침(그릇 1) ④ 잔반 자동 격리(그릇 2) ⑨ 툴 집기 실패(컵 1 세제 직전 · 솔 빼 두기) ⑤ 중단(컵 1 닦기 · 솔 반납 → 홈 C 재파지 → 격리) ⑩ 로봇 오류 2단(컵 2 헹굼 이동 중) + **3회차 빈 시작 ⑥(1분)** · 로봇 시간 ≈33분(+3). 담당 추가: ⑨ 솔 빼기 박진용 · ⑩ 컵 받기 한석형 · E-Stop 1명. 🟡 열린 결정(황인재 화요일 아침): ⑩ 로봇 오류 만드는 법 (a) 이동 중 팔 막아 충돌 감지 (b) 펜던트 보호정지 (c) 빼고 자동 시험 · F3 질문: wipe_bowl air_force_max_n 3 N vs 9/23 그릇 1 공중 2.99 N(0.01 N 차 · 넘으면 ROBOT_ERROR) — 값은 박진용 소관 · 1회차 로그 보고 판단'),
+ 'REH-02':   dict(note_add=H0925e + ': INT-4b 로봇 시간 ≈33분(+3 · E52 예외 7개 + 빈 시작) — 리허설 시작을 그만큼 뒤로'),
+ 'DOC-05':   dict(note_add=H0925e + ': E52 반영 — 결정기록(E52 · E42-종결 · E51-갱신) · 리마인드 §2·§5 · SDD §7(정책·상태도·표) §6(로봇 오류 2단 안내) · IRD §8 · README §1·§3 · 결과표 AC-6·§6 · 아키텍처 예외 카드 7종 재생성'),
+})
+HISTORY199 = ['v24.9', '✅ 결정', 'INT-4b, REH-02, DOC-05', '황인재 9/25(F4 창): E52 예외 처리 재설계(로봇 오류 2단 · 잔반 자동 격리 · 툴 집기 실패 멈춤 · 정리 함수 통일 · tune2) → 화요일 2회차 예외 7개 + 빈 시작 · 로봇 시간 ≈33분 · 열린 것: 로봇 오류 만드는 법 · F3 air_force 3 N', '황인재 9/25', 'H']
+
+
+
+# ---------------------------------------------------------------- 09/27 00:44 황인재(PM 창): E53 — 기본 흐름 동결 유지 · 바꾸는 건 예외 처리뿐 · 화요일 실기 뒤 필요 없거나 구현 안 된 예외는 삭제
+H0927 = '황인재 09/27 00:44'
+EDIT.update({
+ 'INT-4b':   dict(note_add=H0927 + ': **E53** — 기본 흐름(집기→무게→닦기→헹굼→적재)은 동결 그대로 · 바꾸는 것은 예외 처리(E52)뿐 · 2회차 예외 7개 + 빈 시작을 돌려 보고 **안 되거나 필요 없는 예외는 코드·대본·문서에서 뺀다**(예외별 유지/삭제 판정표 = 결과표 §7 · 판정은 황인재 화요일 현장)'),
+ 'DEMO-01':  dict(note_add=H0927 + ': E53 — 시연 대본의 예외는 화요일에 통과한 것만(E45 원칙 그대로) · 삭제한 예외는 발표에서도 뺀다'),
+})
+HISTORY200 = ['v25.1', '✅ 결정', 'INT-4b, DEMO-01', '황인재 09/27 00:44: E53 — 기본 흐름 동결 유지 · 예외 처리만 수정(E52) · 화요일 실기 뒤 필요 없거나 구현 안 된 예외는 삭제', '황인재 09/27 00:44', 'H']
+
+
+
+# ---------------------------------------------------------------- 09/27 01:2x 황인재(PM 창): E54 — 로봇 오류 2단의 두 번째 신호는 화면 재개 버튼만(톡 X)
+H0927b = '황인재 09/27 01:2x'
+EDIT.update({
+ 'INT-4b':   dict(note_add=H0927b + ': **E54** — ⑩ 로봇 오류 2단의 두 번째 신호는 **화면 재개 버튼만**(톡 X · 받는 사람이 물러난 뒤 황인재가 누름). tune2 `_robot_error_pause` 두 번째 wait allow_nudge False + 안내 문구 + HMI 2단 안내 + 대본 ⑩ (F4 · 예외 경로라 E53 범위) · 첫 신호(톡/재개 → 그리퍼만 열기)는 그대로'),
+})
+HISTORY201 = ['v25.2', '✅ 결정', 'INT-4b', '황인재 09/27 01:2x: E54 — 로봇 오류 2단 두 번째 신호 = 화면 재개 버튼만(톡 아님) · F4 가 tune2·HMI·대본 반영', '황인재 09/27 01:2x', 'H']
+
+
+
+# ---------------------------------------------------------------- 09/27 16:1x 황인재 오후(F4 창): E55 ⑩ 로봇 오류 시험·발표 제외(코드 안전망) · E56 소모품 100회 · 세제 = 용기 수/60
+H0927c = '황인재 9/27 오후(F4 창) · PM 16:1x'
+EDIT.update({
+ 'INT-4b':   dict(note_add=H0927c + ': **E55** ⑩ 로봇 오류 2단은 시험·발표 제외(설계한 예외가 아니라 컨트롤러 오류 그물 · 유발 부담) · 코드는 안전망 유지(자동 시험 6 + 보강 55fe450) · HMI 붉은 카드 → 주황 일반 멈춤 카드 → **2회차 = 예외 6개(①②③④⑤⑨) ≈13분 · 로봇 시간 ≈30분** · 끝 `plan 완료 — 그릇 1 · 컵 1 · 격리 2` · 열린 결정에서 "⑩ 만드는 법" 삭제 · 되돌림 커밋 30fc418 은 저녁에 안 얹음. **E56** 소모품 100회(`flow.consumables.sponge_max_uses` · tune2 e1133f4 · HMI 41304aa) · 세제 = 세제 묻힌 용기 수 · 한도 60(HMI dc41309). 🟡 **헹굼 담금 동작(2회 · 60 mm) (a) 0회 / (b) 물 아래 머물기 — 기본 흐름이라 E53 대상 · 화요일 전 황인재 결정**(바꾸면 1회차에서 확인)'),
+ 'INT-4':    dict(note_add=H0927c + ': HMI E55/E56 — 로봇 오류 별도 카드 제거(주황 일반 멈춤 카드 · 중단 비활성) · 소모품 칸 = 수세미(그릇 수/100) · 솔(컵 수/100) · 세제(용기 수/60) · 헹굼 담금 행 제거 · 안내 짧게 · HTML no-store (41304aa · dc41309 · 브랜치 injae/20260925-F4-hmi-complete · PR "열어" 뒤)'),
+ 'DEMO-01':  dict(note_add=H0927c + ': 시연 화면 소모품 = 수세미·솔(완료 용기 수/100) · 세제(용기 수/60) · 로봇 오류 예외는 시연·발표에서 제외(E55)'),
+})
+HISTORY202 = ['v25.3', '✅ 결정', 'INT-4b, INT-4, DEMO-01', '황인재 9/27 오후(F4 창): E55 로봇 오류 시험·발표 제외(코드 안전망) → 2회차 예외 6개 ≈13분 · E56 소모품 100회 · 세제 = 용기 수/60 · 🟡 헹굼 담금 동작 결정 대기(기본 흐름 · E53)', '황인재 9/27 오후', 'H']
+
+
+
+# ---------------------------------------------------------------- 09/27 저녁 황인재(F4 창): 헹굼 담금 그대로 · flow 세제 카운터 용기당 1회 (E56 마무리)
+H0927d = '황인재 9/27 저녁(F4 창) · PM'
+EDIT.update({
+ 'INT-4b':   dict(note_add=H0927d + ': E56 마무리 — 헹굼 담금 동작(2회 · 60 mm) **그대로**(미결 해소 · 기본 흐름 E53 유지) · flow 세제 카운터도 용기당 1회(tune2 a30fdb2 · 카운터 한 줄 · 동작 무관 · PM 확인) → 화요일 전 열린 결정 없음(3 N 은 박진용 답 대기)'),
+})
+HISTORY203 = ['v25.4', '✅ 결정', 'INT-4b', '황인재 9/27 저녁: 헹굼 담금 동작 그대로 · flow 세제 카운터 용기당 1회(E56 마무리) — 화요일 전 열린 결정 없음', '황인재 9/27 저녁', 'H']
+
+
+
+# ---------------------------------------------------------------- 09/27 17:0x 황인재(F4 창 "진행"): E57 F4-04 기록 DB · F4-05 누적 KPI · 잔반통 한도 구현 완료(가짜 검증)
+H0927e = '황인재 9/27(F4 창) · PM 17:0x'
+EDIT.update({
+ 'F4-04':    dict(status='완료', prog='0.9', note_add=H0927e + ': ✅ **E57** SQLite 표 5개(events · runs · pauses · commands · replacements · 브리지를 켠 폴더 prewash.db) · 소모품 사용량 = 마지막 교체 뒤 · CLI hmi_db · 가짜 검증(TC-11 15 · 8001 검증 서버) · pytest f4 42 · node 10 · HMI 브랜치 e9ecb81·b0680a4(PR "열어" 뒤) · 🟡 실제 flow 기록은 9/29'),
+ 'F4-05':    dict(status='완료', prog='0.9', note_add=H0927e + ': ✅ **E57** 누적 KPI 칸(이번 실행/오늘/전체 · 처리량 · 처리율 · 용기당 평균 · 시간당 · 멈춤 · 잔반) · 가짜 검증 ✅ · 🟡 실제 수치는 9/29'),
+ 'INT-4':    dict(note_add=H0927e + ': E57 잔반통 한도 50 kg(hmi.waste_bin_limit_g) → 브리지 /flow/stop → "잔반통 교체" 카드 → 교체 완료 버튼 → 재개(로봇 코드 무변경 · 시연 중 한도 안 닿음) · 소모품 4줄 + 교체 완료 버튼 · 8000 서버는 껐다 켜야 새 코드'),
+})
+HISTORY204 = ['v25.5', '✅ 완료', 'F4-04, F4-05, INT-4', '황인재 9/27(F4 창): E57 — 기록 DB(표 5개) · 누적 KPI · 잔반통 한도 50 kg 구현(F4 · 가짜 검증 ✅ · 실제 flow 기록 9/29 · PR 대기)', '황인재 9/27', 'H']
+
+
+
+# ---------------------------------------------------------------- 09/27 밤 F4 연휴 작업 정리(황인재 요청) → 코드 상태·PR 계획·PPT 재료
+P0927n = 'PM 09/27 밤(F4 정리)'
+EDIT.update({
+ 'INT-4b':   dict(note_add=P0927n + ': 화요일 코드 = **tune2 1887566 하나**(main + E48 + E50 + E52/E54 + HMI 전부(브랜치 합침) + 소모품 카운트 · 551 passed · node 10) · PR 오전 2개(tune2 · 대본 a017c4f) + 저녁 제출 PR 1개(cleanup 되돌림) · 저녁 첫 일 = `hmi_db export --dir records_0929`(KPI 근거 CSV 5개)'),
+ 'UT-F4':    dict(note_add=P0927n + ': TC-11 항목 1~16(툴 집기 실패 · 로봇 오류 2단 · 소모품 · KPI · 잔반통 멈춤 전 과정 · 컵 뒤집힘) · 황인재 9/27 밤 새 서버 정상 1바퀴 → DB events 4 · runs 1 · KPI ✅ · 남은 🟡 실제 flow 연결·소리(9/29)'),
+ 'DOC-02':   dict(note_add=P0927n + ': PPT 재료 확보 — F4 문장 3(예외 8종 설계 → 검증 6종 + 빈 구역 · 로봇 오류 안전망 / HMI = 화면 + DB 표 5 + KPI + 소모품·잔반통 · 로봇 무변경 / 멈춤 안내 = 제목 + 할 일 2~3줄) · 실제 숫자는 9/29 DB · 배치도 SVG(F4 창) · 화면 캡처 요청함 → `_upload/ppt_재료/`'),
+ 'SUB-01':   dict(note_add=P0927n + ': 수요일 오전 여유 시 정리 PR(안 쓰는 예외 코드·카드·대본 삭제 · E53) — 제출 zip 은 v1.0-submit 기준'),
+})
+HISTORY205 = ['v25.6', '📅 일정', 'INT-4b, UT-F4, DOC-02, SUB-01', 'PM 9/27 밤: F4 연휴 작업 정리 — 화요일 코드 tune2 하나(HMI 합침 · 551) · PR 오전 2 + 저녁 1 · PPT 재료(문장·배치도·캡처) · 저녁 DB export', '황인재 9/27', 'H']
+
+
 def main(out):
     gen_todo.EASY.update(EASY)
     for _t in DELETE: EDIT.pop(_t, None); MOVE.pop(_t, None)
@@ -3246,7 +3332,7 @@ def main(out):
             ru.rows[k] = n
     # 7) 변경이력
     h = b.sheet('변경이력')
-    for hist in (HISTORY, HISTORY2, HISTORY3, HISTORY4, HISTORY5, HISTORY6, HISTORY7, HISTORY8, HISTORY9, HISTORY10, HISTORY11, HISTORY12, HISTORY13, HISTORY14, HISTORY15, HISTORY16, HISTORY17, HISTORY18, HISTORY19, HISTORY20, HISTORY21, HISTORY22, HISTORY23, HISTORY24, HISTORY25, HISTORY26, HISTORY27, HISTORY28, HISTORY29, HISTORY30, HISTORY31, HISTORY32, HISTORY33, HISTORY34, HISTORY35, HISTORY36, HISTORY37, HISTORY38, HISTORY39, HISTORY40, HISTORY41, HISTORY42, HISTORY43, HISTORY44, HISTORY45, HISTORY46, HISTORY47, HISTORY48, HISTORY49, HISTORY50, HISTORY51, HISTORY52, HISTORY53, HISTORY54, HISTORY55, HISTORY56, HISTORY57, HISTORY58, HISTORY59, HISTORY60, HISTORY61, HISTORY62, HISTORY63, HISTORY64, HISTORY65, HISTORY66, HISTORY67, HISTORY68, HISTORY69, HISTORY70, HISTORY71, HISTORY72, HISTORY73, HISTORY74, HISTORY75, HISTORY76, HISTORY77, HISTORY78, HISTORY79, HISTORY80, HISTORY81, HISTORY82, HISTORY83, HISTORY84, HISTORY85, HISTORY86, HISTORY87, HISTORY88, HISTORY89, HISTORY90, HISTORY91, HISTORY92, HISTORY93, HISTORY94, HISTORY95, HISTORY96, HISTORY97, HISTORY98, HISTORY99, HISTORY100, HISTORY101, HISTORY102, HISTORY103, HISTORY104, HISTORY105, HISTORY106, HISTORY107, HISTORY108, HISTORY109, HISTORY110, HISTORY111, HISTORY112, HISTORY113, HISTORY114, HISTORY115, HISTORY116, HISTORY117, HISTORY118, HISTORY119, HISTORY120, HISTORY121, HISTORY122, HISTORY123, HISTORY124, HISTORY125, HISTORY126, HISTORY127, HISTORY128, HISTORY129, HISTORY130, HISTORY131, HISTORY132, HISTORY133, HISTORY134, HISTORY135, HISTORY136, HISTORY137, HISTORY138, HISTORY139, HISTORY140, HISTORY141, HISTORY142, HISTORY143, HISTORY144, HISTORY145, HISTORY146, HISTORY147, HISTORY148, HISTORY149, HISTORY150, HISTORY151, HISTORY152, HISTORY153, HISTORY154, HISTORY155, HISTORY156, HISTORY157, HISTORY158, HISTORY159, HISTORY160, HISTORY161, HISTORY162, HISTORY163, HISTORY164, HISTORY165, HISTORY166, HISTORY167, HISTORY168, HISTORY169, HISTORY170, HISTORY171, HISTORY172, HISTORY173, HISTORY174, HISTORY175, HISTORY176, HISTORY177, HISTORY178, HISTORY179, HISTORY180, HISTORY181, HISTORY182, HISTORY183, HISTORY184, HISTORY185, HISTORY186, HISTORY187, HISTORY188, HISTORY189, HISTORY190, HISTORY191, HISTORY192, HISTORY193, HISTORY194, HISTORY195, HISTORY196, HISTORY197):
+    for hist in (HISTORY, HISTORY2, HISTORY3, HISTORY4, HISTORY5, HISTORY6, HISTORY7, HISTORY8, HISTORY9, HISTORY10, HISTORY11, HISTORY12, HISTORY13, HISTORY14, HISTORY15, HISTORY16, HISTORY17, HISTORY18, HISTORY19, HISTORY20, HISTORY21, HISTORY22, HISTORY23, HISTORY24, HISTORY25, HISTORY26, HISTORY27, HISTORY28, HISTORY29, HISTORY30, HISTORY31, HISTORY32, HISTORY33, HISTORY34, HISTORY35, HISTORY36, HISTORY37, HISTORY38, HISTORY39, HISTORY40, HISTORY41, HISTORY42, HISTORY43, HISTORY44, HISTORY45, HISTORY46, HISTORY47, HISTORY48, HISTORY49, HISTORY50, HISTORY51, HISTORY52, HISTORY53, HISTORY54, HISTORY55, HISTORY56, HISTORY57, HISTORY58, HISTORY59, HISTORY60, HISTORY61, HISTORY62, HISTORY63, HISTORY64, HISTORY65, HISTORY66, HISTORY67, HISTORY68, HISTORY69, HISTORY70, HISTORY71, HISTORY72, HISTORY73, HISTORY74, HISTORY75, HISTORY76, HISTORY77, HISTORY78, HISTORY79, HISTORY80, HISTORY81, HISTORY82, HISTORY83, HISTORY84, HISTORY85, HISTORY86, HISTORY87, HISTORY88, HISTORY89, HISTORY90, HISTORY91, HISTORY92, HISTORY93, HISTORY94, HISTORY95, HISTORY96, HISTORY97, HISTORY98, HISTORY99, HISTORY100, HISTORY101, HISTORY102, HISTORY103, HISTORY104, HISTORY105, HISTORY106, HISTORY107, HISTORY108, HISTORY109, HISTORY110, HISTORY111, HISTORY112, HISTORY113, HISTORY114, HISTORY115, HISTORY116, HISTORY117, HISTORY118, HISTORY119, HISTORY120, HISTORY121, HISTORY122, HISTORY123, HISTORY124, HISTORY125, HISTORY126, HISTORY127, HISTORY128, HISTORY129, HISTORY130, HISTORY131, HISTORY132, HISTORY133, HISTORY134, HISTORY135, HISTORY136, HISTORY137, HISTORY138, HISTORY139, HISTORY140, HISTORY141, HISTORY142, HISTORY143, HISTORY144, HISTORY145, HISTORY146, HISTORY147, HISTORY148, HISTORY149, HISTORY150, HISTORY151, HISTORY152, HISTORY153, HISTORY154, HISTORY155, HISTORY156, HISTORY157, HISTORY158, HISTORY159, HISTORY160, HISTORY161, HISTORY162, HISTORY163, HISTORY164, HISTORY165, HISTORY166, HISTORY167, HISTORY168, HISTORY169, HISTORY170, HISTORY171, HISTORY172, HISTORY173, HISTORY174, HISTORY175, HISTORY176, HISTORY177, HISTORY178, HISTORY179, HISTORY180, HISTORY181, HISTORY182, HISTORY183, HISTORY184, HISTORY185, HISTORY186, HISTORY187, HISTORY188, HISTORY189, HISTORY190, HISTORY191, HISTORY192, HISTORY193, HISTORY194, HISTORY195, HISTORY196, HISTORY197, HISTORY198, HISTORY199, HISTORY200, HISTORY201, HISTORY202, HISTORY203, HISTORY204, HISTORY205):
         if not has(h, 'A', hist[0]):
             k = h.first_empty(); n = h.rows[k - 1].clone()
             for c, v in zip('ABCDEF', hist): n.set(c, v)
