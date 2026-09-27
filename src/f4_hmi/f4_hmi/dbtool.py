@@ -6,10 +6,13 @@
     ros2 run f4_hmi hmi_db usage                       소모품·잔반통 사용량(마지막 교체 뒤)
     ros2 run f4_hmi hmi_db kpi --period today          KPI (run · today · all)
     ros2 run f4_hmi hmi_db replace sponge              교체 완료를 기록한다(화면 버튼과 같다)
+    ros2 run f4_hmi hmi_db export --dir records        표 5개를 CSV 파일로(엑셀·LibreOffice 로 연다)
 파일 위치는 params.yaml hmi.db_path(실행 위치 기준 · 기본 prewash.db) — --db 로 바꿀 수 있다.
 """
 import argparse
+import csv
 import sys
+from pathlib import Path
 
 from .db import HmiDb, ITEMS, TABLES
 
@@ -43,6 +46,7 @@ def main(argv=None):
     sub.add_parser('usage')
     k = sub.add_parser('kpi'); k.add_argument('--period', choices=('run', 'today', 'all'), default='all')
     r = sub.add_parser('replace'); r.add_argument('item', choices=ITEMS); r.add_argument('--note', default='터미널에서')
+    e = sub.add_parser('export'); e.add_argument('--dir', default='records'); e.add_argument('--limit', type=int, default=100000)
     a = p.parse_args(argv)
     db = HmiDb(a.db or _cfg_db_path())
     print(f'# {db.path}')
@@ -58,6 +62,18 @@ def main(argv=None):
     elif a.cmd == 'replace':
         db.add_replacement(a.item, a.note)
         print(f'교체 기록: {a.item}')
+    elif a.cmd == 'export':
+        out = Path(a.dir); out.mkdir(parents=True, exist_ok=True)
+        for t in TABLES:
+            rows = list(reversed(db.dump(t, a.limit)))                    # 오래된 것부터
+            f = out / f'{t}.csv'
+            with f.open('w', newline='', encoding='utf-8-sig') as fh:      # BOM → 엑셀이 한글을 바로 읽는다
+                w = csv.writer(fh)
+                cols = list(rows[0].keys()) if rows else []
+                w.writerow(cols)
+                for r in rows:
+                    w.writerow([r.get(c, '') for c in cols])
+            print(f'{f}  {len(rows)} 줄')
     return 0
 
 
