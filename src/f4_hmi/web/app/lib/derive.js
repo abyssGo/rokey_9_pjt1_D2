@@ -33,44 +33,28 @@ export function pauseKind(s) {
   }
 }
 
-// 멈춤 원인별 운영자 안내 — 🔄 9/27 황인재: 짧게. 제목 + 한 줄 + 할 일 2~3개(한 줄씩). flow 문구는 이 갈래들에서 화면에 안 보인다(HIDE_FLOW_MSG).
+// 멈춤 원인별 운영자 안내 — 🔄 9/27 황인재 2차: **제목 + 할 일 2~3줄, 각 줄 몇 단어.** 설명 문장 없음(what 은 비워 둔다 · 있으면 한 줄).
+//    설명·근거는 SDD §7 · 대본에. 로봇 오류는 신호 1(확인 → 톡/재개) · 신호 2(받아 치움 → 재개) · HOME 실패 세 장만(경우를 합쳤다).
 export const GUIDE_KO = {
-  operator: { title: '일시 정지', what: '버튼으로 멈췄습니다.',
-    steps: ['재개 — 이어서 한다', '중단 — 이 용기를 격리한다'] },
-  cable: { title: '케이블 확인', what: '무게를 재는 중 케이블이 당겨졌습니다.',
-    steps: ['케이블을 정리한다', '손목을 톡 친다 (또는 재개)', '안 되면 중단'] },
-  tool_lost: { title: '툴 놓침', what: '닦는 중 수세미·솔이 빠졌습니다.',
-    steps: ['홀더에 다시 꽂는다', '손목을 톡 친다 (또는 재개)'] },
-  tool_fail: { title: '툴 집기 실패', what: '홀더에서 툴을 집지 못했습니다.',
-    steps: ['홀더의 툴을 바로 꽂는다', '손목을 톡 친다 (또는 재개)', '안 되면 중단'] },
-  leftover: { title: '잔반 남음', what: '두 번 털어도 잔반이 남았습니다.',
-    steps: ['잔반을 덜어낸다', '재개 — 무게를 다시 잰다', '또는 중단'] },
-  grip: { title: '집기 실패', what: '용기를 놓쳤거나 파지 폭이 변했습니다.',
-    steps: ['용기 위치를 확인한다', '재개 또는 중단'] },
-  rack_full: { title: '팔레트 가득', what: '넣을 칸이 없습니다.',
-    steps: ['새 팔레트로 바꾼다', '재개'] },
-  // 로봇 오류는 단계(신호 1 · 그리퍼 열림 · 빈손 · HOME 실패)마다 다른 안내 — robotErrorGuide 가 flow 문구의 열쇳말로 고른다(E52·E54)
-  robot_error: { title: '로봇 오류', what: '로봇이 멈췄습니다. 사람이 처리합니다.',
-    steps: ['로봇 주변을 확인한다', '손목을 톡 친다 (또는 재개)'] },
-  robot_error_hold: { title: '로봇 오류 — 쥔 것 있음', what: '그리퍼에 툴·용기가 있습니다.',
-    steps: ['로봇 주변을 확인한다', '톡 치면 (또는 재개) 그리퍼가 열린다', '받을 준비를 한다'] },
-  robot_error_release: { title: '로봇 오류 — 받아 주세요', what: '그리퍼가 열렸습니다.',
-    steps: ['툴·용기를 받아 치운다 (홈의 용기도)', '물러나서 재개를 누른다'] },
-  robot_error_empty: { title: '로봇 오류 — 빈손', what: '로봇이 멈췄습니다.',
-    steps: ['로봇 주변을 확인한다', '손목을 톡 친다 (또는 재개) → HOME'] },
-  robot_error_home: { title: '로봇 오류 — HOME 복귀 실패', what: '로봇이 HOME 으로 못 갔습니다.',
-    steps: ['펜던트로 팔을 안전한 곳으로 옮긴다', '재개를 누른다'] },
+  operator: { title: '일시 정지', steps: ['재개 — 이어서', '중단 — 이 용기 격리'] },
+  cable: { title: '케이블 확인', steps: ['케이블 정리', '손목 톡 (또는 재개)'] },
+  tool_lost: { title: '툴 놓침', steps: ['홀더에 다시 꽂기', '손목 톡 (또는 재개)'] },
+  tool_fail: { title: '툴 집기 실패', steps: ['홀더에 툴 바로 꽂기', '손목 톡 (또는 재개)'] },
+  leftover: { title: '잔반 남음', steps: ['잔반 덜어내기', '재개 (또는 중단)'] },
+  grip: { title: '집기 실패', steps: ['용기 위치 확인', '재개 (또는 중단)'] },
+  rack_full: { title: '팔레트 가득', steps: ['새 팔레트로 교체', '재개'] },
+  robot_error: { title: '로봇 오류', steps: ['로봇·주변 확인', '손목 톡 (또는 재개)', '쥔 것이 있으면 그리퍼가 열림 — 받을 준비'] },
+  robot_error_release: { title: '로봇 오류 — 받아 주세요', steps: ['받아서 치우기 (홈의 용기도)', '물러나서 재개'] },
+  robot_error_home: { title: '로봇 오류 — HOME 실패', steps: ['펜던트로 팔 옮기기', '재개'] },
 };
 // flow 문구를 화면에 같이 보이지 않는 갈래 — 안내가 이미 그 내용이다(황인재 9/27 "글이 너무 길다")
 export const HIDE_FLOW_MSG = ['cable', 'tool_lost', 'tool_fail', 'robot_error'];
 
 export function robotErrorGuide(message) {
   const m = message || '';
-  if (m.includes('그리퍼를 열었습니다')) return GUIDE_KO.robot_error_release;
+  if (m.includes('그리퍼를 열었습니다')) return GUIDE_KO.robot_error_release;   // 신호 2 — 받아 치운 뒤 재개 버튼(E54)
   if (m.includes('HOME 복귀 실패')) return GUIDE_KO.robot_error_home;
-  if (m.includes('빈손')) return GUIDE_KO.robot_error_empty;
-  if (m.includes('그리퍼에')) return GUIDE_KO.robot_error_hold;
-  return GUIDE_KO.robot_error;
+  return GUIDE_KO.robot_error;                                                   // 신호 1 — 쥔 것 유무와 관계없이 같은 할 일
 }
 
 const doneOf = (s, kind) => (kind === 'BOWL' ? s.done_bowl : s.done_cup) || 0;

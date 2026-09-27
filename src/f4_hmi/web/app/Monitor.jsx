@@ -134,7 +134,7 @@ function Alarm({ d, step }) {
     return (
       <section className={`alarm ${a.level}`}>
         <div className="alarm-title">{a.level === 'error' ? '🚨 ' : ''}{g.title}{where}</div>
-        <div className="alarm-msg">{g.what}{a.message && a.kind !== 'operator' && !HIDE_FLOW_MSG.includes(a.kind) ? ` (${a.message})` : ''}</div>
+        {(g.what || (a.message && a.kind !== 'operator' && !HIDE_FLOW_MSG.includes(a.kind))) && <div className="alarm-msg">{g.what || ''}{a.message && a.kind !== 'operator' && !HIDE_FLOW_MSG.includes(a.kind) ? ` ${a.message}` : ''}</div>}
         <ol className="alarm-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
         {a.code && a.code !== 'OK' && a.kind !== 'cable' ? <div className="dim small">코드 {a.code} · {label}</div> : null}
       </section>

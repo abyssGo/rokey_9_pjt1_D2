@@ -27,6 +27,16 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR) -> FastA
     """store: StateStore · cfg: config.load() 결과 · command(name) → {ok, message, latency_ms}: 버튼을 flow 에 전하는 함수(RosLink.call).
     web_dir: 운영 화면 파일 묶음(index.html 이 있어야 쓴다 — 없으면 / 에 시험 페이지). 시험에서 바꿔 끼운다."""
     app = FastAPI(title='PreWash-Cell HMI', docs_url='/api/docs', redoc_url=None)
+
+    @app.middleware('http')
+    async def _no_cache_html(request, call_next):
+        # 🆕 9/27(황인재 지적): npm run build 로 화면을 바꿨는데 브라우저가 옛 index.html·JS 를 캐시에서 보여 줘 "안 바뀌었다" —
+        #    HTML 과 /api 는 캐시 금지. 해시가 붙은 /_next/static 파일은 그대로(내용이 바뀌면 이름도 바뀐다).
+        resp = await call_next(request)
+        path = request.url.path
+        if path == '/' or path.endswith('.html') or path.startswith('/api'):
+            resp.headers['Cache-Control'] = 'no-store'
+        return resp
     flow = cfg.get('flow') or {}
     plan = {'plan': flow.get('plan') or [], 'rack_order': flow.get('rack_order') or {},
             'consumables': flow.get('consumables') or {}}

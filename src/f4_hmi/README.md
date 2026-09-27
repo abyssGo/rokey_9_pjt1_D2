@@ -57,6 +57,7 @@ cd src/f4_hmi/web && node --test test/          # 🆕 화면 계산(derive.js �
 ```bash
 soc && ros2 run f4_hmi hmi_bridge                                                    # 터미널 1 → http://localhost:8000
 soc && ros2 run f4_hmi fake_state_pub tool_lost --speed 0.5                          # 터미널 2 — 대본 이름을 바꿔 가며(멈춤을 천천히 보려면 --speed 0.4)
+# 🚨 화면(web/app)을 고쳤으면 `cd src/f4_hmi/web && npm run build` 뒤 **브라우저를 새로고침(Ctrl+Shift+R)** — 열려 있던 탭은 옛 JS 를 계속 돈다(9/27). 브리지는 HTML 에 no-store 를 붙인다(app.py)
 soc && ros2 bag play ~/rokey9_pjt1/_bags/0923_full_0.5 --topics /flow/state /flow/event --loop --rate 3   # 실제 9/23 실행 재생(버튼은 안 됨)
 ```
 🚨 가짜 flow 와 bag 재생, 실제 flow_node 는 **한 번에 하나만**(같은 토픽). UT-F4 TC-11 결과: `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md`.
