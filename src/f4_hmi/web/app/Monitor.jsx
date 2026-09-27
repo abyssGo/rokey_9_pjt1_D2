@@ -390,9 +390,9 @@ function Stats({ d }) {
         {cy && <div className="minibars">{cy.recent.map((v, i) => <i key={i} style={{ height: `${Math.max(12, (v / top) * 100)}%` }} className={i === cy.recent.length - 1 ? 'last' : ''} />)}</div>}
       </Row>
       <h2 className="gap">소모품 — 교체까지</h2>
-      {spare(cs.sponge, '수세미', 'sponge', '')}
+      {spare(cs.sponge, '수세미', 'sponge', '그릇')}
+      {spare(cs.brush, '솔', 'brush', '컵')}
       {spare(cs.soap, '세제', 'soap', '비눗물은')}
-      <Row icon="tank" title="헹굼 담금" value={<Big v={cs.rinse ?? '-'} unit="회" />} sub="교체 기준 없음 — 센 횟수만" />
     </section>
   );
 }

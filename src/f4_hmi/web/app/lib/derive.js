@@ -184,7 +184,9 @@ function remain(used, max) {
 export function consumables(d) {
   const s = d.state || {};
   const c = (d.plan && d.plan.consumables) || {};
-  return { sponge: remain(s.sponge_uses, c.sponge_max_uses), soap: remain(s.soap_dips, c.soap_max_dips), rinse: s.rinse_dips };
+  // 🔄 9/27 황인재: 수세미·솔은 같은 교체 주기(sponge_max_uses · 100회) · 툴마다 따로 센다 — 그릇 완료 수 = 수세미 사용, 컵 완료 수 = 솔 사용
+  //    (flow 의 sponge_uses 는 둘을 합친 수라 화면엔 안 쓴다) · 헹굼 물은 세지 않는다(표시 제외)
+  return { sponge: remain(s.done_bowl, c.sponge_max_uses), brush: remain(s.done_cup, c.sponge_max_uses), soap: remain(s.soap_dips, c.soap_max_dips) };
 }
 
 // 알람 — 멈춤(PAUSED)이면 원인 갈래(pauseKind)로 붉은색(로봇 오류)/주황(그 밖) · 운전 중이면 마지막 코드가 정상이 아닐 때 노란 경고
