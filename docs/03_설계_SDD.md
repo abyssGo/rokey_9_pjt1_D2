@@ -52,7 +52,7 @@ PC-A ↔ 컨트롤러는 두산 전용 TCP(DDS 아님). PC-A ↔ PC-B는 ROS 2 D
 | `/dsr01/joint_states` | `sensor_msgs/msg/JointState` | dsr_controller2 → 모니터링 | PC-A |
 | dsr_controller2 ↔ 컨트롤러 | 두산 전용 TCP, 포트 12345 | | PC-A ↔ 컨트롤러 |
 | 브라우저 ↔ hmi_bridge | HTTP `GET /` · `POST /api/start|stop|resume|abort` · `GET /api/state` · `GET /api/history` · WS `/ws/state` (JSON) | | PC-B 내부 또는 LAN |
-| hmi_bridge → prewash.db | SQLite `events`(FlowEvent 필드 그대로) · `state_log` | | PC-B 내부 |
+| hmi_bridge → prewash.db | SQLite 🔄 E57(9/27) 표 5개: `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`(소모품 교체) | | PC-B 내부 |
 
 `/dsr01/*`·`/onrobot/*`의 정확한 이름·필드는 [두산 ROS 2 매뉴얼(jazzy)](https://doosanrobotics.github.io/doosan-robotics-ros-manual/jazzy/services/motion_services.html)과 설치본으로 확인한다. 우리 코드는 `cobot_common`을 통해서만 부르므로 이름이 달라도 한 곳만 고친다.
 
@@ -242,7 +242,7 @@ sequenceDiagram
 ### 4.2 데이터 사전
 - 기능 함수·메시지: IRD §3~7 (정본 `src/cobot_api/cobot_api/contracts.py` · `docs/interfaces/*.msg`)
 - `records.csv`(PC-A) 열: `ts, kind, zone_id, attempts, rack_slot, weight_before_g, weight_after_g, leftover_rounds, seat_offset_mm, wipe_duration_s, force_log_path, result, code, duration_s`
-- `prewash.db`(PC-B, SQLite): 표 `events`(FlowEvent 필드 + `id`, `received_at`) · `state_log`(step, kind, zone_id, stamp, 1 Hz 샘플)
+- `prewash.db`(PC-B, SQLite · 브리지를 켠 폴더): 🔄 E57(9/27 · F4-04) 표 5개 — `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`. 소모품 사용량 = 마지막 교체 뒤 events. CLI `ros2 run f4_hmi hmi_db tables|dump|usage|kpi|replace`
 - 힘 로그 `force_YYYYMMDD_HHMMSS.csv`: `t, fx, fy, fz, target`
 
 ### 4.3 설정 파일 스키마 — `config/cell.yaml`(공용) + `config/params.yaml`(기능별 절)
@@ -305,7 +305,7 @@ flow:                                                               # ── flo
   consumables: {sponge_max_uses: 20, soap_max_dips: 60}
   use_mock: []                       # 가짜 모듈로 바꿀 기능. 예: [f1, f3] · 전부 mock 이면 드라이버 없이 돈다 (런치 인자 use_mock 이 덮어씀)
   mock: {fail_on: []}                # 실패 주입. 예: ["place:SEAT_FAIL", "rack_place:RACK_JAM"]
-hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db}   # ── hmi 절 (황인재) ──
+hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db, waste_bin_limit_g: 50000}   # ── hmi 절 (황인재) · E57 잔반통 한도 50 kg ──
 ```
 좌표·힘·횟수는 전부 여기에 둔다. 코드에 숫자를 쓰지 않는다. 경로는 항상 패키지 기준 상대경로.
 
@@ -444,7 +444,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 
 ### 5.5 hmi_bridge (황인재) — 시스템 모니터
 - 구조: FastAPI(uvicorn) + rclpy 스레드. rclpy는 별도 스레드에서 `spin`, `/flow/*` 서비스 호출은 요청 스레드를 막지 않게 실행(HMI는 두산 API를 쓰지 않으므로 TS-01과 무관). WebSocket이 `/flow/state`·`/flow/event`를 브라우저에 밀어준다.
-- SQLite(`db.py`): `/flow/event` 수신마다 `events` INSERT, 1 Hz로 `state_log` INSERT. `GET /api/history`가 최근 N건 반환.
+- SQLite(`db.py`): `/flow/event` 수신마다 `events` INSERT · 실행 시작/끝 `runs` · 멈춤 `pauses`(원인 · 풀린 방법) · 버튼 `commands` · 교체 완료 `replacements`(🔄 E57 9/27). `GET /api/history`가 최근 N건 반환. **잔반통 한도**: 마지막 교체 뒤 버린 잔반 합 ≥ `hmi.waste_bin_limit_g`(50 kg) 이면 브리지가 `/flow/stop` → "잔반통 교체" 카드 → 교체 완료 버튼 → 재개(로봇 코드 무변경).
 - 화면 구성(강의 HMI 요소 반영):
   | 영역 | 내용 |
   |---|---|
@@ -475,7 +475,9 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 | 이력 | 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀 · 원인 · 시도 수) · 문제만 보기 필터. 🟡 케이블 이상으로 중단한 용기는 이벤트 코드가 ROBOT_ERROR 라 '로봇 오류'로 적힘(사유를 이벤트에 실으려면 flow 변경 · 시연 뒤) |
 | 소리 | 넛지(톡톡) 재개 요청 감지 비프(#93) · 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 · 🟡 소리는 9/29 준비 때 귀로 확인 |
 | 로봇 없이 확인 | `hmi_bridge` + 가짜 flow `fake_state_pub`(대본 8종: normal · paused · isolate · error · empty_zone · 🆕 tool_lost · leftover_remain · cable — 9/29 예외 ③④① 화면 연습) 또는 ros bag 재생(`_bags/0923_full_0.5`) · 한 번에 하나만(같은 토픽) |
-| 미구현(시연 뒤) | F4-04 SQLite 이력 · F4-05 KPI · 격리 구역 비움 확인 버튼 · 노션 화면 gif(NOTE-02) |
+| 누적 KPI(F4-05 · 🔄 E57 9/27) | 이번 실행 / 오늘 / 전체 — 처리량 · 처리율 · 용기당 평균 시간 · 시간당 · 멈춤 수 · 잔반 g. 근거는 `prewash.db`(F4-04). 가짜 검증 ✅ · 🟡 실제 flow 기록은 9/29 |
+| 잔반통 교체(🔄 E57) | 마지막 교체 뒤 버린 잔반 합 ≥ 50 kg → 브리지가 정지 → "잔반통 교체" 카드 → **교체 완료** 버튼 → 재개. 소모품 4줄(수세미 · 솔 · 세제 · 잔반통)마다 교체 완료 버튼 · 시연 중엔 한도에 닿지 않음 |
+| 미구현(시연 뒤) | 격리 구역 비움 확인 버튼 · 노션 화면 gif(NOTE-02) — F4-04 · F4-05 는 9/27 구현(E57) |
 
 ## 7. 예외·오류 처리
 | 코드 | 발생 | 처리 | 표시 |

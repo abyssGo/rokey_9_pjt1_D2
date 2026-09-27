@@ -81,7 +81,7 @@
       "id": "db",
       "type": "database",
       "label": "prewash.db",
-      "sublabel": "SQLite · events · state_log",
+      "sublabel": "SQLite · 표 5개 · KPI",
       "row": 2,
       "col": 0,
       "size": [
