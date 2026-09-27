@@ -1,5 +1,5 @@
 'use client';
-// 값 받기 — hmi_bridge 하고만 이야기한다(로봇·ROS 를 모른다). 계약: docs/ref/20260920_F4-00_HMI_설계초안.md §2
+// 값 받기 — hmi_bridge 하고만 이야기한다(로봇·ROS 를 모른다). 계약: src/f4_hmi/README.md(REST·WS) · docs/02_인터페이스_IRD.md §6·§7
 //   ① WebSocket /ws/state — 서버가 먼저 밀어 준다. 붙자마자 전부 1번, 그 뒤 state · event · conn (force · gripping 은 안 쓴다)
 //   ② 끊기면 2초 뒤 다시 걸고, 그동안은 GET /api/state 를 0.5초마다 물어본다(시험 페이지와 같은 방식)
 import { useCallback, useEffect, useRef, useState } from 'react';

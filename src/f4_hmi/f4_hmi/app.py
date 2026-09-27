@@ -9,7 +9,7 @@
     GET  /api/usage · /api/kpi?period=  소모품·잔반통 사용량(마지막 교체 뒤) · 누적 KPI(run/today/all)      (F4-04·05 · SQLite)
     POST /api/replace/{item}            교체 완료(sponge/brush/soap/waste_bin) → 사용량 0 부터
     GET  /api/db/{table}?limit=         표 내용(events/runs/pauses/commands/replacements) · /api/history = events
-응답 모양은 docs/ref/20260920_F4-00_HMI_설계초안.md §2.
+응답 모양은 src/f4_hmi/README.md(REST·WS 계약) 과 docs/02_인터페이스_IRD.md §6·§7.
 """
 import asyncio
 from pathlib import Path
