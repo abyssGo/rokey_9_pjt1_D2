@@ -30,7 +30,7 @@ def _table(rows):
     if not rows:
         print('(없음)')
         return
-    cols = list(rows[0].keys())
+    cols = list(dict.fromkeys(k for r in rows for k in r.keys()))          # 줄마다 열이 달라도(usage 의 used/used_g) 전부 보인다
     width = {c: max(len(c), *(len(str(r.get(c, ''))) for r in rows)) for c in cols}
     print(' | '.join(c.ljust(width[c]) for c in cols))
     print('-+-'.join('-' * width[c] for c in cols))
