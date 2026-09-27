@@ -33,11 +33,6 @@
 - 반납 구역은 내리막 공급 구조라 구역마다 집는 자리가 1개다. 그릇은 옆면(벽)을 세로로, 컵은 테두리를 위에서 집고 파지 폭으로 성공을 판정한다.
 - 뒷면·바깥면은 닦지 않는다. "닦임"은 공정 완료이지 위생 판정이 아니다.
 
-<p align="center">
-  <img src="docs/images/layout_workcell.png" width="820" alt="워크셀 배치도"><br>
-  <sub>워크셀 배치 — 반납 구역(RET_B/C) · 저울 · 잔반통 · 스펀지 홈 · 툴 홀더 · 세제 · 헹굼 수조 · 팔레트 4칸 · 격리 구역</sub>
-</p>
-
 ## 2. 시스템 구성
 
 **PC 2대 · 프로그램 2개.** 기능은 노드가 아니라 **파이썬 함수 모듈**이고, 메인 프로그램이 순서대로 부른다. 로봇 명령은 메인 프로그램의 메인 스레드에서만 나간다.
@@ -145,6 +140,11 @@ ros2 service call /flow/resume std_srvs/srv/Trigger      # 재개 — 실패로 
 ros2 service call /flow/abort  std_srvs/srv/Trigger      # 멈춤 중에만: 이 용기를 격리하고 다음 용기로
 ros2 topic echo /flow/state --once                       # 지금 단계 · 용기 · 잔반 · 메시지(2 Hz)
 ```
+두 PC 로 나눠 돌릴 때는 양쪽 터미널에서 먼저(같은 스위치에 연결):
+```bash
+export ROS_DOMAIN_ID=60
+export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET      # 기본은 LOCALHOST(내 PC 밖으로 안 나감) — 통합 때만 SUBNET, 끝나면 되돌린다
+```
 ```bash
 # PC-B (화면 · 두 PC 가 같은 ROS 도메인)
 ros2 run f4_hmi hmi_bridge                               # http://<PC-B>:8000 — 버튼이 위 서비스를 부른다
@@ -165,7 +165,7 @@ rokey_pjt01_ws/                ← clone 폴더 = ROS 2 워크스페이스
 │   ├── test_logs/              실기·가상 시험 기록(날짜_ID_내용_이름.md)
 │   ├── troubleshooting/        TS-01 ~ TS-08(두산 API 초기화 · 정지 처리 · 수조 안 충돌 …)
 │   ├── setup/                  PC 환경 설정
-│   └── images/                 아키텍처(대화형 HTML · PNG) · 배치도 · 화면 캡처
+│   └── images/                 아키텍처(대화형 HTML · PNG) · 화면 캡처
 ├── src/                        ROS 2 패키지 8개 — cobot_api cobot_msgs cobot_common f1_handling f2_sense_flow f3_wipe f4_hmi prewash_bringup
 │   └── */test/                 pytest(test_*.py) + 실기·가상 시험대(rig_*.py)
 ├── tools/pr_check.sh           PR 자동 검사(.github/workflows)
