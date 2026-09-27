@@ -64,7 +64,7 @@ PC-A ↔ 컨트롤러는 두산 전용 TCP(DDS 아님). PC-A ↔ PC-B는 ROS 2 D
 | `f3_wipe` | 함수 모듈 `wipe.py` (노드 아님) + `test/rig_f3.py` | 박진용 | `f3` 절 | A |
 | `cobot_common` | 라이브러리: 두산 API를 감싼 공용 로봇 함수 + **초기화(`init`, §3.2)** + 설정 로더·`config/cell.yaml`·`params.yaml` | **네 사람 분담(9/19)**: 초기화·로더 황인재 · 이동·그리퍼 한석형 · `weigh` 민범진 · 힘 함수와 **패키지 정리·리뷰 박진용** · 좌표 값(`cell.yaml`)은 한석형 | 두 파일 | A |
 | `cobot_api` | 라이브러리: **기능 함수의 약속**(ID·코드·반환 타입·함수 서명, IRD 정본). 로봇 코드 없음 | **황인재(PM)** | IRD | A·B |
-| `cobot_msgs` | 메시지 2개(`FlowState`·`FlowEvent`, IRD 정본) | **황인재(PM)** — `docs/interfaces/`를 그대로 복사 | IRD | A·B |
+| `cobot_msgs` | 메시지 2개(`FlowState`·`FlowEvent`, IRD 정본) | **황인재(PM)** — `src/cobot_msgs/msg/`를 그대로 복사 | IRD | A·B |
 | `f4_hmi` | **노드 `hmi_bridge`** (+ `fake_state_pub` 개발용) | 황인재 | `hmi` 절 | B |
 | `prewash_bringup` | launch: `prewash.launch.py` · `prewash_mock.launch.py` | 황인재(PM) | — | A |
 
@@ -240,7 +240,7 @@ sequenceDiagram
 ```
 
 ### 4.2 데이터 사전
-- 기능 함수·메시지: IRD §3~7 (정본 `src/cobot_api/cobot_api/contracts.py` · `docs/interfaces/*.msg`)
+- 기능 함수·메시지: IRD §3~7 (정본 `src/cobot_api/cobot_api/contracts.py` · `src/cobot_msgs/msg/*.msg`)
 - `records.csv`(PC-A) 열: `ts, kind, zone_id, attempts, rack_slot, weight_before_g, weight_after_g, leftover_rounds, seat_offset_mm, wipe_duration_s, force_log_path, result, code, duration_s`
 - `prewash.db`(PC-B, SQLite · **워크스페이스 루트 `<ws>/prewash.db`** · 어디서 켜도 같은 파일): 🔄 E57(9/27 · F4-04) 표 5개 — `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`. 소모품 사용량 = 마지막 교체 뒤 events. CLI `ros2 run f4_hmi hmi_db tables|dump|usage|kpi|replace|export`(export = CSV 5개) · GUI `sqlitebrowser prewash.db`
 - 힘 로그 `force_YYYYMMDD_HHMMSS.csv`: `t, fx, fy, fz, target`
