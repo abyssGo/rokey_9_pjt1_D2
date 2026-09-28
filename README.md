@@ -160,7 +160,7 @@ ros2 run f4_hmi hmi_bridge                               # http://<PC-B>:8000 �
 
 ```
 rokey_pjt01_ws/                ← clone 폴더 = ROS 2 워크스페이스
-├── README.md  CONTRIBUTING.md
+├── README.md
 ├── docs/
 │   ├── 01_요구사항_BR-SR.md    요구사항 · 수락 기준(BR · FR · NFR · SR)
 │   ├── 02_인터페이스_IRD.md    함수 약속 · 메시지 · 실패 코드 · 실패 정책
@@ -173,7 +173,6 @@ rokey_pjt01_ws/                ← clone 폴더 = ROS 2 워크스페이스
 │   └── images/                 아키텍처(대화형 HTML · PNG) · 배치도(SVG · PNG) · 화면 캡처
 ├── src/                        ROS 2 패키지 8개 — cobot_api cobot_msgs cobot_common f1_handling f2_sense_flow f3_wipe f4_hmi prewash_bringup
 │   └── */test/                 pytest(test_*.py) + 실기·가상 시험대(rig_*.py)
-├── tools/pr_check.sh           PR 자동 검사(.github/workflows)
 └── build/ install/ log/        (.gitignore)
 ```
 
@@ -185,7 +184,6 @@ rokey_pjt01_ws/                ← clone 폴더 = ROS 2 워크스페이스
 | 결과 · 수치 · 교훈 | [docs/04_결과_결과표.md](docs/04_결과_결과표.md) |
 | 결정 기록(왜 그렇게 했나) | [docs/meetings/20260919_결정기록_DSN-03.md](docs/meetings/20260919_결정기록_DSN-03.md) · [구조·인터페이스 결정](docs/meetings/20260918_결정기록_구조_인터페이스.md) |
 | 시험 기록 · 트러블슈팅 · 환경 설정 | [docs/test_logs/](docs/test_logs/) · [docs/troubleshooting/](docs/troubleshooting/) · [docs/setup/M0609_환경설정.md](docs/setup/M0609_환경설정.md) |
-| 협업 규칙(브랜치 · PR · 검토) | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## 7. 팀 · 진행
 
