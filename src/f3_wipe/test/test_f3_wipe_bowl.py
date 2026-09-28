@@ -69,6 +69,7 @@ class FakeRobot:
         self.fail = None
         self.logger = _Logger()
         self.width = 20.0                                # TOOL_LOST 시험용 — 기본은 안 변한다(안 놓침)
+        self.waited_while_moving = False                 # 나선이 도는 중에 wait_done(mwait) 으로 끝까지 기다렸는가
 
     def grip_width(self):
         return self.width
@@ -110,6 +111,9 @@ class FakeRobot:
 
     def wait_done(self):
         self.calls.append(('mwait',))
+        if self.spiral is not None and self.spiral_moves:     # 나선이 아직 도는 중에 끝까지 기다렸다
+            self.waited_while_moving = True
+            self.spiral = None
 
     def compliance_on(self, stx=None):
         self.calls.append(('compliance',))
@@ -139,6 +143,7 @@ class FakeRobot:
 
     def stop_now(self):
         self.calls.append(('stop_now',))
+        self.spiral = None                               # 즉시 정지 — 도는 나선을 끊는다
 
     def cfg(self):
         return self.cfg_
@@ -392,3 +397,118 @@ def test_tool_lost_tolerance_accepts_a_plain_number(monkeypatch):
         def grip_width(self): return 25.7
     monkeypatch.setattr(wipe, 'cc', _CC())
     assert wipe._tool_tol_mm() == 2.0
+
+
+# ── 힘 상한·시간 초과면 남은 나선을 먼저 즉시 정지(E60) — 정리의 동작 끝 대기(mwait)가 나선을 끝까지 기다리지 않게
+def _after(names, first, then):
+    """first 가 있고, first 뒤에 then 이 한 번 이상 나온다."""
+    i = names.index(first)
+    return then in names[i + 1:]
+
+
+def test_force_limit_in_spiral_stops_now_before_wait_and_force_off(rb, monkeypatch):
+    seen = {}
+    real_stop = rb.stop_now
+
+    def stop_now():
+        seen['spiral_running'] = rb.spiral is not None       # 나선이 아직 도는 중에 끊었는가
+        real_stop()
+    monkeypatch.setattr(wipe.cc, 'stop_now', stop_now, raising=False)
+    rb.press = 99.0                                          # 나선 첫 감시에서 누름 > 10 N
+    r = wipe.wipe_bowl()
+    n = _names(rb)
+    assert r.code == FORCE_LIMIT and n.count('stop_now') == 1 and seen['spiral_running']
+    i = n.index('stop_now')
+    assert 'spiral' in n[:i] and 'mwait' not in n[n.index('spiral'):i]     # 나선 뒤 정지 전에 mwait 없음
+    assert n[i + 1] == 'force_off' and _after(n, 'stop_now', 'mwait') and _ended_home(rb)
+    assert not rb.waited_while_moving
+
+
+def test_lateral_limit_in_spiral_also_stops_now_first(rb):
+    rb.lateral = 99.0
+    r = wipe.wipe_bowl()
+    n = _names(rb)
+    i = n.index('stop_now')
+    assert r.code == FORCE_LIMIT and n.count('stop_now') == 1 and n[i + 1] == 'force_off'
+    assert 'mwait' not in n[n.index('spiral'):i] and not rb.waited_while_moving
+
+
+def test_spiral_timeout_stops_now_before_wait_and_force_off(rb):
+    rb.cfg_['f3']['wipe_bowl']['spiral_time_s'] = -10.0     # 나선 명령 시간 + 5 s 를 이미 넘은 것으로
+    r = wipe.wipe_bowl()
+    n = _names(rb)
+    i = n.index('stop_now')
+    assert r.code == TIMEOUT and n.count('stop_now') == 1 and 'mwait' not in n[n.index('spiral'):i]
+    assert n[i + 1] == 'force_off' and _after(n, 'stop_now', 'mwait') and _ended_home(rb)
+    assert not rb.waited_while_moving
+
+
+def test_total_time_over_in_spiral_stops_now(rb):
+    rb.cfg_['f3']['wipe_bowl']['duration_s'] = -1            # 전체 시간 초과(나선)
+    r = wipe.wipe_bowl()
+    n = _names(rb)
+    i = n.index('stop_now')
+    assert r.code == TIMEOUT and n.count('stop_now') == 1 and n[i + 1] == 'force_off'
+    assert 'mwait' not in n[n.index('spiral'):i] and not rb.waited_while_moving
+
+
+def test_normal_end_has_no_stop_now(rb):
+    r = wipe.wipe_bowl()
+    assert r.ok and 'stop_now' not in _names(rb)
+
+
+def test_robot_error_has_no_new_stop_now(rb):
+    rb.fail = 'movec'
+    r = wipe.wipe_bowl()
+    assert r.code == ROBOT_ERROR and 'stop_now' not in _names(rb) and _ended_home(rb)
+
+
+def test_tool_lost_in_spiral_keeps_single_stop_and_does_not_rise(rb, monkeypatch):
+    """TOOL_LOST 는 감시가 이미 한 번 정지한다 — 정리에서 더 부르지 않고 그 자리에 둔다."""
+    real_done = rb.motion_done
+
+    def done_and_drop():
+        d = real_done()
+        if rb.spiral is not None:
+            rb.width = 5.0                                   # 나선 도는 중 폭이 확 줄었다 = 놓침
+        return d
+    monkeypatch.setattr(wipe.cc, 'motion_done', done_and_drop, raising=False)
+    r = wipe.wipe_bowl()
+    n = _names(rb)
+    assert r.code == TOOL_LOST and n.count('stop_now') == 1 and not _ended_home(rb)
+
+
+def test_halt_after_start_does_not_add_stop_or_rise(rb, monkeypatch):
+    """시작한 뒤(바닥을 찾은 뒤) 강제정지 — 위치를 모른다: 기존 정지 1번 → 힘 끄기만, mwait·상승 없음."""
+    real = rb.contact_down
+
+    def contact_then_halt(*a, **kw):
+        out = real(*a, **kw)
+        rb.halted = True
+        return out
+    monkeypatch.setattr(wipe.cc, 'contact_down', contact_then_halt, raising=False)
+    with pytest.raises(wipe.cc.MotionHalted):
+        wipe.wipe_bowl()
+    n = _names(rb)
+    assert n[-3:] == ['contact_down', 'stop_now', 'force_off'] and n.count('stop_now') == 1 and 'mwait' not in n
+
+
+def test_stop_now_failure_still_cleans_up_with_warning(rb, monkeypatch):
+    def broken_stop():
+        rb.calls.append(('stop_now',))
+        raise RuntimeError('드라이버 응답 없음')
+    monkeypatch.setattr(wipe.cc, 'stop_now', broken_stop, raising=False)
+    rb.press = 99.0
+    r = wipe.wipe_bowl()
+    n = _names(rb)
+    assert r.code == FORCE_LIMIT and n[n.index('stop_now') + 1] == 'force_off' and _ended_home(rb)
+    assert any('즉시 정지' in m and '정리 실패' in m for lv, m in rb.logger.lines if lv == 'error')
+
+
+def test_stop_now_that_does_not_stop_warns(rb, monkeypatch):
+    monkeypatch.setattr(wipe.cc, 'stop_now', lambda: rb.calls.append(('stop_now',)), raising=False)   # 보냈는데 안 멈춤
+    rb.press = 99.0
+    r = wipe.wipe_bowl()
+    assert r.code == FORCE_LIMIT and _ended_home(rb)
+    assert any('3 s 안에 멈추지 않았다' in m for lv, m in rb.logger.lines if lv == 'error')
+

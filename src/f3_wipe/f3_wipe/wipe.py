@@ -86,6 +86,21 @@ def _finish_guard(moved, code):
     return False
 
 
+def _stop_if_aborted(moved, code):
+    """힘 상한·시간 초과로 끝났으면 남은 비동기 동작(나선·주기 운동)을 먼저 즉시 정지한다.
+    정리 단계의 wait_done(mwait)이 남은 동작을 끝까지 기다리지 않게 — 정상 종료·TOOL_LOST·위치 불명은 여기서 건드리지 않는다.
+    stop_now 는 멈춤을 최대 3 s 기다린다. 실패해도 경고만 남기고 정리를 계속한다."""
+    if not moved or code not in (FORCE_LIMIT, TIMEOUT):
+        return
+    _warn(f'{code} — 하던 동작을 즉시 정지(stop_now) → 힘·순응 끄고 곧게 위로')
+    try:
+        cc.stop_now()
+        if not cc.motion_done():
+            _warn(f'{code} — 즉시 정지를 보냈는데 3 s 안에 멈추지 않았다 → 남은 동작이 끝나기를 기다린 뒤 올라간다 · 눈으로 확인')
+    except Exception as e:                                    # noqa: BLE001
+        _warn(f'정리 실패: 즉시 정지 — {e!r} · 눈으로 확인')
+
+
 def _finish_rise(rise):
     """동작 끝 대기 → 곧게 호출 시점 높이로 상승 — 실패해도 예외를 삼키고 경고만 남긴다."""
     for what, fn in (('동작 끝 대기', cc.wait_done), ('곧게 올라오기', rise)):
@@ -401,13 +416,15 @@ def _bowl_to_center(p, log):
 
 
 def _bowl_finish(p, started, moved, bowl_check_z, code=None):
-    """힘 끄기는 언제나 → moved 면 동작 끝 대기 → 곧게 호출 시점 높이로 상승. 움직여서 자리를 다시 찾지 않는다."""
+    """(힘 상한·시간 초과면 먼저 즉시 정지) → 힘 끄기는 언제나 → moved 면 동작 끝 대기 → 곧게 호출 시점 높이로 상승.
+    움직여서 자리를 다시 찾지 않는다."""
     if not started:
         try:
             cc.force_off()
         except Exception:                                    # noqa: BLE001
             _warn('정리 실패: force_off — 눈으로 확인')
         return
+    _stop_if_aborted(moved, code)
     try:
         cc.force_off()
     except Exception as e:                                    # noqa: BLE001
@@ -568,9 +585,11 @@ def wipe_cup() -> WipeCupResult:
         _warn(f'{e} → 호출된 높이로 복귀했다. 티치펜던트로 자세 확인')
     except ToolLostError as e:
         code = _on_tool_lost(e, 'wipe_cup')
-    except cc.ForceLimitError:
+    except cc.ForceLimitError as e:
+        _warn(f'wipe_cup 중단: {e}')
         code = FORCE_LIMIT
-    except (cc.MotionTimeout, cc.MoveTimeout):
+    except (cc.MotionTimeout, cc.MoveTimeout) as e:
+        _warn(f'wipe_cup 중단: {e}')
         code = TIMEOUT
     except (RuntimeError, ValueError, KeyError):
         code = ROBOT_ERROR
@@ -581,7 +600,8 @@ def wipe_cup() -> WipeCupResult:
 
 
 def _cup_finish(p, moved, cup_check_z, code=None):
-    """힘 끄기는 언제나 → moved 면 동작 끝 대기 → 곧게 호출 시점 높이로 상승."""
+    """(힘 상한·시간 초과면 먼저 즉시 정지) → 힘 끄기는 언제나 → moved 면 동작 끝 대기 → 곧게 호출 시점 높이로 상승."""
+    _stop_if_aborted(moved, code)
     try:
         cc.force_off()
     except Exception as e:                                     # noqa: BLE001

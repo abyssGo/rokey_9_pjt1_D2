@@ -430,3 +430,90 @@ def test_cup_logs_depth_and_saves_force_log(cell):
     r = wipe.wipe_cup()
     assert any('바닥' in m for lvl, m in cell.logger.lines if lvl == 'info')
     assert r.force_log_path.endswith('.csv')
+
+
+# ── 힘 상한·시간 초과면 남은 주기 운동을 먼저 즉시 정지(E60) — 정리의 동작 끝 대기(mwait)가 주기 운동을 끝까지 기다리지 않게
+def _with_wait(cell, monkeypatch):
+    """가짜 wait_done — 주기 운동이 아직 도는데 부르면(=끝까지 기다림) 표시해 둔다."""
+    cell.waited_while_moving = False
+
+    def wait_done():
+        cell.calls.append(('mwait',))
+        if cell.periodic > 0:
+            cell.waited_while_moving = True
+            cell.periodic = 0
+    monkeypatch.setattr(wipe.cc, 'wait_done', wait_done, raising=False)
+    return cell
+
+
+def _press_up_after_periodic(cell, monkeypatch, attr='press'):
+    real = cell.move_periodic
+
+    def periodic(*a, **kw):
+        real(*a, **kw)
+        setattr(cell, attr, 99.0)                            # 주기 운동이 시작된 뒤에 힘이 튄다
+    monkeypatch.setattr(wipe.cc, 'move_periodic', periodic, raising=False)
+
+
+def test_cup_force_limit_in_periodic_stops_now_before_wait_and_force_off(cell, monkeypatch):
+    _with_wait(cell, monkeypatch)
+    _press_up_after_periodic(cell, monkeypatch)
+    seen = {}
+    real_stop = cell.stop_now
+
+    def stop_now():
+        seen['periodic_running'] = cell.periodic > 0
+        real_stop()
+    monkeypatch.setattr(wipe.cc, 'stop_now', stop_now, raising=False)
+    r = wipe.wipe_cup()
+    n = [c[0] for c in cell.calls]
+    assert r.code == FORCE_LIMIT and n.count('stop_now') == 1 and seen['periodic_running']
+    i = n.index('stop_now')
+    assert n.index('periodic') < i and n[i + 1] == 'force_off' and 'mwait' in n[i + 1:]
+    assert 'mwait' not in n[n.index('periodic'):i] and not cell.waited_while_moving
+    assert _rels(cell.calls)[-1][2] > 0                      # 곧게 호출된 높이로
+
+
+def test_cup_lateral_limit_in_periodic_stops_now_first(cell, monkeypatch):
+    _with_wait(cell, monkeypatch)
+    _press_up_after_periodic(cell, monkeypatch, attr='lateral')
+    r = wipe.wipe_cup()
+    n = [c[0] for c in cell.calls]
+    i = n.index('stop_now')
+    assert r.code == FORCE_LIMIT and n.count('stop_now') == 1 and n[i + 1] == 'force_off'
+    assert 'mwait' not in n[n.index('periodic'):i] and not cell.waited_while_moving
+
+
+def test_cup_timeout_stops_before_wait_and_force_off(cell, monkeypatch):
+    """주기 운동 중 시간 초과는 세척 루프가 이미 한 번 멈춘다 — 정리에서 한 번 더(이미 멈춘 로봇에 정지는 무해) → 힘 끄기."""
+    _with_wait(cell, monkeypatch)
+    CFG['f3']['wipe_cup']['duration_s'] = -1
+    try:
+        r = wipe.wipe_cup()
+    finally:
+        CFG['f3']['wipe_cup']['duration_s'] = 120
+    n = [c[0] for c in cell.calls]
+    assert r.code == TIMEOUT and n.count('stop_now') == 2 and n[n.index('force_off') - 1] == 'stop_now'
+    assert 'mwait' not in n[n.index('periodic'):n.index('stop_now')] and not cell.waited_while_moving
+
+
+def test_cup_normal_end_has_no_stop_now(cell, monkeypatch):
+    _with_wait(cell, monkeypatch)
+    r = wipe.wipe_cup()
+    assert r.ok and 'stop_now' not in [c[0] for c in cell.calls]
+
+
+def test_cup_joint_guard_keeps_single_stop(cell, monkeypatch):
+    _with_wait(cell, monkeypatch)
+    cell.j4_during = 5.0
+    r = wipe.wipe_cup()
+    assert r.code == ROBOT_ERROR and [c[0] for c in cell.calls].count('stop_now') == 1
+
+
+def test_cup_tool_lost_in_periodic_keeps_single_stop_and_does_not_rise(cell, monkeypatch):
+    _with_wait(cell, monkeypatch)
+    _press_up_after_periodic(cell, monkeypatch, attr='width')    # 주기 운동 시작 뒤 폭이 99 mm = 놓침
+    r = wipe.wipe_cup()
+    n = [c[0] for c in cell.calls]
+    assert r.code == TOOL_LOST and n.count('stop_now') == 1 and 'mwait' not in n[n.index('stop_now'):]
+
