@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -607,22 +607,41 @@ function Kpi({ d, period, setPeriod }) {
 //   [전체 / 문제만] — 문제만 = 완료가 아닌 것(격리 · 오류 · 건너뜀).
 const HISTORY_ROWS = 20;
 
+// 이력 창 — [전체 / 문제만 / 멈춤 기록]. 문제만 = 완료가 아닌 것 + 집기를 다시 시도한 것. 멈춤 기록 = DB pauses 표(FR-14 "오류 로그" · 황인재 9/28)
 function History({ d }) {
-  const [onlyProblems, setOnlyProblems] = useState(false);
+  const [tab, setTab] = useState('all');                              // 'all' | 'problems' | 'pauses'
   const all = d.events || [];
-  const rows = (onlyProblems ? problems({ events: all, state: d.state }) : all).slice(0, HISTORY_ROWS);
-  const nProblems = all.filter((e) => e.result && e.result !== 'DONE').length;
+  const probs = problems({ events: all, state: d.state });
+  const nProblems = all.filter((e) => (e.result && e.result !== 'DONE') || (e.attempts || 0) > 1).length;
+  const pauses = pauseRows(d.pauses);
+  const rows = (tab === 'problems' ? probs : all).slice(0, HISTORY_ROWS);
   return (
     <section className="card">
       <div className="history-head">
-        <h2>이력 <span className="dim tiny">끝난 용기마다 한 줄 · 최근 것부터</span></h2>
+        <h2>이력 <span className="dim tiny">{tab === 'pauses' ? '멈춘 적마다 한 줄 · 최근 것부터' : '끝난 용기마다 한 줄 · 최근 것부터'}</span></h2>
         <div className="tabs">
-          <button className={onlyProblems ? '' : 'on'} onClick={() => setOnlyProblems(false)}>전체 {all.length}</button>
-          <button className={onlyProblems ? 'on' : ''} onClick={() => setOnlyProblems(true)}>문제만 {nProblems}</button>
+          <button className={tab === 'all' ? 'on' : ''} onClick={() => setTab('all')}>전체 {all.length}</button>
+          <button className={tab === 'problems' ? 'on' : ''} onClick={() => setTab('problems')}>문제만 {nProblems}</button>
+          <button className={tab === 'pauses' ? 'on' : ''} onClick={() => setTab('pauses')}>멈춤 기록 {d.pauses ? pauses.length : '-'}</button>
         </div>
       </div>
-      {!rows.length ? (
-        <div className="dim">{onlyProblems ? '문제 있던 용기가 없다' : '아직 끝난 용기가 없다'}</div>
+      {tab === 'pauses' ? (
+        !d.pauses ? <div className="dim">기록 없음(서버가 DB 없이 떠 있음)</div>
+        : !pauses.length ? <div className="dim">멈춘 적이 없다</div>
+        : (
+          <div className="scroll-x"><table className="list history">
+            <thead><tr><th>시각</th><th>단계</th><th>원인</th><th>코드</th><th>풀림</th><th>걸린 시간</th></tr></thead>
+            <tbody>
+              {pauses.map((r) => (
+                <tr key={r.id} className={r.open ? 'warn' : ''}>
+                  <td>{r.time}</td><td>{r.step}</td><td>{r.cause}</td><td className="num">{r.code || '-'}</td><td>{r.resolved}</td><td className="num">{r.duration}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )
+      ) : !rows.length ? (
+        <div className="dim">{tab === 'problems' ? '문제 있던 용기가 없다' : '아직 끝난 용기가 없다'}</div>
       ) : (
         <div className="scroll-x"><table className="list history">
           <thead>
@@ -636,15 +655,15 @@ function History({ d }) {
                 <td>{e.zone_id || '-'} → {e.rack_slot ? e.rack_slot.replace('RACK_', '') : e.result === 'ISOLATED' ? '격리' : '-'}</td>
                 <td className="num">{e.weight_before_g || e.weight_after_g ? `${Math.round(e.weight_before_g)} → ${Math.round(e.weight_after_g)} g` : '-'}</td>
                 <td>{RESULT_KO[e.result] || e.result}</td>
-                <td>{e.result === 'DONE' ? '-' : why(e)}</td>
+                <td>{e.result === 'DONE' ? ((e.attempts || 0) > 1 ? <span className="warn">집기 다시 시도</span> : '-') : why(e)}</td>
                 <td className="num">{e.duration_s ? `${e.duration_s.toFixed(1)} s` : '-'}</td>
-                <td className="num">{e.attempts || '-'}</td>
+                <td className="num">{(e.attempts || 0) > 1 ? <b className="warn">{e.attempts}회</b> : e.attempts || '-'}</td>
               </tr>
             ))}
           </tbody>
         </table></div>
       )}
-      <div className="dim tiny gap-top">최근 50건 · 전체는 SQLite 기록(터미널 `ros2 run f4_hmi hmi_db dump events`)</div>
+      <div className="dim tiny gap-top">{tab === 'pauses' ? '최근 50건 · 전체는 SQLite 기록(터미널 `ros2 run f4_hmi hmi_db dump pauses`)' : '최근 50건 · 전체는 SQLite 기록(터미널 `ros2 run f4_hmi hmi_db dump events`)'}</div>
     </section>
   );
 }

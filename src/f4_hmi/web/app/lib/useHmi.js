@@ -10,7 +10,7 @@ const RETRY_MS = 2000;
 const MAX_EVENTS = 50;          // 화면에 들고 있는 최근 이벤트 수
 
 const EXTRA_MS = 15000;         // 소모품·KPI(DB 값)를 다시 물어보는 간격 — 이벤트가 오면 바로 다시 본다
-const EMPTY = { connected: false, server: true, state: null, events: [], plan: {}, received: 0, age_s: null, ready: false, usage: null, kpi: null, kpiAll: null, notices: null, limits: null };
+const EMPTY = { connected: false, server: true, state: null, events: [], plan: {}, received: 0, age_s: null, ready: false, usage: null, kpi: null, kpiAll: null, pauses: null, notices: null, limits: null };
 
 // 화면이 쓰는 값 d 와 버튼 함수(press · replace), 받는 방식(mode), KPI 기간(period)을 돌려주는 훅
 export function useHmi() {
@@ -24,11 +24,12 @@ export function useHmi() {
   // 소모품·잔반통 사용량과 KPI 는 DB 에서 온다(/api/usage · /api/kpi). 실패하면 그냥 지난 값을 둔다
   const fetchExtra = useCallback(async () => {
     try {
-      const [u, k, ka] = await Promise.all([fetch('/api/usage', { cache: 'no-store' }), fetch(`/api/kpi?period=${periodRef.current}`, { cache: 'no-store' }),
-                                          fetch('/api/kpi?period=all', { cache: 'no-store' })]);   // 전체 누적(팔레트 카드) — 기간 전환과 무관
+      const [u, k, ka, pz] = await Promise.all([fetch('/api/usage', { cache: 'no-store' }), fetch(`/api/kpi?period=${periodRef.current}`, { cache: 'no-store' }),
+                                              fetch('/api/kpi?period=all', { cache: 'no-store' }), fetch('/api/db/pauses?limit=50', { cache: 'no-store' })]);   // 전체 누적(팔레트 카드) · 멈춤 기록(이력 창)
       if (u.ok) { const uj = await u.json(); setD((prev) => ({ ...prev, usage: uj.usage, notices: uj.notices, limits: uj.limits })); }
       if (k.ok) { const kj = await k.json(); setD((prev) => ({ ...prev, kpi: kj })); }
       if (ka.ok) { const aj = await ka.json(); setD((prev) => ({ ...prev, kpiAll: aj })); }
+      if (pz.ok) { const pj = await pz.json(); setD((prev) => ({ ...prev, pauses: pj.rows || [] })); }
     } catch {}
   }, []);
   useEffect(() => { fetchExtra(); }, [period, fetchExtra]);

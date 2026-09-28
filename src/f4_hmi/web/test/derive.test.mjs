@@ -106,6 +106,12 @@ test('소모품 — DB 값(usage)이 있으면 그것을 쓰고 잔반통은 g/�
   assert.deepEqual(life, { fromDb: true, pallets: 3, bowls: 7, cups: 6, isolated: 2, runs: 4 });
   assert.deepEqual(D.lifetime({ totals: { pallets: 1, bowls: 2, cups: 2, isolated: 0, runs: 1 } }), { fromDb: false, pallets: 1, bowls: 2, cups: 2, isolated: 0, runs: 1 });
   assert.equal(D.lifetime({}).pallets, 0);
+  // 멈춤 기록 창(9/28) — DB pauses 행 → 화면 줄 · 문제만에 집기 재시도 포함
+  const pr = D.pauseRows([{ id: 2, started_at: '2026-09-28T15:10:03.1', ended_at: null, duration_s: null, step: 'SOAP', kind: 'tool_fail', code: 'TOOL_FAIL', resolved: null },
+                          { id: 1, started_at: '2026-09-28T15:07:19', ended_at: '2026-09-28T15:07:31', duration_s: 12.4, step: 'WIPE', kind: 'tool_lost', code: 'TOOL_LOST', resolved: 'nudge' }]);
+  assert.deepEqual(pr[1], { id: 1, time: '15:07:19', step: '닦기', cause: '툴 놓침', code: 'TOOL_LOST', resolved: '넛지', open: false, duration: '12 s' });
+  assert.equal(pr[0].resolved, '진행 중'); assert.ok(pr[0].open); assert.equal(pr[0].step, '세제');
+  assert.equal(D.problems({ events: [{ result: 'DONE', attempts: 2 }, { result: 'DONE', attempts: 1 }, { result: 'ISOLATED' }] }).length, 2);
 });
 
 test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토스트는 버튼/넛지·중단을 가른다(9/28)', () => {

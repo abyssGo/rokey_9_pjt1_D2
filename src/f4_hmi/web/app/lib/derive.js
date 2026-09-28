@@ -209,7 +209,26 @@ export function alarm(d) {
 
 // 최근 문제 — 완료가 아닌 이벤트(격리·오류·건너뜀) 최근 5건
 export function problems(d) {
-  return (d.events || []).filter((e) => e.result && e.result !== 'DONE').slice(0, 5);
+  return (d.events || []).filter((e) => (e.result && e.result !== 'DONE') || (e.attempts || 0) > 1).slice(0, 5);   // 집기를 다시 시도한 용기도 문제로 본다(FR-03 · 황인재 9/28)
+}
+
+// 멈춤 기록 — DB pauses 표(/api/db/pauses · 최근 것부터)를 화면 줄로. 언제 · 어느 단계 · 원인 · 코드 · 어떻게 풀렸나 · 걸린 시간
+export const RESOLVED_KO = { resume: '재개 버튼', abort: '중단', nudge: '넛지', restart: '재시작' };
+export function pauseRows(rows) {
+  return (rows || []).map((r) => ({
+    id: r.id,
+    time: clockIso(r.started_at),
+    step: STEP_KO[r.step] || r.step || '-',
+    cause: PAUSE_KO[r.kind] || r.kind || '-',
+    code: r.code && r.code !== 'OK' ? r.code : '',
+    resolved: r.ended_at ? (RESOLVED_KO[r.resolved] || r.resolved || '-') : '진행 중',
+    open: !r.ended_at,
+    duration: r.duration_s != null ? `${Math.round(r.duration_s)} s` : '-',
+  }));
+}
+export function clockIso(iso) {          // DB 의 시각 문자열(YYYY-MM-DDTHH:MM:SS…) → HH:MM:SS
+  const m = /T(\d{2}:\d{2}:\d{2})/.exec(iso || '');
+  return m ? m[1] : (iso || '-');
 }
 
 // 이벤트의 원인 — 운영자가 중단(/flow/abort)하면 flow 는 ISOLATED 에 그때의 last_code 를 붙인다.
