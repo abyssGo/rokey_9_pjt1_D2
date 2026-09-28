@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -73,9 +73,27 @@ export default function Monitor() {
   }, [s?.message]);
   // 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
   const wasPaused = useRef(false);
+  // 멈추면 알림창(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 톡(넛지)으로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
+  const [modal, setModal] = useState(null);
+  const [toast, setToast] = useState(null);
+  const pauseSeq = useRef(0);
+  const lastResumePress = useRef(0);
+  const toastTimer = useRef(null);
+  const dRef = useRef(d);
+  dRef.current = d;
+  const showToast = (t) => { setToast(t); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 6000); };
   useEffect(() => {
     const step = s?.step;
-    if (wasPaused.current && step && RUNNING.includes(step)) playDoubleBeep();
+    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창
+      pauseSeq.current += 1;
+      const a = alarm(dRef.current);
+      if (a && a.level === 'pause') setModal({ seq: pauseSeq.current, a, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
+    }
+    if (wasPaused.current && step && step !== 'PAUSED') {              // 멈춤이 풀렸다(버튼·톡·중단)
+      setModal(null);
+      showToast(resumeToast(Date.now() - lastResumePress.current < 15000, lastRunning.current || '', step));
+      if (RUNNING.includes(step)) playDoubleBeep();
+    }
     wasPaused.current = step === 'PAUSED';
   }, [s?.step]);
 
@@ -92,6 +110,7 @@ export default function Monitor() {
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     } catch {}
     if (name === 'abort' && !window.confirm('이 용기를 격리 구역으로 보내고 다음 용기로 넘어갑니다.\n중단할까요?')) return;
+    if (name === 'resume') lastResumePress.current = Date.now();      // 토스트에 '재개 버튼'/'톡' 을 가르는 근거
     setReply({ pending: true, text: `${BTN_KO[name]} 보내는 중…` });
     const r = await press(name);
     setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${BTN_KO[name]}: ${r.message}${r.latency_ms != null ? ` (${r.latency_ms} ms)` : ''}` });
@@ -99,6 +118,8 @@ export default function Monitor() {
 
   return (
     <div className="page">
+      {modal && <AlertModal m={modal} onClose={() => setModal(null)} />}
+      {toast && <div className="toast" role="status">✔ {toast.text}{toast.sub && <div className="toast-sub">{toast.sub}</div>}</div>}
       <TopBar d={d} can={can} onPress={onPress} />
       <Alarm d={d} step={lastRunning.current || null} />
       <Controls can={can} onPress={onPress} reply={reply} />
@@ -162,12 +183,41 @@ function Alarm({ d, step }) {
   );
 }
 
+// 예외 알림창 — 멈춤 원인 아이콘 + 멈춘 단계 그림 + 할 일 · 확인을 누르면 닫히고(안내 띠는 남는다) 재개 버튼(또는 톡)으로 이어 간다
+function AlertModal({ m, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const g = m.a.guide;
+  const where = m.step && STEP_KO[m.step] ? `${STEP_KO[m.step]} 단계에서 멈춤` : '멈춤';
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={g.title} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <img src={iconArt(causeIcon(m.a.kind, m.kind))} alt="" />
+          <div><div className="modal-title">{g.title}</div><div className="dim">{where}{m.a.code && m.a.code !== 'OK' && m.a.kind !== 'cable' ? ` · 코드 ${m.a.code}` : ''}</div></div>
+        </div>
+        <div className="modal-body">
+          {m.step && STEP_KO[m.step] ? <img className="modal-art" src={stepArt(m.step, m.kind)} alt="" /> : <div className="modal-art" />}
+          <ol className="modal-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
+        </div>
+        <div className="modal-foot">
+          <div className="dim small">처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼(또는 손목 톡). 톡으로 풀리면 이 창은 저절로 닫힙니다.</div>
+          <button className="btn go" onClick={onClose} autoFocus>확인</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 버튼 줄 — 시작 · 재개 · 중단과 flow 의 대답(reply)
 function Controls({ can, onPress, reply }) {
   return (
     <section className="controls">
       <button className="btn go" disabled={!can.start} onClick={() => onPress('start')}>시작</button>
-      <button className="btn go" disabled={!can.resume} onClick={() => onPress('resume')}>재개</button>
+      <button className={`btn go ${can.resume ? 'attn' : ''}`} disabled={!can.resume} onClick={() => onPress('resume')}>재개</button>
       <button className="btn warn" disabled={!can.abort} onClick={() => onPress('abort')}>중단</button>
       <div className={`reply ${reply ? (reply.pending ? 'dim' : reply.ok ? 'ok' : 'bad') : 'dim'}`}>
         {reply ? reply.text : '버튼을 누르면 flow 의 대답이 여기에 나온다'}

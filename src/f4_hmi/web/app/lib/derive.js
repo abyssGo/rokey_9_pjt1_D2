@@ -239,3 +239,17 @@ export function kpiCards(k) {
   ];
 }
 
+// 🆕 9/28 예외 알림창 — 원인 아이콘(public/illust/icons/*.svg 이름) · 멈춤이 풀렸을 때 토스트 문구
+export function causeIcon(kind, containerKind) {
+  const tool = containerKind === 'CUP' ? 'brush' : 'sponge';
+  const vessel = containerKind === 'CUP' ? 'cup' : 'bowl';
+  return { cable: 'cable', tool_lost: tool, tool_fail: tool, leftover: 'bowl', grip: vessel, rack_full: 'pallet',
+           waste_bin: 'tank', robot_error: 'robot', operator: 'timer' }[kind] || 'timer';
+}
+export function resumeToast(viaButton, pausedStep, nextStep) {
+  if (nextStep === 'ISOLATE') return { text: '중단 — 이 용기를 격리 구역으로 보냅니다', sub: '정리가 끝나면 다음 용기로 갑니다' };
+  const how = viaButton ? '재개 버튼' : '톡(넛지)';
+  const from = STEP_KO[nextStep] ? `${STEP_KO[nextStep]} 단계부터 이어 갑니다` : '이어 갑니다';
+  return { text: `재개되었습니다 — ${how}`, sub: from };
+}
+
