@@ -33,6 +33,7 @@ class Recorder:
         self.run_id = None
         self.pause_id = None
         self._prev_step = None
+        self._last_work = None                          # 마지막으로 본 작업 중 상태 — DONE 없이 끝난 회차(flow 재시작·Ctrl+C)를 이 값으로 닫는다
         self._cmd_in_pause = None
         self._lock = threading.Lock()
         self.waste_full = self.db.usage()['waste_bin']['used_g'] >= self.waste_limit_g   # 껐다 켜도 "가득" 은 이어진다(교체 완료 전까지)
@@ -55,6 +56,11 @@ class Recorder:
         if step == prev:
             return
         with self._lock:
+            if step not in _WORKING_END:
+                self._last_work = s
+            elif step != 'DONE' and prev not in _WORKING_END and self.run_id is not None:   # 작업 중 → IDLE: flow 가 DONE 없이 끝났다(재시작) — 회차를 닫아 다음 회차와 섞이지 않게
+                self.db.end_run(self.run_id, self._last_work or s)
+                self.run_id = None
             if prev in _WORKING_END and step not in _WORKING_END and self.run_id is None:
                 self.run_id = self.db.start_run()
             if step == 'PAUSED' and self.pause_id is None:
@@ -64,7 +70,7 @@ class Recorder:
                 self.pause_id = self.db.open_pause(self.run_id, prev, kind, s.get('last_code'))
                 self._cmd_in_pause = None
             elif prev == 'PAUSED' and step != 'PAUSED' and self.pause_id is not None:
-                resolved = self._cmd_in_pause or ('abort' if step == 'ISOLATE' else 'nudge')
+                resolved = self._cmd_in_pause or ('abort' if step == 'ISOLATE' else 'restart' if step in _WORKING_END else 'nudge')
                 self.db.close_pause(self.pause_id, resolved)
                 self.pause_id = None
             if step == 'DONE' and self.run_id is not None:

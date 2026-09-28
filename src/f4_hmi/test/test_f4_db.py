@@ -131,6 +131,23 @@ def test_recorder_makes_runs_pauses_and_events(db):
     assert calls == []                                      # 잔반통이 안 찼으니 stop 을 보내지 않았다
 
 
+def test_recorder_closes_run_when_flow_restarts_without_done(db):
+    # 🆕 9/28 flow 를 도중에 껐다 켜면(DONE 없이 IDLE) 지난 회차를 마지막 작업 상태로 닫는다 — 다음 회차의 KPI(이번 실행)에 섞이지 않게
+    rec = Recorder(db, waste_limit_g=50000)
+    store = StateStore(2.0)
+    store.subscribe(rec.on_store)
+    store.put_state(_state('IDLE')); store.put_state(_state('PICK')); store.put_state(_state('WIPE', done_bowl=1))
+    store.put_state(_state('PAUSED', last_code='TOOL_LOST', done_bowl=1))
+    r1 = rec.run_id
+    store.put_state(_state('IDLE'))                         # flow 재시작 — DONE 없이 IDLE
+    assert rec.run_id is None and rec.pause_id is None
+    run = [r for r in db.dump('runs') if r['id'] == r1][0]
+    assert run['ended_at'] and run['done_bowl'] == 1
+    assert db.dump('pauses')[0]['resolved'] == 'restart'
+    store.put_state(_state('PICK'))
+    assert rec.run_id is not None and rec.run_id != r1
+
+
 def test_recorder_pause_kind_and_nudge_resolution(db):
     rec = Recorder(db, waste_limit_g=50000)
     assert pause_kind({'last_code': 'ROBOT_ERROR', 'message': '케이블 상태를 확인해주세요'}) == 'cable'
