@@ -1,4 +1,4 @@
-# 툴 놓침 — 첫 그릇을 닦는 도중 수세미가 그리퍼에서 빠져 즉시 멈춤(TOOL_LOST → pause · E37). 사람이 홀더에 다시 꽂고 톡(넛지) 또는 재개하면
+# 툴 놓침 — 첫 그릇을 닦는 도중 수세미가 그리퍼에서 빠져 즉시 멈춤(TOOL_LOST → pause · E37). 사람이 홀더에 다시 꽂고 넛지(로봇팔 가볍게 밀기) 또는 재개하면
 # flow 가 툴을 다시 집고 닦기부터 이어 간다(RETRY_STEP). 실제 flow 는 이때 message 를 비워 둔다 → 화면은 last_code 로 안내 문구를 고른다.
 # 시연 예외 ③ 의 화면 연습용. 재개 버튼을 누르면 멈춤이 바로 풀린다(안 누르면 hold_s 뒤).
 # 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)

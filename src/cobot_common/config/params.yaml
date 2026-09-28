@@ -139,11 +139,11 @@ f2:                                   # ── f2 절 (민범진) ── 값은 
                                       #   직선 왕복이 필요하면 {axis: x, amp_mm: 20, period_s: 0.5, acc_mm_s2: 800} (코드 있음 · 상한 max_amp_mm · fast 불가)
   dip:                                # depth_mm = 티칭 자세에서 내려가는 거리 (SDD §5.3)
     RINSE: {depth_mm: 60, hold_s: 1.0}                # 헹굼 담금, 60 확인은 V-07
-  nudge:                                # 케이블 이상 넛지(톡톡) 및 재개 설정
-    force_threshold_n: 15.0             # 톡톡 감지 외력 변화량 임계값(N · 정지 외력 대비). E48: 툴 놓침 넛지(cell.limits.nudge_force_n 15)와 같은 힘으로 통일(처음 5.0)
+  nudge:                                # 케이블 이상 넛지(로봇팔 가볍게 밀기) 및 재개 설정
+    force_threshold_n: 15.0             # 넛지 감지 외력 변화량 임계값(N · 정지 외력 대비). E48: 툴 놓침 넛지(cell.limits.nudge_force_n 15)와 같은 힘으로 통일(처음 5.0)
     poll_gap_s: 0.05                    # 외력 모니터링 폴링 간격(s)
-    settle_s: 1.5                       # 톡톡 감지 후 센서 여진 안정화 대기 시간(s)
-    recheck_samples: 10                 # 톡톡 후 케이블 상태 재검증 표본 수 (약 7 s)
+    settle_s: 1.5                       # 넛지 감지 후 센서 여진 안정화 대기 시간(s)
+    recheck_samples: 10                 # 넛지 후 케이블 상태 재검증 표본 수 (약 7 s)
 
 f3:                                   # ── f3 절 (박진용) ── 초안 출처: CELL-02a 용기 치수 측정 §4 (SDD §4.3 예시와 다름)
                                       # 툴 파지 기준: 그리퍼 끝을 세척부 윗면에 닿게 잡는다
@@ -305,7 +305,7 @@ flow:                                 # ── flow 절 (민범진) ── 계�
     TIMEOUT: "retry:1->isolate"
     RACK_JAM: "retry:1->isolate"
     TOOL_FAIL: pause                  # 🔄 9/26 E52(황인재 9/25): retry:1->isolate → **pause**. 홀더에서 못 집으면 용기 잘못이 아니다 —
-                                      #    툴은 홀더에 둔 채 멈추고 사람이 홀더를 확인 → 톡 1번(또는 재개) → 툴 집기부터 다시(격리 X). 툴 놓침 뒤 재PICK 실패도 같다.
+                                      #    툴은 홀더에 둔 채 멈추고 사람이 홀더를 확인 → 로봇팔 가볍게 밀기(또는 재개) → 툴 집기부터 다시(격리 X). 툴 놓침 뒤 재PICK 실패도 같다.
     TOOL_LOST: pause                  # 🆕 E37(9/23) — 닦는 도중 놓침. 정지 → 사람이 홀더에 다시 놓고 넛지(또는 HMI 재개)
                                       #    → f1.tool 재PICK(handle_failure) → 그 단계부터 다시. GRIP_FAIL 과 같은 결
     RACK_FULL: pause

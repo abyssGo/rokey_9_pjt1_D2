@@ -44,8 +44,8 @@ RESUMED_NUDGE = 'resumed_nudge'  # 재개 — 넛지(힘). 컨트롤러 쪽 SOS 
 ABORTED = 'aborted'              # 중단 (이 용기를 접고 다음 용기)
 # handle_failure 만 돌려주는 값 — run_plan 까지 올라가지 않고 process_one 이 그 자리에서 쓴다
 RETRY_STEP = 'retry_step'        # 재개 — 실패한 그 단계부터 다시 (IRD §8)
-# 멈춤에서 넛지(톡)로도 재개되는 코드 — 사람이 현장에서 바로 손대는 상황들(E52).
-#    툴 놓침(홀더에 꽂고 톡) · 툴 집기 실패(홀더 확인하고 톡) · 로봇 오류(확인하고 톡 — 쥔 것이 있으면 첫 톡은 그리퍼만 연다)
+# 멈춤에서 넛지(로봇팔 가볍게 밀기)로도 재개되는 코드 — 사람이 현장에서 바로 손대는 상황들(E52).
+#    툴 놓침(홀더에 꽂고 넛지) · 툴 집기 실패(홀더 확인하고 넛지) · 로봇 오류(확인하고 넛지 — 쥔 것이 있으면 첫 넛지는 그리퍼만 연다)
 _NUDGE_CODES = (TOOL_LOST, TOOL_FAIL, ROBOT_ERROR)
 
 # 기능 이름 → (진짜 모듈 경로, 가짜 모듈 경로)
@@ -171,7 +171,7 @@ class Flow:
         self._resume = resume or (lambda: None)
         self.holding_tool = None         # 쥐고 있는 툴 이름 — 중단 정리에서 반납한다
         # 그리퍼에 쥔 것(None · 'TOOL' · 'CONTAINER')과 용기가 스펀지 홈에 앉아 있는지(SEAT 뒤 ~ RINSE 재파지 전) — E52.
-        #    로봇 오류 2단 넛지(쥔 것이 있으면 첫 톡은 그리퍼만 열기)와 격리 정리(홈 위 용기 다시 집기)가 이 값을 본다. _track 이 갱신.
+        #    로봇 오류 2단 넛지(쥔 것이 있으면 첫 넛지는 그리퍼만 열기)와 격리 정리(홈 위 용기 다시 집기)가 이 값을 본다. _track 이 갱신.
         self.holding = None
         self.on_bed = False
         # 주의: cc.MotionHalted — 중단을 누르면 하던 이동이 이걸로 끊긴다. 평범한 실패가 아니라
@@ -370,7 +370,7 @@ class Flow:
                 self.message = '중단 요청으로 멈췄습니다'
                 self._halted = True
             elif e.__class__.__name__ == 'CableTightError':
-                # 케이블 장력 이상 — 후퇴하지 않고 그 자리에서 PAUSED 진입, 톡톡 넛지 재개 대기
+                # 케이블 장력 이상 — 후퇴하지 않고 그 자리에서 PAUSED 진입, 넛지 재개 대기
                 self.log.warn(f'{name} — 케이블 장력 이상 감지: {e}')
                 self.message = str(e)
                 self._cable_tight = True
@@ -451,9 +451,9 @@ class Flow:
     def wait_resume(self, sig, allow_nudge=False):
         """resume 을 기다린다. 기다리는 동안에도 /flow/state 는 계속 나간다.
 
-        allow_nudge=True 면 HMI 재개 버튼 대신(또는 같이) **로봇을 살짝 밀거나 톡 치는 것**도 재개 신호로
+        allow_nudge=True 면 HMI 재개 버튼 대신(또는 같이) **로봇팔을 가볍게 미는 것**도 재개 신호로
         본다(E37 · NEW-02a — cell.limits.nudge_force_n·nudge_hold_s). 사람이 현장에서 바로 손대는 멈춤에 쓴다 —
-        툴 놓침·툴 집기 실패·로봇 오류(_NUDGE_CODES · 🔄 E52 9/25: 로봇 오류도 톡으로 — 쥔 것이 있으면 첫 톡은 그리퍼만 연다).
+        툴 놓침·툴 집기 실패·로봇 오류(_NUDGE_CODES · 🔄 E52 9/25: 로봇 오류도 넛지로 — 쥔 것이 있으면 첫 넛지는 그리퍼만 연다).
         힘을 못 읽는 상태(보호정지 등)면 넛지를 포기하고 재개 버튼만 본다(handle_failure 가 고른다).
 
         Ctrl+C 로 끝내려면 여기서 KeyboardInterrupt 가 올라가 main() 의 finally 로 간다.
@@ -723,7 +723,7 @@ class Flow:
             if self._halted:                          # 중단으로 끊긴 것 — 정책을 타지 않는다
                 self._halted = False
                 return self.abort_container(sig)
-            if self._cable_tight:                     # 케이블 장력 이상 — 톡톡 넛지 재개 대기
+            if self._cable_tight:                     # 케이블 장력 이상 — 넛지 재개 대기
                 self._cable_tight = False
                 outcome = self.handle_cable_tight(sig)
                 if outcome != RETRY_STEP:
@@ -788,18 +788,18 @@ class Flow:
         return order[done] if done < len(order) else (order[-1] if order else '')
 
     def handle_cable_tight(self, sig):
-        """케이블 장력 이상 감지 시 정지(PAUSED) 후 사용자 개입(톡톡 또는 resume) 및 상태 재검증.
+        """케이블 장력 이상 감지 시 정지(PAUSED) 후 사용자 개입(넛지 또는 resume) 및 상태 재검증.
 
         1. to_paused 로 상태를 PAUSED 로 변경하고 대시보드 안내 메시지 설정
         2. 현재 모션 즉시 PAUSE (후퇴 없이 그 자리에서 멈춤)
-        3. 사용자 톡톡(외력 변화량) 또는 HMI resume 대기
-        4. 톡톡 또는 resume 감지 시: 케이블 상태(jitter_g) 재측정
+        3. 사용자 넛지(외력 변화량) 또는 HMI resume 대기
+        4. 넛지 또는 resume 감지 시: 케이블 상태(jitter_g) 재측정
         5. 정상: 모션 resume 후 RETRY_STEP 돌려주어 그 단계부터 재개
         6. 이상 지속: PAUSED 유지 및 메시지 갱신 후 다시 대기
         7. abort 요청: abort_container(sig) 로 정리
         """
-        self.to_paused('케이블 장력 이상 — 케이블 상태 확인 및 톡톡 재개 대기', sig)
-        self.message = '케이블 상태를 확인해주세요. 확인 후 로봇을 가볍게 톡톡 두드려 주세요.'
+        self.to_paused('케이블 장력 이상 — 케이블 상태 확인 및 넛지 재개 대기', sig)
+        self.message = '케이블 상태를 확인해주세요. 확인 후 로봇팔을 가볍게 밀어 주세요.'
         self.last_code = ROBOT_ERROR
 
         # 주의: 케이블 이상 시 후퇴 동작 없이 현재 모션 즉시 PAUSE
@@ -866,7 +866,7 @@ class Flow:
                     return RETRY_STEP
                 else:
                     self.log.warn(f'케이블 이상 지속(떨림 {jitter:.1f} g > {limit:.1f} g) — 정지 유지')
-                    self.message = f'케이블 이상 지속(떨림 {jitter:.0f} g > 상한 {limit:.0f} g): 케이블 확인 후 다시 톡톡 두드려 주세요'
+                    self.message = f'케이블 이상 지속(떨림 {jitter:.0f} g > 상한 {limit:.0f} g): 케이블 확인 후 다시 로봇팔을 가볍게 밀어 주세요'
 
     def handle_failure(self, sig, action=None):
         """실패를 정책대로 마무리한다 (재시도는 process_one 이 이미 끝냈다).
@@ -878,11 +878,11 @@ class Flow:
 
         if action == PAUSE:
             code = self.last_code
-            if code == ROBOT_ERROR:                    # 🆕 E52(황인재 9/25) — 그 자리 멈춤 · 쥔 것이 있으면 톡 2번(첫 톡은 그리퍼만 열기)
+            if code == ROBOT_ERROR:                    # 🆕 E52(황인재 9/25) — 그 자리 멈춤 · 쥔 것이 있으면 넛지 2번(첫 넛지는 그리퍼만 열기)
                 return self._robot_error_pause(sig)
-            if code == TOOL_FAIL:                      # 🆕 E52 — 홀더에서 못 집었다: 격리하지 않는다 · 사람이 홀더 확인 → 톡 → 툴 집기부터 다시
+            if code == TOOL_FAIL:                      # 🆕 E52 — 홀더에서 못 집었다: 격리하지 않는다 · 사람이 홀더 확인 → 넛지 → 툴 집기부터 다시
                 self.message = (f'{self.message or "툴 집기 실패"} — 홀더의 수세미·솔이 원래 방향으로 제대로 꽂혔는지 확인한 뒤 '
-                                f'톡 1번(또는 재개) → 툴 집기부터 다시 합니다')
+                                f'로봇팔 가볍게 밀기(또는 재개) → 툴 집기부터 다시 합니다')
             self.to_paused(f'코드 {code}', sig)
             # 넛지 재개는 사람이 현장에서 바로 손대는 멈춤(_NUDGE_CODES)에만 — GRIP_FAIL·RACK_FULL 은 화면에서 확인하고 재개
             answer = self.wait_resume(sig, allow_nudge=(code in _NUDGE_CODES))
@@ -911,10 +911,10 @@ class Flow:
     def _robot_error_pause(self, sig):
         """🆕 E52(황인재 9/25) — 로봇 오류: **그 자리에서 멈춘다.** 로봇은 격리 구역으로 가지 않는다(자기 위치를 모를 수 있다).
 
-        쥔 것이 있으면(툴·용기) → 사람이 확인 → 톡 1번(또는 재개) → **그리퍼만 연다**(팔은 안 움직임) → 사람이 받아 치운다
-          (툴은 홀더에 · 용기는 치움 · 스펀지 홈에 용기가 있으면 그것도) → **화면 재개 버튼**(신호 2 는 톡을 받지 않는다 —
-          황인재 9/27 · PM 지적: 톡 감지 직후 팔이 위로 움직이기 시작하는데 사람 손이 로봇에 닿아 있을 수 있다) → 곧게 위로 → HOME → 다음 용기.
-        빈손이면 → 톡 1번(또는 재개) → 곧게 위로 → HOME → 다음 용기. 이 용기는 ERROR 로 기록한다(격리 X · 사람이 처리).
+        쥔 것이 있으면(툴·용기) → 사람이 확인 → 로봇팔 가볍게 밀기(또는 재개) → **그리퍼만 연다**(팔은 안 움직임) → 사람이 받아 치운다
+          (툴은 홀더에 · 용기는 치움 · 스펀지 홈에 용기가 있으면 그것도) → **화면 재개 버튼**(신호 2 는 넛지를 받지 않는다 —
+          황인재 9/27 · PM 지적: 넛지 감지 직후 팔이 위로 움직이기 시작하는데 사람 손이 로봇에 닿아 있을 수 있다) → 곧게 위로 → HOME → 다음 용기.
+        빈손이면 → 로봇팔 가볍게 밀기(또는 재개) → 곧게 위로 → HOME → 다음 용기. 이 용기는 ERROR 로 기록한다(격리 X · 사람이 처리).
         🚨 그리퍼 열기·복구는 사람이 신호를 준 **뒤**에만 한다. 넛지가 안 잡히는 상태(보호정지에서 힘 읽기 불가)면 재개 버튼.
         """
         held = self.holding
@@ -925,9 +925,9 @@ class Flow:
         bed_note = ' 스펀지 홈에 용기가 있으면 그것도 꺼내 주세요.' if self.on_bed else ''
         if held:
             self.message = (f'{base} — 로봇 오류 · 그리퍼에 {what}이(가) 있습니다. 로봇과 주변을 확인한 뒤 '
-                            f'톡 1번(또는 재개) → 그리퍼만 열립니다 — 받을 준비를 하세요.{bed_note}')
+                            f'로봇팔 가볍게 밀기(또는 재개) → 그리퍼만 열립니다 — 받을 준비를 하세요.{bed_note}')
         else:
-            self.message = (f'{base} — 로봇 오류 · 빈손. 로봇과 주변을 확인한 뒤 톡 1번(또는 재개) → '
+            self.message = (f'{base} — 로봇 오류 · 빈손. 로봇과 주변을 확인한 뒤 로봇팔 가볍게 밀기(또는 재개) → '
                             f'곧게 위로 → HOME → 다음 용기로 갑니다.{bed_note}')
         self.to_paused(f'코드 {ROBOT_ERROR}', sig)
         if self.wait_resume(sig, allow_nudge=True) == ABORTED:     # flow_node 는 로봇 오류 중 중단을 거절한다 — 직접 호출·시험 대비
@@ -940,9 +940,9 @@ class Flow:
             self.message = (f'그리퍼를 열었습니다 — {what}을(를) 받아 '
                             + ('홀더에 원래 방향으로 꽂고 ' if held == 'TOOL' else '치우고 ')
                             + ('스펀지 홈의 용기도 꺼낸 뒤 ' if self.on_bed else '')
-                            + '한 발 물러나 화면의 재개 버튼 → 곧게 위로 → HOME → 다음 용기 (이 신호는 톡을 받지 않습니다)')
+                            + '한 발 물러나 화면의 재개 버튼 → 곧게 위로 → HOME → 다음 용기 (이 신호는 넛지를 받지 않습니다)')
             self.to_paused('그리퍼 열림 — 받은 뒤 화면 재개', sig)
-            # 🚨 신호 2 는 재개 버튼만(allow_nudge=False · 황인재 9/27): 감지 직후 팔이 움직이므로 손이 닿은 채 톡으로 출발시키지 않는다
+            # 🚨 신호 2 는 재개 버튼만(allow_nudge=False · 황인재 9/27): 감지 직후 팔이 움직이므로 손이 닿은 채 넛지로 출발시키지 않는다
             if self.wait_resume(sig, allow_nudge=False) == ABORTED:
                 return self.abort_container(sig)
             self._recover_robot()
@@ -968,10 +968,10 @@ class Flow:
         return w <= open_mm
 
     def _repick_tool(self, sig):
-        """🆕 E37 + E52 — 툴 놓침 뒤 다시 집는다. **못 집으면 격리하지 않고** 다시 멈춰 사람을 부른다(홀더 확인 → 톡).
+        """🆕 E37 + E52 — 툴 놓침 뒤 다시 집는다. **못 집으면 격리하지 않고** 다시 멈춰 사람을 부른다(홀더 확인 → 넛지).
 
         전에는 재PICK 실패 코드(TOOL_FAIL)의 정책을 새로 탔다 → retry→isolate 로 그릇을 격리했다.
-        황인재 9/25: 그릇은 문제 없고 툴이 문제니 사람이 홀더를 고치고 톡 치면 다시 집는다. 성공하면 놓친 단계부터.
+        황인재 9/25: 그릇은 문제 없고 툴이 문제니 사람이 홀더를 고치고 로봇팔을 밀면 다시 집는다. 성공하면 놓친 단계부터.
         """
         tool_id = 'SPONGE' if self.kind == 'BOWL' else 'BRUSH'
         while True:
@@ -985,7 +985,7 @@ class Flow:
                 return self._robot_error_pause(sig)
             self.last_code = rt.code
             self.message = (f'툴을 다시 못 집었습니다({rt.code}) — 홀더에 {tool_id} 가 원래 방향으로 제대로 꽂혔는지 확인한 뒤 '
-                            f'톡 1번(또는 재개) → 다시 집습니다')
+                            f'로봇팔 가볍게 밀기(또는 재개) → 다시 집습니다')
             self.to_paused(f'코드 {rt.code} · 툴 재PICK 실패', sig)
             answer = self.wait_resume(sig, allow_nudge=True)
             if answer == ABORTED:
@@ -1012,12 +1012,12 @@ class Flow:
             self.log.warn(f'로봇 상태를 읽을 수 없다({e!r}) — 그래도 이어간다')
 
     def _go_home_or_wait(self, sig, max_tries=3):
-        """곧게 위로 → HOME. 실패하면 멈춰 사람이 펜던트로 팔을 옮긴 뒤 톡(또는 재개)할 때까지 기다리고 HOME 만 다시 해 본다.
+        """곧게 위로 → HOME. 실패하면 멈춰 사람이 펜던트로 팔을 옮긴 뒤 넛지(또는 재개)할 때까지 기다리고 HOME 만 다시 해 본다.
 
         🚨 로봇 오류 뒤 다음 용기 PICK 으로 곧장 가면 아무 자리에서 관절 이동을 한다(9/22 17:27 충돌의 길) — 중단 정리와 같이
            HOME 을 출발점으로 만든다.
         · 첫 시도: 후퇴(Z 위로) → HOME. 후퇴가 실패하면 로봇 위치를 모르는 것이라 HOME 을 보내지 않고 멈춘다.
-        · 사람이 재개 버튼을 누른 뒤(톡 X): 팔을 옮겼다고 보고 후퇴 없이 HOME 만. max_tries 번 다 실패하면 포기하고 로그에 남긴다
+        · 사람이 재개 버튼을 누른 뒤(넛지 X): 팔을 옮겼다고 보고 후퇴 없이 HOME 만. max_tries 번 다 실패하면 포기하고 로그에 남긴다
           (무한 반복 금지 — 사람이 매번 확인해도 안 되면 다음 용기 PICK 은 지금 자리에서 출발한다 · 눈으로 본다). 중단이면 False.
         """
         for attempt in range(1, max_tries + 1):
@@ -1028,7 +1028,7 @@ class Flow:
                 self.log.error(f'HOME 복귀 {max_tries}번 실패 — 포기하고 다음 용기로 간다. 다음 PICK 은 지금 자리에서 출발한다 · 눈으로 확인')
                 return False
             self.message = (f'HOME 복귀 실패({attempt}/{max_tries}) — 펜던트로 팔을 안전한 자리로 옮긴 뒤 '
-                            f'화면의 재개 버튼을 누르면 후퇴 없이 HOME 으로 갑니다(톡은 받지 않습니다)')
+                            f'화면의 재개 버튼을 누르면 후퇴 없이 HOME 으로 갑니다(넛지는 받지 않습니다)')
             self.to_paused('HOME 복귀 실패', sig)
             if self.wait_resume(sig, allow_nudge=False) == ABORTED:      # 버튼만 — 누르면 팔이 바로 움직인다(황인재 9/27 신호 2 와 같은 이유)
                 return False

@@ -155,7 +155,7 @@ def test_recorder_pause_kind_and_nudge_resolution(db):
     assert pause_kind({'last_code': 'OK', 'message': ''}) == 'operator'
     rec.on_store('state', {'state': _state('PICK')})
     rec.on_store('state', {'state': _state('PAUSED', last_code='ROBOT_ERROR', message='케이블 …')})
-    rec.on_store('state', {'state': _state('WEIGH')})       # 버튼 없이 풀렸다 → 톡(넛지)
+    rec.on_store('state', {'state': _state('WEIGH')})       # 버튼 없이 풀렸다 → 넛지(로봇팔 가볍게 밀기)
     assert db.dump('pauses')[0]['resolved'] == 'nudge' and db.dump('pauses')[0]['kind'] == 'cable'
     rec.on_store('state', {'state': _state('PAUSED')})
     rec.on_store('state', {'state': _state('ISOLATE')})     # 중단 버튼 기록이 없어도 격리로 갔으면 abort

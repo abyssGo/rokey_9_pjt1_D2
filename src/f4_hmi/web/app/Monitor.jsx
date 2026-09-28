@@ -103,7 +103,7 @@ export default function Monitor() {
   // 확인창(교체 완료 · 중단) — 브라우저 기본 창(window.confirm) 대신 알림창과 같은 모양. c = { icon, title, body, ok, tone, onOk }
   const [confirm, setConfirm] = useState(null);
   function onReplace(item) {
-    setConfirm({ icon: item === 'waste_bin' ? 'tank' : item, title: `${ITEM_KO[item]} 교체 완료?`, body: '새것으로 바꿨으면 확인 — 사용량을 0부터 다시 셉니다.', ok: '확인', tone: 'go',
+    setConfirm({ icon: item === 'waste_bin' ? 'bin' : item, title: `${ITEM_KO[item]} 교체 완료?`, body: '새것으로 바꿨으면 확인 — 사용량을 0부터 다시 셉니다.', ok: '확인', tone: 'go',
       onOk: async () => { const r = await replace(item); setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${r.message || ''}` }); } });
   }
   async function send(name) {
@@ -210,7 +210,7 @@ function AlertModal({ m, a, onClose }) {
           <ol className="modal-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
         </div>
         <div className="modal-foot">
-          <div className="dim small">처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼 또는 로봇 손목 두드리기({NUDGE.word}). 두드려서 풀리면 이 창은 저절로 닫힙니다.</div>
+          <div className="dim small">처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼 또는 로봇팔 가볍게 밀기({NUDGE.word}). 밀어서 풀리면 이 창은 저절로 닫힙니다.</div>
           <button className="btn go" onClick={onClose} autoFocus>확인</button>
         </div>
       </div>
@@ -494,7 +494,7 @@ function Stats({ d, onReplace }) {
       {spare(cs.brush, '솔', 'brush', '컵', 'brush')}
       {spare(cs.soap, '세제', 'soap', '용기', 'soap')}
       {cs.waste && (
-        <Row icon="tank" tone={cs.waste.level} title={<>잔반통{cs.waste.level !== 'ok' && <span className="tag">{cs.waste.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}{replaceBtn('waste_bin')}</>}
+        <Row icon="bin" tone={cs.waste.level} title={<>잔반통{cs.waste.level !== 'ok' && <span className="tag">{cs.waste.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}{replaceBtn('waste_bin')}</>}
           value={<Big v={(cs.waste.used_g / 1000).toFixed(1)} unit={cs.waste.max_g ? `/ ${cs.waste.max_g >= 10000 ? Math.round(cs.waste.max_g / 1000) : (cs.waste.max_g / 1000).toFixed(1)} kg` : 'kg'} cls={cs.waste.level} />}
           sub={cs.waste.max_g ? '버린 잔반 무게 합 · 한도에 닿으면 일시 정지' : '한도 설정 없음'}>
           {cs.waste.max_g ? <Bar value={cs.waste.used_g} max={cs.waste.max_g} cls={cs.waste.level === 'ok' ? '' : cs.waste.level} /> : null}

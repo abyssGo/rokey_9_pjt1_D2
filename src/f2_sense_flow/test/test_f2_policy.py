@@ -518,7 +518,7 @@ def test_move_incomplete_does_not_retreat():
     f = _flow_with(retreats, force_offs, (MoveIncomplete,), MoveIncomplete)
     before_signal = []
 
-    class Sig(PauseWatcher):                        # 사람이 첫 신호(재개·톡)를 주는 순간까지의 후퇴 횟수를 찍는다
+    class Sig(PauseWatcher):                        # 사람이 첫 신호(재개·넛지)를 주는 순간까지의 후퇴 횟수를 찍는다
         def take(self, name):
             v = super().take(name)
             if name == 'resume' and v and not before_signal:
@@ -902,7 +902,7 @@ def test_robot_error_while_holding_opens_gripper_then_waits_for_second_signal(mo
     """
     released, watches = [], []
     monkeypatch.setattr(flow_module.cc, 'release', lambda: released.append(1))
-    monkeypatch.setattr(flow_module.cc, 'start_nudge_watch', lambda: watches.append(1))   # 넛지 감시를 켠 횟수 = 톡을 받은 대기 횟수
+    monkeypatch.setattr(flow_module.cc, 'start_nudge_watch', lambda: watches.append(1))   # 넛지 감시를 켠 횟수 = 넛지를 받은 대기 횟수
     monkeypatch.setattr(flow_module.cc, 'check_nudge', lambda *a: False)
     mods = load_features(['f1', 'f2', 'f3'])
     calls = []
@@ -932,7 +932,7 @@ def test_robot_error_while_holding_opens_gripper_then_waits_for_second_signal(mo
     assert calls.count(('move_to', ('HOME', False))) == 1, '둘째 신호 뒤 HOME 으로 가야 한다'
     assert [(e['result'], e['code']) for e in events] == [('ERROR', 'ROBOT_ERROR')]
     assert f.isolated == 0 and f.holding is None and f.holding_tool is None
-    assert watches == [1], f'톡은 첫 신호에만 — 둘째 신호(받은 뒤)는 재개 버튼만 받아야 한다(황인재 9/27 · 팔이 바로 움직임) ({len(watches)}회)'
+    assert watches == [1], f'넛지는 첫 신호에만 — 둘째 신호(받은 뒤)는 재개 버튼만 받아야 한다(황인재 9/27 · 팔이 바로 움직임) ({len(watches)}회)'
 
 
 def test_robot_error_with_empty_hand_needs_one_signal_and_mentions_the_bed(monkeypatch):
@@ -1043,7 +1043,7 @@ def test_force_limit_exhausted_returns_tool_regrips_from_bed_and_isolates():
 
 
 def test_tool_fail_pauses_and_retries_tool_pick_without_isolation():
-    """툴 집기 실패(정책 pause) → 멈춤(안내: 홀더 확인 → 톡) → 재개 → **툴 집기부터 다시** → DONE. 격리 X."""
+    """툴 집기 실패(정책 pause) → 멈춤(안내: 홀더 확인 → 넛지) → 재개 → **툴 집기부터 다시** → DONE. 격리 X."""
     mods = load_features(['f1', 'f2', 'f3'])
     tool_calls = []
     f1 = _ns(F1Api, mods['f1'])

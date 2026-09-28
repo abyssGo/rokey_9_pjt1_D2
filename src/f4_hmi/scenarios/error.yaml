@@ -8,4 +8,4 @@ items:
     zone: RET_B
     # E52·E54: 실제 flow._robot_error_pause 의 신호 1 단계 문구 그대로(쥔 것 = 용기). 가짜 flow 는 2단을 못 흉내 내서 hold_s 뒤 ERROR 로 넘어간다.
     fail: {at: RINSE, code: ROBOT_ERROR, action: pause,
-           message: 'f2.dip: 드라이버 응답 없음 — 로봇 오류 · 그리퍼에 용기이(가) 있습니다. 로봇과 주변을 확인한 뒤 톡 1번(또는 재개) → 그리퍼만 열립니다 — 받을 준비를 하세요.'}
+           message: 'f2.dip: 드라이버 응답 없음 — 로봇 오류 · 그리퍼에 용기이(가) 있습니다. 로봇과 주변을 확인한 뒤 로봇팔 가볍게 밀기(또는 재개) → 그리퍼만 열립니다 — 받을 준비를 하세요.'}

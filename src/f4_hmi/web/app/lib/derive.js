@@ -34,9 +34,9 @@ export function pauseKind(s) {
   }
 }
 
-// 넛지(Nudge · 로봇 손목을 힘 15 N 넘게 한 번 두드리면 재개 신호) 를 화면에서 부르는 말 — 한곳에서 바꾼다.
+// 넛지(Nudge · 로봇팔을 힘 15 N 넘게 가볍게 밀면 재개 신호) 를 화면에서 부르는 말 — 한곳에서 바꾼다.
 //   step: 안내 카드의 할 일 한 줄 · done: 풀렸을 때 토스트 · word: 이름
-export const NUDGE = { step: '손목 두드리기 (또는 재개)', done: '넛지(손목 두드림)', word: '넛지' };
+export const NUDGE = { step: '로봇팔 가볍게 밀기 (또는 재개)', done: '넛지(로봇팔 가볍게 밀기)', word: '넛지' };
 
 // 멈춤 원인별 운영자 안내 — 제목 + 할 일 2~3줄, 각 줄 몇 단어. 설명 문장 없음(what 은 비워 둔다 · 있으면 한 줄).
 //    설명·근거는 SDD §7 · 대본에. 로봇 오류는 신호 1(확인 → 넛지/재개) · 신호 2(받아 치움 → 재개) · HOME 실패 세 장만(경우를 합쳤다).
@@ -257,7 +257,7 @@ export function causeIcon(kind, containerKind) {
   const tool = containerKind === 'CUP' ? 'brush' : 'sponge';
   const vessel = containerKind === 'CUP' ? 'cup' : 'bowl';
   return { cable: 'cable', tool_lost: tool, tool_fail: tool, leftover: 'bowl', grip: vessel, rack_full: 'pallet',
-           waste_bin: 'tank', robot_error: 'robot', operator: 'timer' }[kind] || 'timer';
+           waste_bin: 'bin', robot_error: 'robot', operator: 'timer' }[kind] || 'timer';
 }
 export function resumeToast(viaButton, pausedStep, nextStep) {
   if (nextStep === 'ISOLATE') return { text: '중단 — 이 용기를 격리 구역으로 보냅니다', sub: '정리가 끝나면 다음 용기로 갑니다' };

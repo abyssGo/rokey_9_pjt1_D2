@@ -52,7 +52,7 @@ class CableTightError(RuntimeError):
 #    MoveIncomplete : 이동이 도중에 섰다 → 로봇이 어디 있는지 모른다. 여기서 코드로 바꾸면
 #                     flow 가 평범한 실패로 보고 재시도하거나 이어서 내려간다 — 그러면 안 된다.
 #    MotionHalted   : 강제정지(중단) — flow 의 중단 흐름이 받아야 한다(FLOW-03).
-#    CableTightError: 케이블 장력/떨림 이상 — flow 가 PAUSED 로 진입하고 넛지(톡톡) 재개를 기다린다.
+#    CableTightError: 케이블 장력/떨림 이상 — flow 가 PAUSED 로 진입하고 넛지(로봇팔 가볍게 밀기) 재개를 기다린다.
 #    flow.call() 이 받아서 ROBOT_ERROR(그 자리 정지 → PAUSED)로 마무리한다.
 _PASS_THROUGH = (cc.MoveIncomplete, cc.MotionHalted, CableTightError)
 
@@ -693,12 +693,12 @@ def dip(station: str, count: int, kind: str) -> Result:
     return Result()
 
 
-# ────────────────────────────────── 케이블 넛지(톡톡) 및 재검증
-_nudge_armed = False                     # E48: wait_for_nudge 가 cc.start_nudge_watch 를 부른 뒤인가 — 0.2 s 씩 여러 번 불려도 두드림 횟수가 이어지게
+# ────────────────────────────────── 케이블 넛지(로봇팔 가볍게 밀기) 및 재검증
+_nudge_armed = False                     # E48: wait_for_nudge 가 cc.start_nudge_watch 를 부른 뒤인가 — 0.2 s 씩 여러 번 불려도 밀기 횟수가 이어지게
 
 
 def wait_for_nudge(conf=None, sig=None, timeout_s=None):
-    """정지 상태에서 사용자의 두드림(톡톡 · 넛지)을 감지한다 — 툴 놓침 넛지와 같은 감지기(cc.check_nudge)로
+    """정지 상태에서 사용자의 넛지(로봇팔 가볍게 밀기)을 감지한다 — 툴 놓침 넛지와 같은 감지기(cc.check_nudge)로
     15 N(f2.nudge.force_threshold_n) · 2번 치기(cell.limits.nudge_taps · window nudge_tap_window_s)(E48). 힘 읽기 주기는 cell.limits.nudge_poll_s(0.2 s)
     — 0.05 s 로 읽으면 로봇 실시간 채널이 막혀 SAFE_STOP(1.3014)이 났다(실기).
     handle_cable_tight 가 timeout_s=0.2 로 반복해서 부르므로 기준(start_nudge_watch)은 처음 한 번만 잡고, 'nudge'/'resume'/'abort' 로 끝날 때 다시 잡게 푼다.
@@ -708,7 +708,7 @@ def wait_for_nudge(conf=None, sig=None, timeout_s=None):
     conf = conf if conf is not None else _f2()
     nudge_cfg = conf.get('nudge') or {}
     lim = (cc.cfg().get('cell') or {}).get('limits') or {}
-    thresh = float(nudge_cfg.get('force_threshold_n') or lim.get('nudge_force_n') or 15.0)   # 톡 판정 힘(없으면 15 N)
+    thresh = float(nudge_cfg.get('force_threshold_n') or lim.get('nudge_force_n') or 15.0)   # 넛지 판정 힘(없으면 15 N)
     hold = float(lim.get('nudge_hold_s') or 0.15)                                          # 힘이 유지돼야 하는 시간(없으면 0.15 s)
     taps = int(lim.get('nudge_taps') or 1)                                                 # 몇 번 쳐야 하나(없으면 1번)
     window = float(lim.get('nudge_tap_window_s') or 2.0)                                   # 여러 번 치기의 시간 창(없으면 2 s)
@@ -735,7 +735,7 @@ def wait_for_nudge(conf=None, sig=None, timeout_s=None):
         if _nudge_armed and callable(check_fn):
             try:
                 if check_fn(thresh, hold, taps, window):
-                    _log().info(f'👉 톡톡(넛지) 감지 — {thresh:g} N 넘게 {taps}번 (창 {window:g} s)')
+                    _log().info(f'👉 넛지(로봇팔 가볍게 밀기) 감지 — {thresh:g} N 넘게 {taps}번 (창 {window:g} s)')
                     _nudge_armed = False
                     return 'nudge'
             except Exception as e:
@@ -749,11 +749,11 @@ def recheck_cable(conf=None):
     """
     conf = conf if conf is not None else _f2()
     nudge_cfg = conf.get('nudge') or {}
-    settle_s = float(nudge_cfg.get('settle_s') or 1.5)                                   # 톡 친 뒤 가라앉을 시간(없으면 1.5 s)
+    settle_s = float(nudge_cfg.get('settle_s') or 1.5)                                   # 민 뒤 가라앉을 시간(없으면 1.5 s)
     samples = int(nudge_cfg.get('recheck_samples') or 10)                                # 재측정 표본 수(없으면 10)
     max_spread = float(((conf.get('limits') or {}).get('max_weigh_spread_g')) or 50.0)   # 떨림 상한(없으면 50 g)
 
-    # 손으로 톡톡 친 직후 센서 탄성/진동이 가라앉도록 잠시 대기
+    # 손으로 민 직후 센서 탄성/진동이 가라앉도록 잠시 대기
     if settle_s > 0:
         time.sleep(settle_s)
 

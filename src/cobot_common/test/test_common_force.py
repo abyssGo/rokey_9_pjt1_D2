@@ -555,7 +555,7 @@ def test_check_nudge_one_long_push_counts_once(_reset_nudge, monkeypatch):
 
 
 def test_check_nudge_second_tap_after_window_restarts_count(_reset_nudge, monkeypatch):
-    """첫 두드림 뒤 2 s 가 지나서 온 두 번째는 '첫 번째'로 다시 센다 → 아직 False."""
+    """첫 밀기 뒤 2 s 가 지나서 온 두 번째는 '첫 번째'로 다시 센다 → 아직 False."""
     monkeypatch.setattr(force, 'read_force', lambda: [0.0, 0.0, 0.0, 0, 0, 0])
     force.start_nudge_watch()
     _push_sequence(monkeypatch, [(0.0, 20.0), (0.2, 20.0), (0.4, 0.0), (3.0, 20.0), (3.2, 20.0)])

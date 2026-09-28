@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""케이블 이상 감지 및 넛지(톡톡) 재개 기능 테스트 — 민범진 (F2)
+"""케이블 이상 감지 및 넛지(로봇팔 가볍게 밀기) 재개 기능 테스트 — 민범진 (F2)
 
 검증 시나리오:
 1. 정상 상태: jitter_g <= max_weigh_spread_g -> 정상 진행
 2. 케이블 이상: jitter_g > max_weigh_spread_g -> CableTightError -> PAUSED 전환 및 대시보드 안내 메시지
-3. 톡톡 후 정상: 톡톡 감지 -> 재검증(jitter 정상) -> 작업 재개(RETRY_STEP)
-4. 톡톡 후 이상 지속: 톡톡 감지 -> 재검증(jitter 초과) -> PAUSED 유지
+3. 넛지 후 정상: 넛지 감지 -> 재검증(jitter 정상) -> 작업 재개(RETRY_STEP)
+4. 넛지 후 이상 지속: 넛지 감지 -> 재검증(jitter 초과) -> PAUSED 유지
 5. HMI 신호: resume 신호 시 재검증 후 재개 / abort 신호 시 안전 중단
 """
 import pytest
@@ -71,7 +71,7 @@ def _limits(monkeypatch, cc, **over):
 
 
 def test_wait_for_nudge_uses_the_shared_two_tap_detector(monkeypatch):
-    """🔄 9/24 E48: 톡톡 감지는 툴 놓침 넛지와 같은 cc.check_nudge(15 N · 2번 치기) — 두 번째 두드림이 잡히면 'nudge'."""
+    """🔄 9/24 E48: 넛지 감지는 툴 놓침 넛지와 같은 cc.check_nudge(15 N · 2번 밀기) — 두 번째 밀기가 잡히면 'nudge'."""
     import cobot_common as cc
     import f2_sense_flow.sense as sense
     _limits(monkeypatch, cc)
@@ -87,7 +87,7 @@ def test_wait_for_nudge_uses_the_shared_two_tap_detector(monkeypatch):
 
 
 def test_wait_for_nudge_keeps_the_baseline_across_short_calls(monkeypatch):
-    """handle_cable_tight 가 0.2 s 씩 반복해서 불러도 두드림 횟수가 이어지도록 기준은 처음 한 번만 잡는다 · 시간 초과는 None."""
+    """handle_cable_tight 가 0.2 s 씩 반복해서 불러도 밀기 횟수가 이어지도록 기준은 처음 한 번만 잡는다 · 시간 초과는 None."""
     import cobot_common as cc
     import f2_sense_flow.sense as sense
     _limits(monkeypatch, cc)
@@ -129,7 +129,7 @@ def test_recheck_cable_judges_ok_and_tight(monkeypatch):
 
 
 def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
-    """Flow 통합: 케이블 이상 발생 -> PAUSED -> 톡톡 감지 -> 재검증 통과 -> 작업 재개(RETRY_STEP)."""
+    """Flow 통합: 케이블 이상 발생 -> PAUSED -> 넛지 감지 -> 재검증 통과 -> 작업 재개(RETRY_STEP)."""
     log = MockLogger()
     cfg = {
         'flow': {
@@ -189,7 +189,7 @@ def test_flow_handle_cable_tight_maintains_paused_when_tight_persists(monkeypatc
 
     # abort_container 가 호출되면 ABORTED 관련 종료
     outcome = flow.handle_cable_tight(sig)
-    # 1번째 톡톡 후 재검증 실패로 메시지가 '케이블 이상 지속'으로 갱신되었는지 확인
+    # 1번째 넛지 후 재검증 실패로 메시지가 '케이블 이상 지속'으로 갱신되었는지 확인
     # (최종적으로 abort 되어 격리 완료됨)
     assert outcome == 'go_on'  # abort_container 반환값
 

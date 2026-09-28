@@ -8,7 +8,7 @@
 | `fake_state_pub` | **가짜 flow** — 대본대로 실제 flow 와 같은 토픽을 방송하고 버튼(`/flow/start·stop·resume·abort`)에 반응(로봇·브링업 불필요) | `ros2 run f4_hmi fake_state_pub [대본] [--speed N] [--once] [--wait-start]` |
 
 대본(`scenarios/*.yaml`): `normal` 정상 · `isolate` 격리 · `error` 로봇 오류로 멈춤 · `paused` 일시정지→재개 · `empty_zone` 빈 구역
-· 🆕 9/25 `tool_lost` 툴 놓침 → 멈춤 → 다시 집고 이어감(E37) · `leftover_remain` 잔반 남음 → 용기 든 채 멈춤 → 덜어내고 재개(E42) · `cable` 케이블 이상 → 멈춤 → 톡톡 재개(#93) · 🆕 9/26 `tool_fail` 툴 집기 실패 → 멈춤(홀더 확인 → 톡 → 다시 집기 · E52)
+· 🆕 9/25 `tool_lost` 툴 놓침 → 멈춤 → 다시 집고 이어감(E37) · `leftover_remain` 잔반 남음 → 용기 든 채 멈춤 → 덜어내고 재개(E42) · `cable` 케이블 이상 → 멈춤 → 넛지 재개(#93) · 🆕 9/26 `tool_fail` 툴 집기 실패 → 멈춤(홀더 확인 → 넛지 → 다시 집기 · E52)
   — 세 대본은 `fail.action: pause_retry`(멈춘 뒤 **그 단계부터 다시** 이어 완료 · 실제 flow 의 RETRY_STEP). 멈춤은 `hold_s` 뒤 저절로 풀리고, 화면의 **재개** 를 누르면 바로 풀린다. 9/29 예외 실기 ①③④⑤ 의 화면 연습용.
 🚨 `fake_state_pub` 와 실제 `flow_node` 를 **동시에 띄우지 않는다**(같은 토픽에 두 곳이 방송한다).
 
@@ -30,7 +30,7 @@ python3 -m venv --system-site-packages ~/venvs/hmi
 | 이번 팔레트 | 4칸 입체 그림(넣는 순서 ① 그릇 1 → ④ 컵 2) · 가득 차면 교체 안내 · 아래에 **지금까지 처리 — 전체**(팔레트 · 그릇 · 컵 · 격리 · DB 전체 기록) | done_* · `flow.rack_order` · `/api/kpi?period=all` |
 | 진행 · 사이클 · 소모품 | 그릇/컵 수량 막대 · 반납 구역 남은 수·상태(`비었음` 포함) · 격리 수 · 용기 1개 시간 · 수세미/세제 교체까지 | state · `/flow/event` · `flow.consumables` |
 | 이력 | 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀) · 원인(운영자 중단 · 잔반이 남음 · 빈 구역 · 툴 놓침 …) · 문제만 보기 | `/flow/event` |
-| 소리 | 넛지(손목 두드림) 재개 요청이 감지되면 비프(#93 · flow 문구 '재개 요청 감지') · 🆕 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 | message · step |
+| 소리 | 넛지(로봇팔 가볍게 밀기) 재개 요청이 감지되면 비프(#93 · flow 문구 '재개 요청 감지') · 🆕 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 | message · step |
 
 ## 화면(`web/` — Next.js 정적 내보내기)
 ```bash

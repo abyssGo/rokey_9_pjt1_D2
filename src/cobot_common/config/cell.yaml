@@ -31,10 +31,10 @@ cell:
                                   #   안착 놓기는 beds.*.seat.contact_limit_n(15) · 팔레트 삽입은 insert_limit_n(15) 을 따로 쓴다
     insert_limit_n: 15            # 삽입(팔레트·컵 솔) 힘 상한    — NFR-01 "안착 15 N · 삽입 15 N"
     timeout_s: 10                 # 접촉 동작 공통 타임아웃 (SDD §4.3)
-    nudge_force_n: 15.0           # 넛지(살짝 밀기·톡 치기) 판정 힘 — 실기(NEW-02a/b)로 확정 · E48 로 f2.nudge.force_threshold_n 과 같은 값
+    nudge_force_n: 15.0           # 넛지(로봇팔 가볍게 밀기) 판정 힘 — 실기(NEW-02a/b)로 확정 · E48 로 f2.nudge.force_threshold_n 과 같은 값
     nudge_hold_s: 0.15            # 이만큼 유지돼야 진짜 넛지(순간 노이즈 아님) — 같은 실기로 확정(E48 에서 유지)
-    nudge_taps: 1                 # 재개에 필요한 두드림 횟수. 1 = 한 번 치기(두 번은 번거로워 되돌림) — 힘 15 N·유지 0.15 s 는 그대로(E48). 2 로 두면 두 번 쳐야 재개(cc.check_nudge taps)
-    nudge_tap_window_s: 2.0       # E48: 첫 두드림 뒤 이 시간 안에 두 번째가 와야 한다(지나면 처음부터)
+    nudge_taps: 1                 # 재개에 필요한 밀기 횟수. 1 = 한 번 밀기(두 번은 번거로워 되돌림) — 힘 15 N·유지 0.15 s 는 그대로(E48). 2 로 두면 두 번 쳐야 재개(cc.check_nudge taps)
+    nudge_tap_window_s: 2.0       # E48: 첫 밀기 뒤 이 시간 안에 두 번째가 와야 한다(지나면 처음부터)
     nudge_settle_s: 0.5           # halt 뒤 팔이 완전히 멈출 때까지 기다렸다 기준값을 잡는다 — 제한: 임시값 · 실기 값으로 조정
     nudge_poll_s: 0.2             # 힘 읽기 주기 — 너무 빠르면(0.05 s) 로봇 실시간 채널이 하트비트를 못 보내 SAFE_STOP(실기 확인)
     nudge_resume_settle_s: 3.0    # 넛지로 재개된 뒤 로봇 상태가 STANDBY 로 돌아올 때까지 기다리는 최대 시간(폴링) — 고정 시간만 기다리면 MoveIncomplete 가 났다 · 제한: 임시값
