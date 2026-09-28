@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트(황인재 9/21 · Claude 디자인 시안 승인). public/illust/ 에 있다
@@ -57,6 +57,8 @@ export default function Monitor() {
   const lastSoundMsg = useRef('');
   const s = d.state;
   if (lastRunning.current === null) lastRunning.current = recall();
+  // 🆕 9/28 멈춘 뒤에 연 화면(새 탭·태블릿)은 멈춘 단계를 못 봤다 → 브리지가 기억한 직전 단계(paused_from)를 쓴다
+  if (s && (s.step === 'PAUSED' || s.step === 'ERROR') && !lastRunning.current && d.paused_from) { lastRunning.current = d.paused_from; remember(d.paused_from); }
   if (s && RUNNING.includes(s.step) && lastRunning.current !== s.step) { lastRunning.current = s.step; remember(s.step); }
   if (s && (s.step === 'IDLE' || s.step === 'DONE') && lastRunning.current) { lastRunning.current = ''; remember(''); }
 
@@ -81,10 +83,9 @@ export default function Monitor() {
   const showToast = (t) => { setToast(t); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 6000); };
   useEffect(() => {
     const step = s?.step;
-    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창
+    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다)
       pauseSeq.current += 1;
-      const a = alarm(dRef.current);
-      if (a && a.level === 'pause') setModal({ seq: pauseSeq.current, a, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
+      setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
     }
     if (wasPaused.current && step && step !== 'PAUSED') {              // 멈춤이 풀렸다(버튼·톡·중단)
       setModal(null);
@@ -115,7 +116,7 @@ export default function Monitor() {
 
   return (
     <div className="page">
-      {modal && <AlertModal m={modal} onClose={() => setModal(null)} />}
+      {modal && alarm(d)?.level === 'pause' && <AlertModal m={modal} a={alarm(d)} onClose={() => setModal(null)} />}
       {toast && <div className="toast" role="status">✔ {toast.text}{toast.sub && <div className="toast-sub">{toast.sub}</div>}</div>}
       <TopBar d={d} can={can} onPress={onPress} />
       <Alarm d={d} step={lastRunning.current || null} />
@@ -179,20 +180,20 @@ function Alarm({ d, step }) {
 }
 
 // 🆕 9/28 예외 알림창 — 멈춤 원인 아이콘 + 멈춘 단계 그림 + 할 일 · 확인을 누르면 닫히고(안내 띠는 남는다) 재개 버튼(또는 톡)으로 이어 간다
-function AlertModal({ m, onClose }) {
+function AlertModal({ m, a, onClose }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  const g = m.a.guide;
+  const g = a.guide;
   const where = m.step && STEP_KO[m.step] ? `${STEP_KO[m.step]} 단계에서 멈춤` : '멈춤';
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" role="dialog" aria-modal="true" aria-label={g.title} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <img src={iconArt(causeIcon(m.a.kind, m.kind))} alt="" />
-          <div><div className="modal-title">{g.title}</div><div className="dim">{where}{m.a.code && m.a.code !== 'OK' && m.a.kind !== 'cable' ? ` · 코드 ${m.a.code}` : ''}</div></div>
+          <img src={iconArt(causeIcon(a.kind, m.kind))} alt="" />
+          <div><div className="modal-title">{g.title}</div><div className="dim">{where}{a.code && a.code !== 'OK' && a.kind !== 'cable' ? ` · 코드 ${a.code}` : ''}</div></div>
         </div>
         <div className="modal-body">
           {m.step && STEP_KO[m.step] ? <img className="modal-art" src={stepArt(m.step, m.kind)} alt="" /> : <div className="modal-art" />}
@@ -350,7 +351,7 @@ function Pallet({ d }) {
   const filled = cells.filter((c) => c.filled).length;
   const full = cells.length > 0 && filled >= cells.length;       // 이번 회차가 칸을 다 채웠다 → 사람이 팔레트를 바꾼다
   const loading = cells.some((c) => c.loading);
-  const t = d.totals || {};
+  const t = lifetime(d);                                          // 🔄 9/28 누적은 DB 전체 기록(없으면 메모리)
   return (
     <section className={`card pallet-card ${full ? 'full' : ''}`}>
       <h2>이번 팔레트</h2>
@@ -370,12 +371,14 @@ function Pallet({ d }) {
       <div className="segs">{cells.map((c) => <i key={c.slot} className={c.filled ? 'done' : c.loading ? 'now' : ''} />)}</div>
       <svg viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`} className="rack-art" role="img" aria-label="팔레트 적재 상태"
         dangerouslySetInnerHTML={{ __html: art }} />
-      <div className="rack-totals">
-        <img src={iconArt('pallet')} alt="" width="40" height="40" />
-        <div><span className="dim">처리한 팔레트</span> <b>{t.pallets ?? 0}</b> 장</div>
-        <div className="dim">누적 그릇 <b>{t.bowls ?? 0}</b> · 컵 <b>{t.cups ?? 0}</b> · 격리 <b className="warn">{t.isolated ?? 0}</b></div>
+      <h2 className="gap">지금까지 처리 — 전체</h2>
+      <div className="tiles four">
+        <div><span>팔레트</span><b>{t.pallets}<small> 장</small></b></div>
+        <div><span>그릇</span><b>{t.bowls}</b></div>
+        <div><span>컵</span><b>{t.cups}</b></div>
+        <div><span>격리</span><b className={t.isolated ? 'warn' : ''}>{t.isolated}</b></div>
       </div>
-      <div className="dim tiny">누적은 HMI 를 켠 뒤부터 · 끝난 회차 {t.runs ?? 0}번 · 팔레트는 칸을 다 채우고 끝난 회차만 센다</div>
+      <div className="dim tiny">{t.fromDb ? '전체 기록(SQLite) · 껐다 켜도 이어진다' : 'HMI 를 켠 뒤부터(기록 없음)'} · 실행 {t.runs}회 · 팔레트 = 칸 {cells.length || 4}개를 다 채우고 끝난 실행</div>
     </section>
   );
 }

@@ -27,7 +27,7 @@ python3 -m venv --system-site-packages ~/venvs/hmi
 | 버튼 | 시작(IDLE 만) · 재개(PAUSED 만) · 중단(PAUSED · 로봇 오류 멈춤 제외 — 케이블 이상은 가능) · 끊기면 전부 비활성 · 누르면 flow 의 대답 문구와 지연(ms) | `/api/start|stop|resume|abort` |
 | 단계 표시줄 | 8단계 그림 카드 + 격리 · 지금 = 파랑 · 멈춤 = 주황(멈춘 단계를 기억해 가리킴) · 로봇 오류 = 붉음 | step · 탭 저장소 |
 | 지금 하는 일 | 큰 그림 · 한 줄 설명 · 이번 용기 경과 · 몇 번째 · 다음 할 일 · 상태 알약(`진행 중`·`일시 정지`·`멈춤 — 툴 놓침` …) | step · kind · 수량 |
-| 이번 팔레트 | 4칸 입체 그림(넣는 순서 ① 그릇 1 → ④ 컵 2) · 가득 차면 교체 안내 · 누적 | done_* · `flow.rack_order` |
+| 이번 팔레트 | 4칸 입체 그림(넣는 순서 ① 그릇 1 → ④ 컵 2) · 가득 차면 교체 안내 · 아래에 **지금까지 처리 — 전체**(팔레트 · 그릇 · 컵 · 격리 · DB 전체 기록) | done_* · `flow.rack_order` · `/api/kpi?period=all` |
 | 진행 · 사이클 · 소모품 | 그릇/컵 수량 막대 · 반납 구역 남은 수·상태(`비었음` 포함) · 격리 수 · 용기 1개 시간 · 수세미/세제 교체까지 | state · `/flow/event` · `flow.consumables` |
 | 이력 | 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀) · 원인(운영자 중단 · 잔반이 남음 · 빈 구역 · 툴 놓침 …) · 문제만 보기 | `/flow/event` |
 | 소리 | 톡톡(넛지) 재개 요청이 감지되면 비프(#93 · flow 문구 '재개 요청 감지') · 🆕 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 | message · step |
@@ -67,7 +67,7 @@ soc && ros2 bag play ~/rokey9_pjt1/_bags/0923_full_0.5 --topics /flow/state /flo
 - 표 5개: `events`(용기 1개 = 1줄 · 시각·실행 번호·종류·구역·칸·결과·코드·시도·무게 전/후·소요·버린 잔반 g) · `runs`(시작 1번 = 1줄) · `pauses`(멈춤 1번 = 1줄 · 단계·원인·어떻게 풀렸나) · `commands`(버튼 1번 = 1줄) · `replacements`(교체 1번 = 1줄 · 수세미/솔/세제/잔반통).
 - 소모품 사용량 = **마지막 교체 뒤의 events** — 수세미 = 그릇 완료 수 · 솔 = 컵 완료 수 · 세제 = 완료 용기 수 · 잔반통 = 버린 잔반 g 합(잔반 판정이 난 그릇의 무게 전 − 후). 화면 소모품 칸의 **교체 완료** 버튼 → `POST /api/replace/{item}` → 0 부터.
 - 잔반통 한도 `hmi.waste_bin_limit_g`(50 kg): 누적이 닿으면 브리지가 `/flow/stop`(일시 정지 · 다음 용기 집기 전)을 보내고 화면에 "잔반통 교체" 카드 → 교체 완료 → 재개.
-- 화면 "누적" 칸(이번 실행 / 오늘 / 전체): 처리량 · 처리율 · 용기당 평균 · 시간당 · 멈춤(횟수·시간·잦은 원인) · 잔반 비율·버린 양. `GET /api/kpi?period=run|today|all`.
+- 화면 "누적" 칸(이번 실행 / 오늘 / 전체): 처리량(그릇·컵·**팔레트 장수**) · 처리율 · 용기당 평균 · 시간당 · 멈춤(횟수·시간·잦은 원인) · 잔반 비율·버린 양. `GET /api/kpi?period=run|today|all`. 팔레트 = 칸(`flow.rack_order` 합 = 4)을 다 채우고 끝난 실행 수(`kpi.pallets` · 9/28).
 - 터미널에서 보기: `ros2 run f4_hmi hmi_db tables` · `hmi_db dump events --limit 20` · `hmi_db dump pauses` · `hmi_db usage` · `hmi_db kpi --period today` · `hmi_db replace waste_bin`. (`--db 파일` 로 다른 파일)
 - 웹 주소: `/api/usage` · `/api/kpi` · `/api/db/{표}?limit=` · `/api/history?limit=`. 브리지를 기록 없이 띄운 시험 서버는 503.
 - 시험: `pytest src/f4_hmi/test/test_f4_db.py`(DB·기록자 · ROS 없이) · API 시험은 웹 부품 상자로 `~/venvs/hmi/bin/python -m pytest src/f4_hmi` · `node --test web/test/`.

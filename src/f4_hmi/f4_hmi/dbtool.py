@@ -18,12 +18,20 @@ from .db import HmiDb, ITEMS, TABLES
 from .paths import ws_path
 
 
-def _cfg_db_path():
+def _cfg():
     try:
         from cobot_common import config
-        return str((config.load().get('hmi') or {}).get('db_path') or 'prewash.db')
-    except Exception:                                       # noqa: BLE001 — 설정을 못 읽어도 기본 파일로
-        return 'prewash.db'
+        return config.load()
+    except Exception:                                       # noqa: BLE001 — 설정을 못 읽어도 기본값으로
+        return {}
+
+
+def _cfg_db_path():
+    return str((_cfg().get('hmi') or {}).get('db_path') or 'prewash.db')
+
+
+def _cfg_rack_slots():
+    return sum(len(v or []) for v in ((_cfg().get('flow') or {}).get('rack_order') or {}).values())
 
 
 def _table(rows):
@@ -49,7 +57,7 @@ def main(argv=None):
     r = sub.add_parser('replace'); r.add_argument('item', choices=ITEMS); r.add_argument('--note', default='터미널에서')
     e = sub.add_parser('export'); e.add_argument('--dir', default='records'); e.add_argument('--limit', type=int, default=100000)
     a = p.parse_args(argv)
-    db = HmiDb(ws_path(a.db or _cfg_db_path()))            # 어디서 실행하든 워크스페이스의 파일
+    db = HmiDb(ws_path(a.db or _cfg_db_path()), rack_slots=_cfg_rack_slots())   # 어디서 실행하든 워크스페이스의 파일
     print(f'# {db.path}')
     if a.cmd == 'tables':
         for t in TABLES:

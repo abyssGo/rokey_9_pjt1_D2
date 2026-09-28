@@ -11,6 +11,7 @@ import time
 from collections import deque
 
 RECENT_EVENTS = 50              # 메모리에 들고 있는 최근 이벤트 수(화면 이력) — 전체는 SQLite(F4-04 · db.py)
+RUNNING_STEPS = ('PICK', 'WEIGH', 'SHAKE', 'SEAT', 'SOAP', 'WIPE', 'RINSE', 'RACK', 'ISOLATE')   # 🆕 9/28 멈추기 직전 단계(paused_from)를 기억하는 데 쓴다
 FORCE_FRESH_S = 0.5             # /cell/force 는 닦는 동안만 온다 → 이 시간 넘게 없으면 '지금은 닦지 않는다'(None)
 
 
@@ -28,6 +29,7 @@ class StateStore:
         # 누적 — flow 가 계획을 마치고 DONE 으로 넘어가는 순간 한 회차로 센다. HMI 를 켠 뒤부터(끄면 사라진다 · 저장은 F4-04 SQLite)
         self._rack_slots = int(rack_slots)
         self._totals = {'runs': 0, 'pallets': 0, 'bowls': 0, 'cups': 0, 'isolated': 0}
+        self._paused_from = None                            # 🆕 9/28 멈춤(PAUSED·ERROR) 직전에 하던 단계 — 멈춘 뒤에 연 화면(태블릿·새 탭)도 "닦기 단계에서 멈춤"을 안다
         self._listeners = []
 
     def subscribe(self, fn):
@@ -50,6 +52,11 @@ class StateStore:
             before = self._state.get('step') if self._state else None
             if before is not None and before != 'DONE' and fields.get('step') == 'DONE':   # 회차가 끝났다(처음 받은 값이 DONE 이면 세지 않는다 — 못 본 회차)
                 self._count_run(fields)
+            if fields.get('step') in ('PAUSED', 'ERROR'):
+                if before in RUNNING_STEPS:
+                    self._paused_from = before
+            else:
+                self._paused_from = None
             self._state, self._state_at = dict(fields), self._clock()
             self._count += 1
         self._tell('state', self.live())
@@ -102,4 +109,5 @@ class StateStore:
                 'force_n': round(self._force, 2) if fresh else None,
                 'events': [dict(e) for e in self._events],
                 'totals': {**self._totals, 'rack_slots': self._rack_slots},
+                'paused_from': self._paused_from,
             }

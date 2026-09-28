@@ -39,9 +39,10 @@ def _now():
 
 
 class HmiDb:
-    def __init__(self, path, leftover_threshold_g=50.0, now=_now):
+    def __init__(self, path, leftover_threshold_g=50.0, now=_now, rack_slots=0):
         self.path = str(path)
         self.leftover_threshold_g = float(leftover_threshold_g)
+        self.rack_slots = int(rack_slots or 0)              # 🆕 9/28 팔레트 한 장의 칸 수 — 칸을 다 채우고 끝난 회차 = 팔레트 1장(kpi.pallets)
         self._now = now
         self._lock = threading.Lock()                       # ROS 스레드(기록)와 웹 스레드(조회)가 같이 쓴다
         self._con = sqlite3.connect(self.path, check_same_thread=False)
@@ -165,12 +166,15 @@ class HmiDb:
                     rid = row['id'] if row else None
                 where, args = ('run_id=?', (rid,)) if rid is not None else ('0', ())
                 pwhere, pargs = where, args
+                rwhere, rargs = ('id=?', (rid,)) if rid is not None else ('0', ())
             elif period == 'today':
                 day = self._now()[:10]
                 where, args = ("substr(ts,1,10)=?", (day,))
                 pwhere, pargs = ("substr(started_at,1,10)=?", (day,))
+                rwhere, rargs = pwhere, pargs
             else:
                 where, args, pwhere, pargs = '1', (), '1', ()
+                rwhere, rargs = '1', ()
             q = lambda sql, a=(): self._con.execute(sql, a).fetchone()          # noqa: E731
             counts = {r['k']: r['c'] for r in self._con.execute(
                 f"SELECT result || '_' || kind k, COUNT(*) c FROM events WHERE {where} GROUP BY k", args).fetchall()}
@@ -197,6 +201,9 @@ class HmiDb:
             pn = q(f'SELECT COUNT(*) c, COALESCE(SUM(duration_s),0) s FROM pauses WHERE {pwhere}', pargs)
             top = self._con.execute(f'SELECT kind, COUNT(*) c FROM pauses WHERE {pwhere} GROUP BY kind ORDER BY c DESC LIMIT 1', pargs).fetchone()
             runs = q(f"SELECT COUNT(*) c FROM runs WHERE {pwhere if period != 'run' else '1'}", pargs if period != 'run' else ())['c']
+            # 🆕 9/28 황인재: 처리한 팔레트 수 — 칸(rack_slots)을 다 채우고 끝난 회차만 센다(화면 '이번 팔레트' 카드의 누적과 같은 기준 · 껐다 켜도 남는다)
+            pallets = (q(f"SELECT COUNT(*) c FROM runs WHERE {rwhere} AND ended_at IS NOT NULL AND done_bowl + done_cup >= ?", rargs + (self.rack_slots,))['c']
+                       if self.rack_slots > 0 else 0)
             return {
                 'period': period,
                 'total': int(total),
@@ -208,6 +215,6 @@ class HmiDb:
                 'pauses': int(pn['c']), 'pause_s': round(float(pn['s']), 1), 'pause_top': (top['kind'] if top else ''),
                 'leftover_pct': round(100.0 * leftover / bowls, 1) if bowls else None,
                 'avg_attempts': round(float(att), 2) if att is not None else None,
-                'runs': int(runs),
+                'runs': int(runs), 'pallets': int(pallets),
                 'waste_g': round(float(q(f'SELECT COALESCE(SUM(waste_g),0) g FROM events WHERE {where}', args)['g']), 1),
             }

@@ -227,13 +227,22 @@ export function kpiCards(k) {
   const n = (v, unit = '') => (v == null ? '-' : `${v}${unit}`);
   const kg = (g) => (g == null ? '-' : g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${Math.round(g)} g`);
   return [
-    { label: '처리량', value: n(k.done_bowl + k.done_cup, '개'), sub: `그릇 ${k.done_bowl} · 컵 ${k.done_cup}` },
+    { label: '처리량', value: n(k.done_bowl + k.done_cup, '개'), sub: `그릇 ${k.done_bowl} · 컵 ${k.done_cup}${k.pallets != null ? ` · 팔레트 ${k.pallets}장` : ''}` },
     { label: '처리율', value: n(k.success_pct, '%'), sub: `격리 ${k.isolated} · 오류 ${k.error} · 건너뜀 ${k.skipped}`, tone: k.success_pct != null && k.success_pct < 90 ? 'warn' : '' },
     { label: '용기당 평균', value: `${n(k.avg_s_bowl, 's')} / ${n(k.avg_s_cup, 's')}`, sub: '그릇 / 컵' },
     { label: '시간당', value: n(k.per_hour, '개'), sub: k.per_hour == null ? '5분 넘게 돌면 계산' : '완료 기준' },
     { label: '멈춤', value: n(k.pauses, '회'), sub: k.pauses ? `${Math.round(k.pause_s)}초 · 잦은 원인 ${PAUSE_KO[k.pause_top] || k.pause_top || '-'}` : '없음', tone: k.pauses ? 'warn' : '' },
     { label: '잔반', value: n(k.leftover_pct, '%'), sub: `그릇 중 잔반 있던 비율 · 버린 양 ${kg(k.waste_g)}` },
   ];
+}
+
+// 🆕 9/28 황인재 "처리한 팔레트·그릇·컵 수가 어디 있나" — '이번 팔레트' 카드 아래 누적 칸. DB 전체 기록(/api/kpi?period=all)이 있으면 그것(껐다 켜도 남는다),
+//    없으면 브리지 메모리 누적(totals · HMI 를 켠 뒤부터). 팔레트 = 칸을 다 채우고 끝난 실행 수(db.kpi.pallets · state_store._count_run 과 같은 기준)
+export function lifetime(d) {
+  const k = d.kpiAll;
+  if (k) return { fromDb: true, pallets: k.pallets || 0, bowls: k.done_bowl || 0, cups: k.done_cup || 0, isolated: k.isolated || 0, runs: k.runs || 0 };
+  const t = d.totals || {};
+  return { fromDb: false, pallets: t.pallets || 0, bowls: t.bowls || 0, cups: t.cups || 0, isolated: t.isolated || 0, runs: t.runs || 0 };
 }
 
 // 🆕 9/28 예외 알림창 — 원인 아이콘(public/illust/icons/*.svg 이름) · 멈춤이 풀렸을 때 토스트 문구

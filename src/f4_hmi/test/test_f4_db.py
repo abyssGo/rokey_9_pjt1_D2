@@ -84,6 +84,18 @@ def test_kpi_totals_averages_and_pauses(db):
     assert run['ended_at'] and (run['done_bowl'], run['done_cup'], run['isolated']) == (2, 1, 1)   # runs 는 flow 가 준 상태값 그대로
 
 
+def test_kpi_pallets_count_runs_that_filled_the_rack(tmp_path):
+    # 🆕 9/28 황인재: 처리한 팔레트 수 — 칸(rack_slots)을 다 채우고 끝난 회차만. 기간(run·all)을 따르고, 칸 수를 모르면 0
+    d = HmiDb(tmp_path / 'p.db', now=Clock(), rack_slots=4)
+    r1 = d.start_run(); d.end_run(r1, {'done_bowl': 2, 'done_cup': 2, 'isolated': 0})
+    r2 = d.start_run(); d.end_run(r2, {'done_bowl': 1, 'done_cup': 2, 'isolated': 1})
+    assert d.kpi('all')['pallets'] == 1 and d.kpi('today')['pallets'] == 1
+    assert d.kpi('run')['pallets'] == 0 and d.kpi('run', run_id=r1)['pallets'] == 1
+    r3 = d.start_run()                                                          # 진행 중인 회차는 세지 않는다
+    assert d.kpi('all')['pallets'] == 1
+    assert HmiDb(tmp_path / 'q.db', now=Clock()).kpi('all')['pallets'] == 0
+
+
 def test_recent_events_have_stamp_for_the_screen(db):
     db.add_event(ev())
     e = db.recent_events(5)[0]

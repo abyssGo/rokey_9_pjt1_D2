@@ -97,7 +97,14 @@ test('소모품 — DB 값(usage)이 있으면 그것을 쓰고 잔반통은 g/�
   assert.equal(D.alarm(dd).kind, 'waste_bin'); assert.match(D.alarm(dd).guide.title, /잔반통/);
   const cards = D.kpiCards({ period: 'run', total: 4, done_bowl: 2, done_cup: 1, isolated: 1, error: 0, skipped: 0, success_pct: 75, avg_s_bowl: 70, avg_s_cup: 40, per_hour: null, pauses: 1, pause_s: 12, pause_top: 'tool_lost', leftover_pct: 50, waste_g: 92, runs: 1 });
   assert.equal(cards.length, 6); assert.equal(cards[0].value, '3개'); assert.match(cards[4].sub, /툴 놓침/);
+  assert.doesNotMatch(cards[0].sub, /팔레트/);                                     // 옛 서버(pallets 없음)면 숨긴다
+  assert.match(D.kpiCards({ done_bowl: 2, done_cup: 2, isolated: 0, error: 0, skipped: 0, pauses: 0, pallets: 1 })[0].sub, /팔레트 1장/);
   assert.equal(D.kpiCards(null).length, 0);
+  // 🆕 9/28 팔레트 카드의 누적 칸 — DB 전체 기록이 있으면 그것, 없으면 브리지 메모리 누적
+  const life = D.lifetime({ kpiAll: { pallets: 3, done_bowl: 7, done_cup: 6, isolated: 2, runs: 4 }, totals: { pallets: 0, bowls: 1 } });
+  assert.deepEqual(life, { fromDb: true, pallets: 3, bowls: 7, cups: 6, isolated: 2, runs: 4 });
+  assert.deepEqual(D.lifetime({ totals: { pallets: 1, bowls: 2, cups: 2, isolated: 0, runs: 1 } }), { fromDb: false, pallets: 1, bowls: 2, cups: 2, isolated: 0, runs: 1 });
+  assert.equal(D.lifetime({}).pallets, 0);
 });
 
 test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토스트는 버튼/톡·중단을 가른다(9/28)', () => {
