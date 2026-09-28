@@ -243,3 +243,38 @@ def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
     assert outcome == RETRY_STEP
 
 
+def test_cable_recheck_failure_waits_for_a_new_signal(monkeypatch):
+    """화면 재개로 풀었는데 재검증이 실패하면 — 다시 멈춤 상태로 들어가 **새 신호**(넛지·재개)를 기다린다.
+    남은 재개 깃발로 사람 신호 없이 다시 재거나 출발하지 않는다."""
+    log = MockLogger()
+    cfg = {'flow': {'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}], 'policy': {}}}
+    polls, rechecks = [0], []
+
+    def wait_like_real(conf, sig, timeout_s):
+        """실제 sense.wait_for_nudge 처럼 resume 깃발은 peek(안 내림)으로만 본다.
+        3번째 폴에서 화면 재개를 누르고, 12번째 폴에 넛지(새 신호)가 온다. 50번 넘게 폴하면 끝나지 않는 것."""
+        polls[0] += 1
+        if polls[0] > 50:
+            raise AssertionError(f'끝나지 않는다 — 재검증 {len(rechecks)}회')
+        if polls[0] == 3:
+            sig.raise_('resume')                          # 멈춘 뒤 화면 재개
+        if sig.peek('resume'):
+            return 'resume'
+        if polls[0] == 12:
+            return 'nudge'
+        return None
+
+    def recheck(conf):
+        rechecks.append(1)
+        return (len(rechecks) >= 2, 90.0 if len(rechecks) < 2 else 40.0, 80.0)   # 1번째 실패 · 2번째 통과
+
+    flow = Flow(cfg, log, features={'f2': types.SimpleNamespace(wait_for_nudge=wait_like_real, recheck_cable=recheck)})
+    flow.step = 'WEIGH'
+    flow._prev_step = 'WEIGH'
+    sig = Signals()
+    outcome = flow.handle_cable_tight(sig)
+    assert outcome == RETRY_STEP
+    assert len(rechecks) == 2, f'재검증 실패 뒤 새 신호 없이 다시 쟀다 ({len(rechecks)}회 · 폴 {polls[0]}회)'
+    assert polls[0] == 12, f'넛지(새 신호)를 기다리지 않고 다시 쟀다 (폴 {polls[0]}회)'
+    assert not sig.peek('resume'), '쓴 재개 신호가 남아 있다'
+

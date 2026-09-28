@@ -44,6 +44,7 @@ RESUMED_NUDGE = 'resumed_nudge'  # 재개 — 넛지(힘). 컨트롤러 쪽 SOS 
 ABORTED = 'aborted'              # 중단 (이 용기를 접고 다음 용기)
 # handle_failure 만 돌려주는 값 — run_plan 까지 올라가지 않고 process_one 이 그 자리에서 쓴다
 RETRY_STEP = 'retry_step'        # 재개 — 실패한 그 단계부터 다시 (IRD §8)
+RETRY_TOOL_PICK = 'retry_tool_pick'   # 재개 — 툴 놓침 뒤: 곧게 빠져나와 '툴 집기' 단계부터 다시(툴 집기 → 세제 → 닦기)
 # 멈춤에서 넛지(로봇팔 가볍게 밀기)로도 재개되는 코드 — 사람이 현장에서 바로 손대는 상황들(E52).
 #    툴 놓침(홀더에 꽂고 넛지) · 툴 집기 실패(홀더 확인하고 넛지) · 로봇 오류(확인하고 넛지 — 쥔 것이 있으면 첫 넛지는 그리퍼만 연다)
 _NUDGE_CODES = (TOOL_LOST, TOOL_FAIL, ROBOT_ERROR)
@@ -149,12 +150,13 @@ class Flow:
     def __init__(self, cfg, log, publish_event=None, safe_retreat=None, features=None,
                  force_off=None, no_retreat_errors=(),
                  is_paused=None, halt=None, clear_halt=None, halt_errors=(),
-                 pause=None, resume=None):
+                 pause=None, resume=None, grip_width=None):
         self.cfg = (cfg or {}).get('flow', {})
         self.f = features or {}                  # {'f1': 모듈, 'f2': 모듈, 'f3': 모듈}
         self.log = log
         self._publish_event = publish_event or (lambda ev: None)
         self._safe_retreat = safe_retreat or (lambda: None)
+        self._grip_width = grip_width or getattr(cc, 'grip_width', None)   # 닦기 재시도 전 툴 쥠 확인(_tool_held)
         # 주의: 후퇴를 하면 안 되는 예외들 (SDD §7). flow 는 로봇을 모르므로
         #    클래스와 함수를 flow_node 가 넣어 준다 — cc.MoveIncomplete · cc.force_off.
         #    이동이 도중에 서면 로봇이 어디 있는지 모른다 → Z 를 올리는 후퇴가 더 위험하다
@@ -323,6 +325,25 @@ class Flow:
             except Exception:                 # noqa: BLE001 — 로그가 터져도 통로는 안 샌다
                 pass
             return False
+
+    def _tool_held(self, tool_id):
+        """쥔 툴이 아직 손에 있는가 — 툴 집기(f1 _tool_pick)와 같은 판정: |읽은 폭 − 영점 − 기대 폭| ≤ 허용오차.
+        True/False, 판단할 수 없으면 None(폭을 못 읽음 · 고정 폭 프리셋 · 설정 없음 — 이때 닦기 함수가 시작할 때 폭을 읽다 멈춘다)."""
+        if not tool_id or not callable(self._grip_width):
+            return None
+        try:
+            preset = cc.cfg()['cell']['presets'][tool_id]
+            if preset.get('grip_target_mm') is not None:
+                return None
+            want, tol, zero = float(preset['grip_width_mm']), float(preset['width_tol_mm']), float(preset['grip_zero_mm'])
+            width = float(self._grip_width())
+        except Exception as e:                         # noqa: BLE001 — 판단 못 하면 None
+            self.log.warn(f'재시도 전 툴 쥠 확인 불가({e!r})')
+            return None
+        held = abs(width - zero - want) <= tol
+        self.log.info(f'재시도 전 툴 확인: {tool_id} 폭 {width:.2f} mm (기대 {zero + want:.2f} ± {tol:g}) → '
+                      f'{"쥐고 있음" if held else "손에 없음"}')
+        return held
 
     def _retreat(self):
         """안전 자세로 물러난다. 실패하면 False.
@@ -740,9 +761,25 @@ class Flow:
                 #    실기에서는 이미 팔레트에 넣은 용기로 공정을 통째로 한 번 더 돈다.
                 for attempt in range(retries):
                     self.log.info(f'{step} 재시도 {attempt + 1}/{retries} (코드 {r.code})')
+                    # 닦기 재시도 전에 툴을 아직 쥐고 있는지 본다 — 닦다가 사람이 툴을 당기면 폭보다 힘 상한이 먼저 걸릴 수 있다.
+                    #    그대로 다시 부르면 빈손으로 그릇·컵에 다시 내려가고, 닦기 함수가 빈손 폭을 새 기준으로 잡아 놓침도 못 본다.
+                    if step == 'WIPE' and self._tool_held(self.holding_tool) is False:
+                        self.last_code = TOOL_LOST
+                        self.message = f'툴 놓침 — 닦기를 다시 하기 전에 보니 {self.holding_tool} 이(가) 손에 없다'
+                        r = Result.fail(TOOL_LOST)
+                        action = PAUSE                # 툴 놓침과 같게: 멈춤 → 홀더에 꽂고 가볍게 밀기 → 툴 집기부터
+                        break
                     if not self._retreat():   # 주의: 후퇴 실패 → 더 움직이지 않는다
                         action = PAUSE
                         break
+                    # 그릇 닦기는 첫 시도와 같은 자리(HOME)에서 다시 부른다 — 후퇴 높이(safe_z)는 HOME 보다 높아 바닥 찾기 깊이가
+                    #    모자랄 수 있고, 나선·벽면 도중 실패면 가운데·손목이 어긋나 있다. 컵은 부르는 높이가 safe_z 보다 높아 해당 없다.
+                    if fname == 'wipe_bowl':
+                        home = self.call_fn('f1', 'move_to', 'HOME', True)
+                        if not home.ok:       # HOME 으로 못 갔다 → 다시 하지 않고 사람을 부른다(후퇴 실패와 같게)
+                            r = home
+                            action = PAUSE
+                            break
                     r = self.call_fn(mod, fname, *args)
                     if r.ok:
                         break
@@ -760,6 +797,9 @@ class Flow:
                     if action != PAUSE:
                         action, _ = self.policy_for(r.code)
                     outcome = self.handle_failure(sig, action)
+                    if outcome == RETRY_TOOL_PICK:     # 툴 놓침 — '툴 집기' 단계로 되돌아간다(세제가 닦는 자리로 옮겨 준다)
+                        i = next(k for k, st in enumerate(steps) if st[2] == 'tool' and st[3][1] == PICK)
+                        continue
                     if outcome != RETRY_STEP:
                         return outcome
                     continue                    # i 를 안 올린다 → 실패한 그 단계를 다시
@@ -828,6 +868,7 @@ class Flow:
                 return self.abort_container(sig)
 
             if ev in ('nudge', 'resume') or sig.take('resume'):
+                sig.clear('resume')                            # 이 신호는 여기서 쓴다 — 남기면 재검증이 실패해도 사람 신호 없이 다시 잰다
                 sig.clear('stop')
                 self.log.info(f'재개 요청 감지(유형: {ev}) — 케이블 상태 재확인 중...')
                 self.message = '재개 요청 감지 — 케이블 상태를 재확인하고 있습니다...'
@@ -865,7 +906,8 @@ class Flow:
                     self.last_code = OK
                     return RETRY_STEP
                 else:
-                    self.log.warn(f'케이블 이상 지속(떨림 {jitter:.1f} g > {limit:.1f} g) — 정지 유지')
+                    self.log.warn(f'케이블 이상 지속(떨림 {jitter:.1f} g > {limit:.1f} g) — 정지 유지 · 새 신호를 기다린다')
+                    self.to_paused('케이블 이상 지속', sig)       # 멈춤을 다시 건다 — 남은 재개 신호를 지우고, 사람이 다시 밀거나 재개할 때까지 기다린다
                     self.message = f'케이블 이상 지속(떨림 {jitter:.0f} g > 상한 {limit:.0f} g): 케이블 확인 후 다시 로봇팔을 가볍게 밀어 주세요'
 
     def handle_failure(self, sig, action=None):
@@ -968,30 +1010,18 @@ class Flow:
         return w <= open_mm
 
     def _repick_tool(self, sig):
-        """🆕 E37 + E52 — 툴 놓침 뒤 다시 집는다. **못 집으면 격리하지 않고** 다시 멈춰 사람을 부른다(홀더 확인 → 넛지).
+        """툴 놓침(TOOL_LOST) 재개 뒤 — 곧게 위로 빠져나온 다음 '툴 집기' 단계로 되돌아간다(툴 집기 → 세제 → 닦기).
 
-        전에는 재PICK 실패 코드(TOOL_FAIL)의 정책을 새로 탔다 → retry→isolate 로 그릇을 격리했다.
-        황인재 9/25: 그릇은 문제 없고 툴이 문제니 사람이 홀더를 고치고 로봇팔을 밀면 다시 집는다. 성공하면 놓친 단계부터.
+        놓친 자리는 그릇·컵 안이다. 거기서 그리퍼를 열거나 옆으로 가면 벽을 칠 수 있어 먼저 곧게 올라온다.
+        툴만 다시 집고 곧장 닦기로 가면 안 된다: 닦기 함수는 세제 단계가 옮겨 준 자리(그릇·컵 바로 위)에서
+        곧게 내려가므로, 홀더 자리에서 불리면 홀더 쪽으로 내려간다. 그래서 세제부터 다시 탄다.
+        다시 집기가 실패하면 툴 집기 단계의 정책(TOOL_FAIL · 멈춤 → 홀더 확인 → 넛지·재개)을 그대로 탄다 — 격리하지 않는다.
         """
-        tool_id = 'SPONGE' if self.kind == 'BOWL' else 'BRUSH'
-        while True:
-            rt = self.call_fn('f1', 'tool', tool_id, PICK)
-            self._collect('TOOL_LOST 재PICK', 'tool', rt)
-            if rt.ok:
-                self.holding, self.holding_tool = 'TOOL', tool_id
-                self.log.info(f'재개 — {self.step} 단계부터 다시 (툴 {tool_id} 다시 집음)')
-                return RETRY_STEP
-            if rt.code == ROBOT_ERROR:                 # 집기 함수가 터졌다(후퇴는 call 이 했다) → 로봇 오류 절차
-                return self._robot_error_pause(sig)
-            self.last_code = rt.code
-            self.message = (f'툴을 다시 못 집었습니다({rt.code}) — 홀더에 {tool_id} 가 원래 방향으로 제대로 꽂혔는지 확인한 뒤 '
-                            f'로봇팔 가볍게 밀기(또는 재개) → 다시 집습니다')
-            self.to_paused(f'코드 {rt.code} · 툴 재PICK 실패', sig)
-            answer = self.wait_resume(sig, allow_nudge=True)
-            if answer == ABORTED:
-                return self.abort_container(sig)
-            if answer == RESUMED_NUDGE:
-                self._recover_robot()
+        self.holding, self.holding_tool = None, None       # 놓쳤다 — 쥔 것이 없다(중단 정리가 툴 반납을 하지 않게)
+        if not self._retreat():                            # 곧게 못 올라왔다 → 위치를 모른다: 로봇 오류 절차
+            return self._robot_error_pause(sig)
+        self.log.info(f'재개 — 툴 놓침: 곧게 올라왔다 → 툴 집기부터 다시(툴 집기 → 세제 → 닦기)')
+        return RETRY_TOOL_PICK
 
     def _recover_robot(self):
         """넛지·재개 뒤 컨트롤러가 STANDBY 로 돌아올 때까지 본다 — 보호정지(SAFE_STOP)면 자동 복구(set_robot_control).

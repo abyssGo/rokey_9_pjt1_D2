@@ -415,10 +415,10 @@ def test_resume_redoes_the_failed_step():
 
 
 def test_tool_lost_repicks_before_retrying_step(monkeypatch):
-    """🆕 E37 — TOOL_LOST 로 멈추면 재개 전에 f1.tool(PICK) 을 다시 부른 뒤 실패한 단계부터 다시.
+    """TOOL_LOST 로 멈추면 재개 뒤 곧게 후퇴 → '툴 집기' 단계부터 다시(툴 집기 → 세제 → 닦기).
 
-    GRIP_FAIL 과 달리 손에 아무것도 없는 게 아니라 **툴을 놓친** 것이라, 그냥 다시 하면
-    빈손으로 닦으려 든다 — 재개 전에 반드시 다시 집어야 한다(handle_failure).
+    GRIP_FAIL 과 달리 **툴을 놓친** 것이라 그냥 다시 하면 빈손으로 닦으려 든다 — 다시 집어야 한다.
+    툴만 집고 곧장 닦기로 가면 닦기 함수가 홀더 자리에서 내려간다 — 세제 단계가 닦는 자리로 옮겨 준다.
     """
     monkeypatch.setattr(flow_module.cc, 'start_nudge_watch', lambda: None)
     monkeypatch.setattr(flow_module.cc, 'check_nudge', lambda *a: False)   # 여기선 HMI 재개(AutoResume)만 본다
@@ -438,13 +438,20 @@ def test_tool_lost_repicks_before_retrying_step(monkeypatch):
         tool_calls.append((tool_id, action))
         return mods['f1'].tool(tool_id, action)
 
+    order = []
+
+    def soap(count, kind=None):
+        order.append('soap')
+        return mods['f3'].soap(count, kind)
+
     f3 = types.SimpleNamespace(**{n: getattr(mods['f3'], n) for n in dir(F3Api) if not n.startswith('_')})
-    f3.wipe_bowl = wipe_bowl
+    f3.wipe_bowl = lambda: (order.append('wipe'), wipe_bowl())[1]
+    f3.soap = soap
     f1 = types.SimpleNamespace(**{n: getattr(mods['f1'], n) for n in dir(F1Api) if not n.startswith('_')})
-    f1.tool = tool
+    f1.tool = lambda tool_id, action: (order.append(f'tool {action}'), tool(tool_id, action))[1]
 
     events = []
-    f = Flow(CFG, Quiet(), publish_event=events.append)
+    f = Flow(CFG, Quiet(), publish_event=events.append, safe_retreat=lambda: order.append('retreat'))
     f.f = {'f1': f1, 'f2': mods['f2'], 'f3': f3}
     f.plan = [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}]
 
@@ -452,9 +459,12 @@ def test_tool_lost_repicks_before_retrying_step(monkeypatch):
     f.run_plan(sig)
 
     assert sig.resumes >= 1, 'TOOL_LOST 인데 PAUSED 를 거치지 않았다'
-    assert len(wipe_tries) == 2, f'재개 뒤 같은 단계(wipe_bowl)를 다시 하지 않았다 ({len(wipe_tries)}회)'
+    assert len(wipe_tries) == 2, f'재개 뒤 닦기를 다시 하지 않았다 ({len(wipe_tries)}회)'
     pick_calls = [c for c in tool_calls if c[1] == PICK]
     assert len(pick_calls) == 2, f'놓친 뒤 재PICK 을 안 했다 (tool PICK {len(pick_calls)}회 — 원래 1 + 재PICK 1 = 2)'
+    i = order.index('wipe')                                                   # 첫 닦기(놓침)
+    assert order[i + 1:i + 5] == ['retreat', f'tool {PICK}', 'soap', 'wipe'], \
+        f'놓친 뒤 곧게 후퇴 → 툴 집기 → 세제 → 닦기 순서가 아니다: {order}'
     assert f.isolated == 0, 'TOOL_LOST 는 격리가 아니다'
     assert [e['result'] for e in events] == ['DONE'], '마저 해서 끝났으면 DONE 이다'
 
@@ -1066,7 +1076,8 @@ def test_tool_fail_pauses_and_retries_tool_pick_without_isolation():
 
 
 def test_tool_lost_repick_failure_pauses_again_instead_of_isolating(monkeypatch):
-    """툴 놓침 → 재PICK 실패 → (전엔 TOOL_FAIL 정책으로 격리) 이제는 **다시 멈춰** 사람을 부르고, 다음 신호에 또 집는다 → DONE."""
+    """툴 놓침 → 재PICK 실패 → 툴 집기 단계의 정책(params.yaml TOOL_FAIL: pause)으로 **다시 멈춰** 사람을 부르고,
+    다음 신호에 또 집는다 → 세제 → 닦기 → DONE. 격리하지 않는다."""
     mods = load_features(['f1', 'f2', 'f3'])
     wipe_tries, tool_calls = [], []
     f3 = _ns(F3Api, mods['f3'])
@@ -1083,7 +1094,7 @@ def test_tool_lost_repick_failure_pauses_again_instead_of_isolating(monkeypatch)
         return mods['f1'].tool(tool_id, action)
     f3.wipe_bowl, f1.tool = wipe_bowl, tool
 
-    f, events, _ = _one_bowl(f1=f1, f3=f3)
+    f, events, _ = _one_bowl(f1=f1, f3=f3, policy={'TOOL_FAIL': 'pause'})
     sig = PauseWatcher()
     f.run_plan(sig)
 
@@ -1091,3 +1102,105 @@ def test_tool_lost_repick_failure_pauses_again_instead_of_isolating(monkeypatch)
     assert sum(1 for c in tool_calls if c[1] == PICK) == 3, tool_calls
     assert len(wipe_tries) == 2 and f.isolated == 0
     assert [e['result'] for e in events] == ['DONE']
+    assert '홀더' in f.message, f'홀더를 확인하라는 안내가 없다: {f.message}'
+
+
+def test_tool_lost_retreat_failure_goes_to_robot_error_pause(monkeypatch):
+    """툴 놓침 재개 뒤 곧게 못 올라오면(후퇴 실패) 위치를 모른다 — 툴 집기로 가지 않고 로봇 오류 절차로."""
+    monkeypatch.setattr(flow_module.cc, 'start_nudge_watch', lambda: None)
+    monkeypatch.setattr(flow_module.cc, 'check_nudge', lambda *a: False)
+    mods = load_features(['f1', 'f2', 'f3'])
+    f3, f1 = _ns(F3Api, mods['f3']), _ns(F1Api, mods['f1'])
+    tool_calls = []
+    f3.wipe_bowl = lambda: Result.fail(TOOL_LOST)
+    f1.tool = lambda tool_id, action: (tool_calls.append(action), mods['f1'].tool(tool_id, action))[1]
+    f, events, _ = _one_bowl(f1=f1, f3=f3)
+    called = {}
+
+    def boom():
+        raise RuntimeError('후퇴 실패')
+    f._safe_retreat = boom
+    f._robot_error_pause = lambda sig: called.setdefault('robot_error', True) and 'go_on'
+    f.run_plan(PauseWatcher())
+    assert called.get('robot_error'), '후퇴 실패인데 로봇 오류 절차로 가지 않았다'
+    assert tool_calls.count(PICK) == 1, f'후퇴 실패 뒤에도 툴을 다시 집으러 갔다: {tool_calls}'
+
+
+# ── E61 닦기 재시도 보강 — 재시도 전에 툴을 쥐었는지 보고, 그릇 닦기는 HOME(첫 시도와 같은 자리)에서 다시 부른다
+_PRESETS = {'cell': {'presets': {'SPONGE': {'grip_width_mm': 15.0, 'width_tol_mm': 0.6, 'grip_zero_mm': 10.58},
+                                 'BRUSH': {'grip_width_mm': 8.3, 'width_tol_mm': 0.6, 'grip_zero_mm': 10.58}},
+                     'limits': {'nudge_settle_s': 0.0, 'nudge_force_n': 15.0, 'nudge_hold_s': 0.15, 'nudge_poll_s': 0.2,
+                                'nudge_taps': 1, 'nudge_tap_window_s': 2.0, 'nudge_resume_settle_s': 0.1}}}
+
+
+def _e61_flow(monkeypatch, fail_on, kind='BOWL', width=25.6, policy=None):
+    """가짜 기능 함수 + 호출 기록. width = 재시도 전에 읽히는 그리퍼 폭(수세미 쥠 25.6 · 솔 쥠 18.9 · 빈손은 더 작다)."""
+    monkeypatch.setattr(flow_module.cc, 'cfg', lambda: _PRESETS)
+    monkeypatch.setattr(flow_module.cc, 'start_nudge_watch', lambda: None)
+    monkeypatch.setattr(flow_module.cc, 'check_nudge', lambda *a: False)
+    mock.configure(fail_on)
+    cfg = {'flow': dict(CFG['flow'])}
+    if policy:
+        cfg['flow']['policy'] = dict(CFG['flow']['policy'], **policy)
+    calls, events = [], []
+    f = Flow(cfg, Quiet(), publish_event=events.append, grip_width=lambda: width,
+             safe_retreat=lambda: calls.append('retreat'))
+    f.f = load_features(['f1', 'f2', 'f3'])
+    orig = f.call_fn
+    f.call_fn = lambda mod, fname, *a: (calls.append(fname if fname != 'move_to' else f'move_to {a[0]}'), orig(mod, fname, *a))[1]
+    f.plan = [{'zone': 'RET_B' if kind == 'BOWL' else 'RET_C', 'kind': kind, 'count': 1}]
+    return f, calls, events
+
+
+def test_bowl_wipe_retry_goes_home_first_then_done(monkeypatch):
+    for code in ('FORCE_LIMIT', 'TIMEOUT'):
+        f, calls, events = _e61_flow(monkeypatch, [f'wipe_bowl:{code}:1'])
+        f.run_plan(PauseWatcher())
+        mock.reset()
+        i = calls.index('wipe_bowl')
+        assert calls[i + 1:i + 4] == ['retreat', 'move_to HOME', 'wipe_bowl'], f'{code}: 재시도 앞에 HOME 이 없다 {calls}'
+        assert [e['result'] for e in events] == ['DONE'], code
+
+
+def test_cup_wipe_retry_does_not_add_home(monkeypatch):
+    f, calls, events = _e61_flow(monkeypatch, ['wipe_cup:FORCE_LIMIT:1'], kind='CUP', width=18.9)
+    f.run_plan(PauseWatcher())
+    mock.reset()
+    i = calls.index('wipe_cup')
+    assert calls[i + 1:i + 3] == ['retreat', 'wipe_cup'], f'컵 재시도에 HOME 이 끼었다 {calls}'
+    assert [e['result'] for e in events] == ['DONE']
+
+
+def test_no_failure_call_list_unchanged_by_e61(monkeypatch):
+    f, calls, events = _e61_flow(monkeypatch, [])
+    f.run_plan(PauseWatcher())
+    mock.reset()
+    assert 'move_to HOME' not in calls[calls.index('wipe_bowl'):calls.index('wipe_bowl') + 2]
+    assert calls.count('wipe_bowl') == 1 and 'retreat' not in calls and [e['result'] for e in events] == ['DONE']
+
+
+def test_bowl_wipe_retry_home_failure_pauses_without_retry(monkeypatch):
+    f, calls, events = _e61_flow(monkeypatch, ['wipe_bowl:FORCE_LIMIT:1', 'move_to:ROBOT_ERROR:1'])
+    sig = PauseWatcher()
+    f.run_plan(sig)
+    mock.reset()
+    i = calls.index('wipe_bowl')
+    assert calls[i + 1:i + 3] == ['retreat', 'move_to HOME'], calls
+    assert sig.resumes >= 1, 'HOME 이동 실패인데 멈추지 않았다'
+    assert f.isolated == 0, 'HOME 이동 실패로 격리하면 안 된다(위치를 모른다)'
+    assert calls.count('wipe_bowl') == 1 or calls[calls.index('move_to HOME') + 1] != 'wipe_bowl', \
+        f'HOME 이동 실패 직후 닦기를 다시 불렀다 {calls}'
+
+
+def test_bowl_wipe_retry_with_empty_gripper_goes_to_tool_lost(monkeypatch):
+    """힘 상한 뒤 폭이 빈손이면(사람이 수세미를 뺐다) 재시도하지 않고 툴 놓침 멈춤 → 재개 → 곧게 후퇴 → 툴 집기 → 세제 → 닦기."""
+    f, calls, events = _e61_flow(monkeypatch, ['wipe_bowl:FORCE_LIMIT:1'], width=23.9)   # 빈손: 명령 폭 23.9 에서 멈춤
+    sig = PauseWatcher()
+    f.run_plan(sig)
+    mock.reset()
+    i = calls.index('wipe_bowl')
+    assert calls[i + 1:i + 6] == ['retreat', 'tool', 'soap', 'wipe_bowl', 'tool'], \
+        f'빈손인데 곧장 닦기를 다시 했거나 툴 집기부터 다시 하지 않았다 {calls}'
+    assert sig.resumes >= 1 and f.isolated == 0
+    assert [e['result'] for e in events] == ['DONE']
+
