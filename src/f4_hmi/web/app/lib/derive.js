@@ -226,6 +226,12 @@ export function pauseRows(rows) {
     duration: r.duration_s != null ? `${Math.round(r.duration_s)} s` : '-',
   }));
 }
+// 빈 구역 알림(황인재 9/28) — flow 는 멈추지 않고 건너뛰므로(SKIPPED 이벤트) 확인 창 대신 몇 초 뜨는 주황 알림
+export function skipToast(e) {
+  if (!e || e.result !== 'SKIPPED') return null;
+  const kind = KIND_KO[e.kind] ? `${KIND_KO[e.kind]} ` : '';
+  return { tone: 'warn', text: `빈 구역 — ${kind}반납 구역${e.zone_id ? `(${e.zone_id})` : ''}에 용기가 없습니다`, sub: '건너뛰고 다음 구역으로 갑니다' };
+}
 export function clockIso(iso) {          // DB 의 시각 문자열(YYYY-MM-DDTHH:MM:SS…) → HH:MM:SS
   const m = /T(\d{2}:\d{2}:\d{2})/.exec(iso || '');
   return m ? m[1] : (iso || '-');

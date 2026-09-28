@@ -112,6 +112,9 @@ test('소모품 — DB 값(usage)이 있으면 그것을 쓰고 잔반통은 g/�
   assert.deepEqual(pr[1], { id: 1, time: '15:07:19', step: '닦기', cause: '툴 놓침', code: 'TOOL_LOST', resolved: '넛지', open: false, duration: '12 s' });
   assert.equal(pr[0].resolved, '진행 중'); assert.ok(pr[0].open); assert.equal(pr[0].step, '세제');
   assert.equal(D.problems({ events: [{ result: 'DONE', attempts: 2 }, { result: 'DONE', attempts: 1 }, { result: 'ISOLATED' }] }).length, 2);
+  // 빈 구역 알림(9/28) — 건너뜀 이벤트만
+  assert.deepEqual(D.skipToast({ result: 'SKIPPED', kind: 'BOWL', zone_id: 'RET_B' }), { tone: 'warn', text: '빈 구역 — 그릇 반납 구역(RET_B)에 용기가 없습니다', sub: '건너뛰고 다음 구역으로 갑니다' });
+  assert.equal(D.skipToast({ result: 'DONE', kind: 'BOWL' }), null); assert.equal(D.skipToast(null), null);
 });
 
 test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토스트는 버튼/넛지·중단을 가른다(9/28)', () => {

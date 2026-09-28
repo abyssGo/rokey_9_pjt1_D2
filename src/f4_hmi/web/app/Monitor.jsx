@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -143,6 +143,18 @@ export default function Monitor() {
   }, []);
   const [panel, setPanel] = useState(null);                            // 'kpi' | 'history' — 누적 KPI 와 이력은 버튼을 누르면 창으로(황인재: 한 화면에 다 보이게)
 
+  // 빈 구역 — 새 이벤트가 '건너뜀' 이면 주황 알림 + 짧은 음(로봇은 멈추지 않는다 · 황인재 9/28). 켤 때 이미 있던 이벤트는 알리지 않는다
+  const lastEvent = useRef(undefined);
+  useEffect(() => {
+    const e = (d.events || [])[0];
+    const key = e ? `${e.stamp}-${e.result}-${e.zone_id}` : null;
+    if (lastEvent.current === undefined) { lastEvent.current = key; return; }
+    if (key === lastEvent.current) return;
+    lastEvent.current = key;
+    const t = skipToast(e);
+    if (t) { showToast(t); playBeep(900, 0.22, 'square', 0.6); }
+  }, [d.events]);
+
   const can = buttons(d);
   const ITEM_KO = { sponge: '수세미', brush: '솔', soap: '세제', waste_bin: '잔반통' };
   // 확인창(교체 완료 · 중단) — 브라우저 기본 창(window.confirm) 대신 알림창과 같은 모양. c = { icon, title, body, ok, tone, onOk }
@@ -170,7 +182,7 @@ export default function Monitor() {
     <div className="page">
       {modal && alarm(d)?.level === 'pause' && <AlertModal m={modal} a={alarm(d)} onClose={() => setModal(null)} />}
       {confirm && <ConfirmModal c={confirm} onClose={() => setConfirm(null)} />}
-      {toast && <div className="toast" role="status">✔ {toast.text}{toast.sub && <div className="toast-sub">{toast.sub}</div>}</div>}
+      {toast && <div className={`toast ${toast.tone || ''}`} role="status">{toast.tone === 'warn' ? '⚠' : '✔'} {toast.text}{toast.sub && <div className="toast-sub">{toast.sub}</div>}</div>}
       <TopBar d={d} can={can} onPress={onPress} />
       <Alarm d={d} step={lastRunning.current || null} />
       <Controls can={can} onPress={onPress} reply={reply} />
