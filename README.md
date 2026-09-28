@@ -33,6 +33,11 @@
 - 반납 구역은 내리막 공급 구조라 구역마다 집는 자리가 1개다. 그릇은 옆면(벽)을 세로로, 컵은 테두리를 위에서 집고 파지 폭으로 성공을 판정한다.
 - 뒷면·바깥면은 닦지 않는다. "닦임"은 공정 완료이지 위생 판정이 아니다.
 
+<p align="center">
+  <img src="docs/images/layout_workcell.png" width="700" alt="워크셀 배치도(위에서 본 그림)"><br>
+  <sub>워크셀 배치(위에서 본 그림 · 9/28 실제 배치 기준) — 맨 위 헹굼 구역(흐르는 물) · 왼쪽 반납 구역(그릇·컵 슬롯 1·2) · 가운데 툴 홀더·세제 통·스펀지 홈과 로봇(앞 +X 는 스펀지 홈 쪽) · 오른쪽 잔반통·격리 구역 · 아래 팔레트 4칸</sub>
+</p>
+
 ## 2. 시스템 구성
 
 **PC 2대 · 프로그램 2개.** 기능은 노드가 아니라 **파이썬 함수 모듈**이고, 메인 프로그램이 순서대로 부른다. 로봇 명령은 메인 프로그램의 메인 스레드에서만 나간다.
@@ -165,7 +170,7 @@ rokey_pjt01_ws/                ← clone 폴더 = ROS 2 워크스페이스
 │   ├── test_logs/              실기·가상 시험 기록(날짜_ID_내용_이름.md)
 │   ├── troubleshooting/        TS-01 ~ TS-08(두산 API 초기화 · 정지 처리 · 수조 안 충돌 …)
 │   ├── setup/                  PC 환경 설정
-│   └── images/                 아키텍처(대화형 HTML · PNG) · 화면 캡처
+│   └── images/                 아키텍처(대화형 HTML · PNG) · 배치도(SVG · PNG) · 화면 캡처
 ├── src/                        ROS 2 패키지 8개 — cobot_api cobot_msgs cobot_common f1_handling f2_sense_flow f3_wipe f4_hmi prewash_bringup
 │   └── */test/                 pytest(test_*.py) + 실기·가상 시험대(rig_*.py)
 ├── tools/pr_check.sh           PR 자동 검사(.github/workflows)

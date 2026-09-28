@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="2080" viewBox="0 0 1000 1040" role="img" font-family="'Noto Sans KR','Malgun Gothic',sans-serif">
+<title>PreWash-Cell 배치도 — 위에서 본 그림</title>
+<defs><pattern id="g" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#e2e8f0" stroke-width=".8"/></pattern><marker id="a" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#4b5563"/></marker></defs>
+<rect width="1000" height="1040" fill="#fff"/><rect width="1000" height="1040" fill="url(#g)"/>
+<text x="500.0" y="30" font-size="18" font-weight="700" fill="#0f172a" text-anchor="middle">PreWash-Cell 배치도 — 위에서 본 그림</text>
+<text x="500.0" y="48" font-size="11" fill="#64748b" text-anchor="middle">괄호 안 = cell.yaml 의 자리 이름 · 점선 = 배치 미정</text>
+<rect x="300" y="68" width="400" height="88" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.2"/>
+<text x="500.0" y="103.0" font-size="14.0" font-weight="700" fill="#0c4a6e" text-anchor="middle">헹굼 구역 (RINSE)</text>
+<text x="500.0" y="121.0" font-size="11.0" fill="#0c4a6e" text-anchor="middle">흐르는 물에 담갔다 뺀다</text>
+<path d="M316 82 q9 -5 18 0 t18 0 t18 0 t18 0 t18 0" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-opacity=".55"/>
+<path d="M594 134 q9 -5 18 0 t18 0 t18 0 t18 0 t18 0" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-opacity=".55"/>
+<path d="M316 90 q9 -5 18 0 t18 0 t18 0 t18 0 t18 0" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-opacity=".55"/>
+<path d="M594 142 q9 -5 18 0 t18 0 t18 0 t18 0 t18 0" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-opacity=".55"/>
+<path d="M316 98 q9 -5 18 0 t18 0 t18 0 t18 0 t18 0" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-opacity=".55"/>
+<path d="M594 150 q9 -5 18 0 t18 0 t18 0 t18 0 t18 0" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-opacity=".55"/>
+<line x1="20" y1="180" x2="980" y2="180" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 6"/><text x="24" y="174" font-size="10" fill="#64748b">경계</text>
+<rect x="40" y="200" width="300" height="380" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2.2"/>
+<text x="190.0" y="224" font-size="14.0" font-weight="700" fill="#1e293b" text-anchor="middle">반납 구역 (RET)</text>
+<text x="190.0" y="242" font-size="11.0" fill="#1e293b" text-anchor="middle">손님이 돌려준 용기 — 여기서 집는다</text>
+<text x="190.0" y="260" font-size="10.5" fill="#1e293b" text-anchor="middle">슬롯 1부터, 비어 있으면 슬롯 2</text>
+<ellipse cx="115" cy="320" rx="50" ry="50" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+<text x="115" y="316" font-size="12.5" font-weight="700" fill="#064e3b" text-anchor="middle">컵 적재 2</text>
+<text x="115" y="332" font-size="10.0" fill="#064e3b" text-anchor="middle">RET_C 슬롯 2</text>
+<ellipse cx="265" cy="320" rx="50" ry="50" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+<text x="265" y="316" font-size="12.5" font-weight="700" fill="#064e3b" text-anchor="middle">컵 적재 1</text>
+<text x="265" y="332" font-size="10.0" fill="#064e3b" text-anchor="middle">RET_C 슬롯 1</text>
+<ellipse cx="115" cy="465" rx="46" ry="70" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+<text x="115" y="461" font-size="12.5" font-weight="700" fill="#1e3a8a" text-anchor="middle">그릇 적재 2</text>
+<text x="115" y="477" font-size="10.0" fill="#1e3a8a" text-anchor="middle">RET_B 슬롯 2</text>
+<ellipse cx="265" cy="465" rx="46" ry="70" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+<text x="265" y="461" font-size="12.5" font-weight="700" fill="#1e3a8a" text-anchor="middle">그릇 적재 1</text>
+<text x="265" y="477" font-size="10.0" fill="#1e3a8a" text-anchor="middle">RET_B 슬롯 1</text>
+<text x="190" y="566" font-size="10.5" fill="#1e293b" text-anchor="middle">그릇은 벽을 세로로, 컵은 몸통을 잡는다</text>
+<rect x="440" y="200" width="92" height="70" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2.2"/>
+<text x="486.0" y="226.0" font-size="13.0" font-weight="700" fill="#78350f" text-anchor="middle">솔 홀더</text>
+<text x="486.0" y="244.0" font-size="10.5" fill="#78350f" text-anchor="middle">TOOL_BRUSH</text>
+<circle cx="585" cy="235" r="38" fill="#fff7ed" stroke="#d97706" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="585" y="232" font-size="12.5" font-weight="700" fill="#78350f" text-anchor="middle">세제 통</text>
+<text x="585" y="248" font-size="9.5" fill="#78350f" text-anchor="middle">SOAP · 미정</text>
+<rect x="638" y="200" width="102" height="70" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2.2"/>
+<text x="689.0" y="226.0" font-size="13.0" font-weight="700" fill="#78350f" text-anchor="middle">수세미 홀더</text>
+<text x="689.0" y="244.0" font-size="10.5" fill="#78350f" text-anchor="middle">TOOL_SPONGE</text>
+<ellipse cx="870" cy="250" rx="90" ry="50" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="870" y="246" font-size="13.0" font-weight="700" fill="#78350f" text-anchor="middle">잔반통 (WASTE)</text>
+<text x="870" y="262" font-size="10.5" fill="#78350f" text-anchor="middle">털기 자리</text>
+<rect x="400" y="320" width="160" height="160" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2.2"/>
+<text x="480.0" y="344" font-size="12.6" font-weight="700" fill="#1e293b" text-anchor="middle">스펀지 홈 (닦는 자리)</text>
+<ellipse cx="480" cy="395" rx="62" ry="28" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+<text x="480" y="391" font-size="12.0" font-weight="700" fill="#1e3a8a" text-anchor="middle">그릇 홈</text>
+<text x="480" y="407" font-size="9.5" fill="#1e3a8a" text-anchor="middle">SPONGE_BED_B</text>
+<ellipse cx="480" cy="452" rx="62" ry="26" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+<text x="480" y="448" font-size="12.0" font-weight="700" fill="#064e3b" text-anchor="middle">컵 홈</text>
+<text x="480" y="464" font-size="9.5" fill="#064e3b" text-anchor="middle">SPONGE_BED_C</text>
+<rect x="600" y="320" width="140" height="160" rx="12" fill="#e5e7eb" stroke="#4b5563" stroke-width="2.2"/>
+<text x="670.0" y="391.0" font-size="14.0" font-weight="700" fill="#111827" text-anchor="middle">로봇</text>
+<text x="670.0" y="409.0" font-size="10.5" fill="#111827" text-anchor="middle">M0609 · HOME</text>
+<line x1="640" y1="352" x2="572" y2="352" stroke="#4b5563" stroke-width="3" marker-end="url(#a)"/><text x="655" y="356" font-size="10.5" fill="#4b5563">앞 (+X)</text>
+<rect x="780" y="320" width="180" height="160" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2.2"/>
+<text x="870.0" y="391.0" font-size="13.5" font-weight="700" fill="#7f1d1d" text-anchor="middle">격리 구역 (ISOLATE)</text>
+<text x="870.0" y="409.0" font-size="10.5" fill="#7f1d1d" text-anchor="middle">잔반이 남거나 실패한 용기</text>
+<rect x="400" y="520" width="340" height="450" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.2"/>
+<text x="570.0" y="544" font-size="14.0" font-weight="700" fill="#3b0764" text-anchor="middle">팔레트 (RACK)</text>
+<text x="570.0" y="562" font-size="11.0" fill="#3b0764" text-anchor="middle">씻은 용기를 넣는 곳 — 순서 ① → ④</text>
+<text x="570.0" y="580" font-size="10.5" fill="#3b0764" text-anchor="middle">컵은 뒤집어, 그릇은 세워 핀에 얹는다</text>
+<ellipse cx="470" cy="665" rx="54" ry="54" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+<text x="470" y="661" font-size="12.3" font-weight="700" fill="#064e3b" text-anchor="middle">컵 배치 장소 2</text>
+<text x="470" y="677" font-size="10.0" fill="#064e3b" text-anchor="middle">RACK_C2 · ④</text>
+<ellipse cx="670" cy="745" rx="54" ry="54" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+<text x="670" y="741" font-size="12.3" font-weight="700" fill="#064e3b" text-anchor="middle">컵 배치 장소 1</text>
+<text x="670" y="757" font-size="10.0" fill="#064e3b" text-anchor="middle">RACK_C1 · ③</text>
+<line x1="400" y1="812" x2="740" y2="812" stroke="#7c3aed" stroke-width="1.2" stroke-opacity=".5"/><line x1="400" y1="892" x2="740" y2="892" stroke="#7c3aed" stroke-width="1.2" stroke-opacity=".5"/>
+<ellipse cx="570" cy="852" rx="150" ry="34" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+<text x="570" y="848" font-size="12.5" font-weight="700" fill="#1e3a8a" text-anchor="middle">그릇 배치 장소 2</text>
+<text x="570" y="864" font-size="10.0" fill="#1e3a8a" text-anchor="middle">RACK_B2 · ②</text>
+<ellipse cx="570" cy="932" rx="150" ry="34" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+<text x="570" y="928" font-size="12.5" font-weight="700" fill="#1e3a8a" text-anchor="middle">그릇 배치 장소 1</text>
+<text x="570" y="944" font-size="10.0" fill="#1e3a8a" text-anchor="middle">RACK_B1 · ①</text>
+<rect x="40" y="1000" width="14" height="14" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><text x="60" y="1012" font-size="11" fill="#334155">그릇</text>
+<rect x="102" y="1000" width="14" height="14" rx="3" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/><text x="122" y="1012" font-size="11" fill="#334155">컵</text>
+<rect x="153" y="1000" width="14" height="14" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/><text x="173" y="1012" font-size="11" fill="#334155">툴·세제·잔반</text>
+<rect x="261" y="1000" width="14" height="14" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/><text x="281" y="1012" font-size="11" fill="#334155">헹굼</text>
+<rect x="323" y="1000" width="14" height="14" rx="3" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/><text x="343" y="1012" font-size="11" fill="#334155">반납·닦기</text>
+<rect x="413" y="1000" width="14" height="14" rx="3" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="433" y="1012" font-size="11" fill="#334155">팔레트</text>
+<rect x="486" y="1000" width="14" height="14" rx="3" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/><text x="506" y="1012" font-size="11" fill="#334155">격리</text>
+<rect x="548" y="1000" width="14" height="14" rx="3" fill="#e5e7eb" stroke="#4b5563" stroke-width="1.5"/><text x="568" y="1012" font-size="11" fill="#334155">로봇</text>
+</svg>
