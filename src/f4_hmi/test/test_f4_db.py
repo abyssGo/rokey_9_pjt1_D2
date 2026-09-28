@@ -240,3 +240,11 @@ def test_ws_path_resolves_relative_to_workspace_root(tmp_path, monkeypatch):
     assert paths.ws_path('/tmp/x.db') == __import__('pathlib').Path('/tmp/x.db')
     assert paths.ws_path('~/y.db').is_absolute()
 
+
+def test_recorder_pause_kind_cable_needs_robot_error_code():
+    """케이블 복구 뒤 남은 '케이블 정상 확인' 문구로 다음 멈춤(일시 정지·툴 놓침)을 케이블로 적지 않는다 — 화면과 같은 규칙."""
+    from f4_hmi.recorder import pause_kind
+    assert pause_kind({'last_code': 'ROBOT_ERROR', 'message': '케이블 상태를 확인해주세요.'}) == 'cable'
+    assert pause_kind({'last_code': 'OK', 'message': '케이블 정상 확인 — 작업을 재개합니다'}) == 'operator'
+    assert pause_kind({'last_code': 'TOOL_LOST', 'message': '케이블 정상 확인 — 작업을 재개합니다'}) == 'tool_lost'
+

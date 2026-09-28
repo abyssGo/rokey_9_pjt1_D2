@@ -22,7 +22,9 @@ export const CODE_KO = {                             // cobot_api CODES (IRD §2
 //   'cable' 만 message 로 본다: 케이블 이상은 코드가 아니라 flow 가 last_code=ROBOT_ERROR 에 케이블 안내 문구를 얹어 보낸다(flow.handle_cable_tight).
 export function pauseKind(s) {
   if (!s || s.step !== 'PAUSED') return null;
-  if ((s.message || '').includes('케이블')) return 'cable';
+  // 케이블 멈춤은 flow 가 last_code=ROBOT_ERROR 에 케이블 문구를 얹어 보낸다(flow.handle_cable_tight). 코드까지 봐야 한다 —
+  //    복구 뒤 남는 '케이블 정상 확인 — 작업을 재개합니다' 문구 때문에 다음 멈춤(일시 정지·툴 놓침)이 케이블로 보이지 않게.
+  if (s.last_code === 'ROBOT_ERROR' && (s.message || '').includes('케이블')) return 'cable';
   switch (s.last_code) {
     case 'ROBOT_ERROR': return 'robot_error';
     case 'TOOL_LOST': return 'tool_lost';
@@ -43,6 +45,7 @@ export const NUDGE = { step: '로봇팔 가볍게 밀기 (또는 재개)', done:
 export const GUIDE_KO = {
   operator: { title: '일시 정지', steps: ['재개 — 이어서', '중단 — 이 용기 격리'] },
   cable: { title: '케이블 확인', steps: ['케이블 정리', NUDGE.step] },
+  cable_again: { title: '케이블 이상 지속', steps: ['케이블 다시 정리', NUDGE.step] },   // 재검증에서 또 떨림 — 새 신호를 기다린다
   tool_lost: { title: '툴 놓침', steps: ['홀더에 다시 꽂기', NUDGE.step] },
   tool_fail: { title: '툴 집기 실패', steps: ['홀더에 툴 바로 꽂기', NUDGE.step] },
   leftover: { title: '잔반 남음', steps: ['잔반 덜어내기', '재개 (또는 중단)'] },
@@ -202,9 +205,40 @@ export function alarm(d) {
   if (!s) return null;
   let kind = pauseKind(s);
   if (kind === 'operator' && d.notices && d.notices.waste_full) kind = 'waste_bin';   // 잔반통이 차서 HMI 가 보낸 일시 정지
-  if (kind) return { level: 'pause', kind, guide: kind === 'robot_error' ? robotErrorGuide(s.message) : GUIDE_KO[kind], code: s.last_code, message: s.message };   // 로봇 오류도 주황(별도 예외 X)
+  if (kind) {
+    const guide = kind === 'robot_error' ? robotErrorGuide(s.message)
+      : kind === 'cable' && (s.message || '').includes('이상 지속') ? GUIDE_KO.cable_again : GUIDE_KO[kind];
+    return { level: 'pause', kind, guide, code: s.last_code, message: s.message };
+  }   // 로봇 오류도 주황(별도 예외 X)
   if (s.last_code && s.last_code !== 'OK') return { level: 'warn', kind: null, guide: null, code: s.last_code, message: s.message };   // 재개해 진행 중 — 최근 원인만
   return null;
+}
+
+// 넛지(로봇팔 가볍게 밀기)로도 풀리는 멈춤 — flow._NUDGE_CODES(툴 놓침 · 툴 집기 실패 · 로봇 오류)와 케이블. 일시 정지 버튼 멈춤 등은 재개 버튼만
+export const NUDGE_KINDS = ['cable', 'tool_lost', 'tool_fail', 'robot_error'];
+
+// 자동 재시도 원인 — params.yaml flow.policy 에서 'retry:N->isolate' 인 코드(서버가 plan.policy 로 넘겨준다).
+//    설정이 안 오면(옛 서버) params.yaml 과 같은 목록을 쓴다: FORCE_LIMIT · TIMEOUT · RACK_JAM = retry:1->isolate
+export function retryPolicy(plan) {
+  const pol = (plan && plan.policy) || null;
+  if (!pol) return { FORCE_LIMIT: 1, TIMEOUT: 1, RACK_JAM: 1 };
+  const out = {};
+  for (const [code, v] of Object.entries(pol)) {
+    const m = /^retry:(\d+)/.exec(String(v));
+    if (m) out[code] = Number(m[1]);
+  }
+  return out;
+}
+
+// 운전 중 노란 띠의 한 줄 — 상황에 맞는 말만(추측으로 '재개해 진행 중' 이라고 하지 않는다)
+//    resumedCode = 화면이 마지막으로 본 멈춤의 원인 코드(Monitor 가 기억 · 회차가 끝나면 지운다)
+export function runningNote(s, plan, resumedCode) {
+  if (!s) return '';
+  if (s.step === 'ISOLATE') return '이 용기를 격리하는 중입니다 — 끝나면 다음 용기로 갑니다';
+  if (resumedCode && s.last_code === resumedCode) return '재개해 진행 중입니다 — 다시 멈추면 위 안내가 뜹니다';
+  const n = retryPolicy(plan)[s.last_code];
+  if (n) return `자동으로 ${n === 1 ? '한 번' : `최대 ${n}번`} 다시 시도하는 중입니다 — 또 실패하면 이 용기는 격리합니다`;
+  return '진행 중입니다 — 다시 멈추면 위 안내가 뜹니다';
 }
 
 // 최근 문제 — 완료가 아닌 이벤트(격리·오류·건너뜀) 최근 5건

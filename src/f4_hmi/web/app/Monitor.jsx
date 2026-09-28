@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, NUDGE_KINDS, runningNote,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -99,6 +99,8 @@ export default function Monitor() {
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const pauseSeq = useRef(0);
+  const pausedCode = useRef(null);                                     // 마지막 멈춤의 원인 코드 — 노란 띠 '재개해 진행 중' 판단
+  const againMsg = useRef('');                                         // 케이블 재검증 실패로 다시 띄운 문구(같은 문구로 두 번 띄우지 않게)
   const lastResumePress = useRef(0);
   const toastTimer = useRef(null);
   const dRef = useRef(d);
@@ -106,8 +108,11 @@ export default function Monitor() {
   const showToast = (t) => { setToast(t); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 6000); };
   useEffect(() => {
     const step = s?.step;
-    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다) + 세 음
+    if (step === 'IDLE' || step === 'DONE') pausedCode.current = null;
+    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다) + 한 번 울림
       pauseSeq.current += 1;
+      pausedCode.current = s.last_code || null;
+      againMsg.current = '';
       setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
       playStopBeep();
     }
@@ -151,6 +156,17 @@ export default function Monitor() {
     if (t) showToast(t);                                                  // 로봇이 멈추지 않으니 소리는 없다
   }, [d.events]);
 
+  // 케이블 재검증에서 또 떨리면 flow 는 멈춘 채 문구만 '케이블 이상 지속 …' 으로 바꾼다 — 처음 멈췄을 때처럼 알림창을 다시 띄우고 한 번 울린다
+  useEffect(() => {
+    const msg = s?.message || '';
+    if (s?.step === 'PAUSED' && pauseKind(s) === 'cable' && msg.includes('이상 지속') && msg !== againMsg.current) {
+      againMsg.current = msg;
+      pauseSeq.current += 1;
+      setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
+      playStopBeep();
+    }
+  }, [s?.message, s?.step]);
+
   const can = buttons(d);
   const ITEM_KO = { sponge: '수세미', brush: '솔', soap: '세제', waste_bin: '잔반통' };
   // 확인창(교체 완료 · 중단) — 브라우저 기본 창(window.confirm) 대신 알림창과 같은 모양. c = { icon, title, body, ok, tone, onOk }
@@ -180,7 +196,7 @@ export default function Monitor() {
       {confirm && <ConfirmModal c={confirm} onClose={() => setConfirm(null)} />}
       {toast && <div className={`toast ${toast.tone || ''}`} role="status">{toast.tone === 'warn' ? '⚠' : '✔'} {toast.text}{toast.sub && <div className="toast-sub">{toast.sub}</div>}</div>}
       <TopBar d={d} can={can} onPress={onPress} />
-      <Alarm d={d} step={lastRunning.current || null} />
+      <Alarm d={d} step={lastRunning.current || null} resumedCode={pausedCode.current} />
       <Controls can={can} onPress={onPress} reply={reply} />
       <StepBar d={d} paused={s && s.step === 'PAUSED' ? lastRunning.current || null : null} />
       <div className="grid">
@@ -225,7 +241,7 @@ function TopBar({ d, can, onPress }) {
 }
 
 // 알람 상자 — 멈춤이면 원인별 제목·할 일(derive.alarm → GUIDE_KO), 운전 중이면 최근 원인 경고. 없으면 그리지 않는다
-function Alarm({ d, step }) {
+function Alarm({ d, step, resumedCode }) {
   const a = alarm(d);
   if (!a) return null;
   const label = CODE_KO[a.code] || a.code;
@@ -245,7 +261,7 @@ function Alarm({ d, step }) {
     <section className="alarm warn">
       <div className="alarm-title">⚠ 최근 원인: {label}</div>
       {a.message && <div className="alarm-msg">{a.message}</div>}
-      <div className="dim small">재개해 진행 중입니다 — 다시 멈추면 위 안내가 뜹니다</div>
+      <div className="dim small">{runningNote(d.state, d.plan, resumedCode)}</div>
     </section>
   );
 }
@@ -271,7 +287,9 @@ function AlertModal({ m, a, onClose }) {
           <ol className="modal-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
         </div>
         <div className="modal-foot">
-          <div className="dim small">처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼 또는 로봇팔 가볍게 밀기({NUDGE.word}). 밀어서 풀리면 이 창은 저절로 닫힙니다.</div>
+          <div className="dim small">{NUDGE_KINDS.includes(a.kind)
+            ? <>처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼 또는 로봇팔 가볍게 밀기({NUDGE.word}). 밀어서 풀리면 이 창은 저절로 닫힙니다.</>
+            : <>처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼(이 멈춤은 로봇팔을 밀어도 풀리지 않습니다).</>}</div>
           <button className="btn go" onClick={onClose} autoFocus>확인</button>
         </div>
       </div>

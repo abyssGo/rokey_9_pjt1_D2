@@ -125,3 +125,22 @@ test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토�
   assert.match(D.resumeToast(true, 'SOAP', 'ISOLATE').text, /중단/);
 });
 
+test('케이블 카드는 코드 ROBOT_ERROR + 케이블 문구일 때만 · 재검증 실패는 이상 지속 카드 · 운전 중 띠 문구(9/29)', () => {
+  const P = (last_code, message) => ({ step: 'PAUSED', last_code, message });
+  assert.equal(D.pauseKind(P('ROBOT_ERROR', '케이블 상태를 확인해주세요.')), 'cable');
+  assert.equal(D.pauseKind(P('OK', '케이블 정상 확인 — 작업을 재개합니다')), 'operator');       // ① 뒤 ② 일시 정지
+  assert.equal(D.pauseKind(P('TOOL_LOST', '케이블 정상 확인 — 작업을 재개합니다')), 'tool_lost'); // ① 뒤 ③ 툴 놓침
+  const again = D.alarm({ state: P('ROBOT_ERROR', '케이블 이상 지속(떨림 90 g > 상한 80 g): 케이블 확인 후 다시 로봇팔을 가볍게 밀어 주세요') });
+  assert.equal(again.kind, 'cable'); assert.equal(again.guide.title, '케이블 이상 지속');
+  assert.ok(D.NUDGE_KINDS.includes('tool_fail') && !D.NUDGE_KINDS.includes('operator'));
+  const plan = { policy: { FORCE_LIMIT: 'retry:1->isolate', TIMEOUT: 'retry:1->isolate', RACK_JAM: 'retry:1->isolate', TOOL_FAIL: 'pause', LEFTOVER_REMAIN: 'isolate' } };
+  const R = (step, last_code) => ({ step, last_code });
+  assert.match(D.runningNote(R('WIPE', 'FORCE_LIMIT'), plan, null), /자동으로 한 번 다시 시도/);
+  assert.match(D.runningNote(R('ISOLATE', 'FORCE_LIMIT'), plan, null), /격리하는 중/);
+  assert.match(D.runningNote(R('ISOLATE', 'LEFTOVER_REMAIN'), plan, null), /격리하는 중/);
+  assert.match(D.runningNote(R('WIPE', 'TOOL_LOST'), plan, 'TOOL_LOST'), /재개해 진행 중/);
+  assert.match(D.runningNote(R('SOAP', 'TOOL_FAIL'), plan, null), /^진행 중/);                  // 멈춘 적 없으면 '재개해' 라고 하지 않는다
+  assert.match(D.runningNote(R('WIPE', 'TIMEOUT'), {}, null), /자동으로 한 번/);                 // 옛 서버(policy 없음) → params 와 같은 목록
+  assert.match(D.runningNote(R('WIPE', 'TIMEOUT'), { policy: { TIMEOUT: 'retry:3->isolate' } }, null), /최대 3번/);
+});
+

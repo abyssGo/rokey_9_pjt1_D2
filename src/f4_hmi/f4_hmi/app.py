@@ -46,7 +46,8 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder
         return resp
     flow = cfg.get('flow') or {}
     plan = {'plan': flow.get('plan') or [], 'rack_order': flow.get('rack_order') or {},
-            'consumables': flow.get('consumables') or {}}
+            'consumables': flow.get('consumables') or {},
+            'policy': flow.get('policy') or {}}          # 실패 정책 — 화면이 '자동 재시도 중' 을 가릴 때 쓴다(derive.retryPolicy)
     hub = Hub()
     store.subscribe(hub.from_ros)
     app.state.hub = hub
