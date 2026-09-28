@@ -239,3 +239,4 @@ footer { padding: 4px 0 12px; }
 .modal-text { font-size: 19px; margin-top: 14px; }
 .modal-foot.right { justify-content: flex-end; }
 .btn.plain:not(:disabled):hover, .btn.plain:not(:disabled):focus-visible { box-shadow: inset 0 0 0 2em var(--card2); border-color: var(--dim); }
+.modal-foot > .dim { flex: 1 1 320px; min-width: 0; }   /* 설명 글이 길어도 버튼을 아래로 밀지 않고 옆에서 줄바꿈 */
