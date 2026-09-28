@@ -1204,3 +1204,49 @@ def test_bowl_wipe_retry_with_empty_gripper_goes_to_tool_lost(monkeypatch):
     assert sig.resumes >= 1 and f.isolated == 0
     assert [e['result'] for e in events] == ['DONE']
 
+
+def test_abort_during_tool_lost_pause_does_not_return_a_tool(monkeypatch):
+    """툴 놓침으로 멈춘 동안 '중단' — 손에 툴이 없으니 정리에서 툴 반납을 가지 않는다
+    (가면 사람이 다시 꽂아 둔 손잡이 위로 닫힌 손가락이 내려앉는다)."""
+    monkeypatch.setattr(flow_module.cc, 'start_nudge_watch', lambda: None)
+    monkeypatch.setattr(flow_module.cc, 'check_nudge', lambda *a: False)
+    mods = load_features(['f1', 'f2', 'f3'])
+    f3, f1 = _ns(F3Api, mods['f3']), _ns(F1Api, mods['f1'])
+    tool_calls = []
+    f3.wipe_bowl = lambda: Result.fail(TOOL_LOST)
+    f1.tool = lambda tool_id, action: (tool_calls.append(action), mods['f1'].tool(tool_id, action))[1]
+    f, events, _ = _one_bowl(f1=f1, f3=f3)
+
+    class AbortOnPause(PauseWatcher):
+        def take(self, name):
+            if name == 'abort':
+                return True                                     # 멈추면 곧바로 중단을 누른다
+            return super().take(name)
+
+        def peek(self, name):
+            return True if name == 'abort' else super().peek(name)
+    f.run_plan(AbortOnPause())
+    assert tool_calls == [PICK], f'툴이 손에 없는데 중단 정리에서 툴 반납(RETURN)을 갔다: {tool_calls}'
+    assert [e['result'] for e in events] == ['ISOLATED']
+
+
+def test_abort_during_bowl_retry_home_move_is_handled_now(monkeypatch):
+    """재시도의 HOME 이동 중 일시 정지 → 중단 — 그 자리에서 정리하고 끝낸다(중단 깃발을 다음 용기로 넘기지 않는다)."""
+    f, calls, events = _e61_flow(monkeypatch, ['wipe_bowl:FORCE_LIMIT:1'])
+    orig = f.call_fn
+    once = {'done': False}
+
+    def halt_on_home(mod, fname, *a):
+        r = orig(mod, fname, *a)
+        if not once['done'] and calls and calls[-1] == 'move_to HOME':
+            once['done'] = True
+            f._halted = True                                    # 재시도의 HOME 이동이 중단으로 끊겼다(한 번만)
+        return r
+    f.call_fn = halt_on_home
+    f.plan = [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 2}]
+    f.run_plan(PauseWatcher())
+    mock.reset()
+    assert calls[calls.index('move_to HOME') + 1] != 'wipe_bowl', f'중단했는데 재시도 닦기를 또 불렀다(로봇이 다시 내려간다) {calls}'
+    assert [e['result'] for e in events] == ['ISOLATED', 'DONE'], f'중단한 용기만 격리 · 다음 용기는 정상이어야 한다 {events}'
+    assert f._halted is False
+

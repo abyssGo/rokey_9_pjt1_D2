@@ -216,6 +216,11 @@ export function alarm(d) {
 
 // 넛지(로봇팔 가볍게 밀기)로도 풀리는 멈춤 — flow._NUDGE_CODES(툴 놓침 · 툴 집기 실패 · 로봇 오류)와 케이블. 일시 정지 버튼 멈춤 등은 재개 버튼만
 export const NUDGE_KINDS = ['cable', 'tool_lost', 'tool_fail', 'robot_error'];
+// 이 멈춤이 넛지로 풀리는가 — 로봇 오류의 신호 2(받아 치운 뒤)와 HOME 복귀 실패는 재개 버튼만 받는다(flow._robot_error_pause · E54)
+export function nudgeOk(a) {
+  if (!a || !NUDGE_KINDS.includes(a.kind)) return false;
+  return !(a.guide === GUIDE_KO.robot_error_release || a.guide === GUIDE_KO.robot_error_home);
+}
 
 // 자동 재시도 원인 — params.yaml flow.policy 에서 'retry:N->isolate' 인 코드(서버가 plan.policy 로 넘겨준다).
 //    설정이 안 오면(옛 서버) params.yaml 과 같은 목록을 쓴다: FORCE_LIMIT · TIMEOUT · RACK_JAM = retry:1->isolate

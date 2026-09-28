@@ -775,12 +775,20 @@ class Flow:
                     # 그릇 닦기는 첫 시도와 같은 자리(HOME)에서 다시 부른다 — 후퇴 높이(safe_z)는 HOME 보다 높아 바닥 찾기 깊이가
                     #    모자랄 수 있고, 나선·벽면 도중 실패면 가운데·손목이 어긋나 있다. 컵은 부르는 높이가 safe_z 보다 높아 해당 없다.
                     if fname == 'wipe_bowl':
+                        first_code = r.code
                         home = self.call_fn('f1', 'move_to', 'HOME', True)
+                        if self._halted:      # 이동 중 일시 정지 → 중단 — 정책을 타지 않고 지금 정리한다(깃발을 다음 용기로 넘기지 않는다)
+                            self._halted = False
+                            return self.abort_container(sig)
                         if not home.ok:       # HOME 으로 못 갔다 → 다시 하지 않고 사람을 부른다(후퇴 실패와 같게)
                             r = home
                             action = PAUSE
                             break
+                        self.last_code = first_code   # 재시도 중임을 화면에 그대로 보인다(HOME 이동 성공이 OK 로 덮지 않게)
                     r = self.call_fn(mod, fname, *args)
+                    if self._halted:
+                        self._halted = False
+                        return self.abort_container(sig)
                     if r.ok:
                         break
                 if not r.ok:
@@ -925,6 +933,8 @@ class Flow:
             if code == TOOL_FAIL:                      # 🆕 E52 — 홀더에서 못 집었다: 격리하지 않는다 · 사람이 홀더 확인 → 넛지 → 툴 집기부터 다시
                 self.message = (f'{self.message or "툴 집기 실패"} — 홀더의 수세미·솔이 원래 방향으로 제대로 꽂혔는지 확인한 뒤 '
                                 f'로봇팔 가볍게 밀기(또는 재개) → 툴 집기부터 다시 합니다')
+            if code == TOOL_LOST:                      # 툴이 손에 없다 — 기다리는 동안 '중단'을 누르면 정리가 빈손으로 툴 반납을 가서
+                self.holding, self.holding_tool = None, None   # 사람이 다시 꽂아 둔 손잡이 위로 닫힌 손가락을 내리지 않게 먼저 지운다
             self.to_paused(f'코드 {code}', sig)
             # 넛지 재개는 사람이 현장에서 바로 손대는 멈춤(_NUDGE_CODES)에만 — GRIP_FAIL·RACK_FULL 은 화면에서 확인하고 재개
             answer = self.wait_resume(sig, allow_nudge=(code in _NUDGE_CODES))

@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, NUDGE_KINDS, runningNote,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -159,6 +159,7 @@ export default function Monitor() {
   // 케이블 재검증에서 또 떨리면 flow 는 멈춘 채 문구만 '케이블 이상 지속 …' 으로 바꾼다 — 처음 멈췄을 때처럼 알림창을 다시 띄우고 한 번 울린다
   useEffect(() => {
     const msg = s?.message || '';
+    if (!msg.includes('이상 지속')) againMsg.current = '';                  // 재확인 중 문구가 오면 비운다 — 같은 떨림 값으로 또 실패해도 다시 띄운다
     if (s?.step === 'PAUSED' && pauseKind(s) === 'cable' && msg.includes('이상 지속') && msg !== againMsg.current) {
       againMsg.current = msg;
       pauseSeq.current += 1;
@@ -287,7 +288,7 @@ function AlertModal({ m, a, onClose }) {
           <ol className="modal-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
         </div>
         <div className="modal-foot">
-          <div className="dim small">{NUDGE_KINDS.includes(a.kind)
+          <div className="dim small">{nudgeOk(a)
             ? <>처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼 또는 로봇팔 가볍게 밀기({NUDGE.word}). 밀어서 풀리면 이 창은 저절로 닫힙니다.</>
             : <>처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼(이 멈춤은 로봇팔을 밀어도 풀리지 않습니다).</>}</div>
           <button className="btn go" onClick={onClose} autoFocus>확인</button>

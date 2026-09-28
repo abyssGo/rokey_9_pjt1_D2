@@ -144,3 +144,12 @@ test('케이블 카드는 코드 ROBOT_ERROR + 케이블 문구일 때만 · 재
   assert.match(D.runningNote(R('WIPE', 'TIMEOUT'), { policy: { TIMEOUT: 'retry:3->isolate' } }, null), /최대 3번/);
 });
 
+test('넛지 안내는 넛지로 풀리는 멈춤에만 — 로봇 오류 신호 2 · HOME 복귀 실패는 재개 버튼만(9/29)', () => {
+  const A = (last_code, message) => D.alarm({ state: { step: 'PAUSED', last_code, message } });
+  assert.ok(D.nudgeOk(A('TOOL_LOST', '')));
+  assert.ok(D.nudgeOk(A('ROBOT_ERROR', 'f2.dip: 드라이버 응답 없음 — 로봇 오류 · 그리퍼에 용기이(가) 있습니다.')));
+  assert.ok(!D.nudgeOk(A('ROBOT_ERROR', '그리퍼를 열었습니다 — 받아서 치운 뒤 화면의 재개 버튼')));
+  assert.ok(!D.nudgeOk(A('ROBOT_ERROR', 'HOME 복귀 실패 — 펜던트로 옮긴 뒤 재개')));
+  assert.ok(!D.nudgeOk(A('OK', '일시 정지 — 운영자 요청')));
+});
+
