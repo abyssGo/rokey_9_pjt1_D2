@@ -47,7 +47,7 @@ class HmiDb:
         · rack_slots: 팔레트 한 장의 칸 수 — 칸을 다 채우고 끝난 회차를 팔레트 1장으로 센다(kpi.pallets · 0 이면 세지 않는다)."""
         self.path = str(path)
         self.leftover_threshold_g = float(leftover_threshold_g)
-        self.rack_slots = int(rack_slots or 0)              # 🆕 9/28 팔레트 한 장의 칸 수 — 칸을 다 채우고 끝난 회차 = 팔레트 1장(kpi.pallets)
+        self.rack_slots = int(rack_slots or 0)              # 팔레트 한 장의 칸 수 — 칸을 다 채우고 끝난 회차 = 팔레트 1장(kpi.pallets)
         self._now = now
         self._lock = threading.Lock()                       # ROS 스레드(기록)와 웹 스레드(조회)가 같이 쓴다
         self._con = sqlite3.connect(self.path, check_same_thread=False)
@@ -218,7 +218,7 @@ class HmiDb:
             pn = q(f'SELECT COUNT(*) c, COALESCE(SUM(duration_s),0) s FROM pauses WHERE {pwhere}', pargs)
             top = self._con.execute(f'SELECT kind, COUNT(*) c FROM pauses WHERE {pwhere} GROUP BY kind ORDER BY c DESC LIMIT 1', pargs).fetchone()
             runs = q(f"SELECT COUNT(*) c FROM runs WHERE {pwhere if period != 'run' else '1'}", pargs if period != 'run' else ())['c']
-            # 🆕 9/28 황인재: 처리한 팔레트 수 — 칸(rack_slots)을 다 채우고 끝난 회차만 센다(화면 '이번 팔레트' 카드의 누적과 같은 기준 · 껐다 켜도 남는다)
+            # 처리한 팔레트 수 — 칸(rack_slots)을 다 채우고 끝난 회차만 센다(화면 '이번 팔레트' 카드의 누적과 같은 기준 · 껐다 켜도 남는다)
             pallets = (q(f"SELECT COUNT(*) c FROM runs WHERE {rwhere} AND ended_at IS NOT NULL AND done_bowl + done_cup >= ?", rargs + (self.rack_slots,))['c']
                        if self.rack_slots > 0 else 0)
             return {

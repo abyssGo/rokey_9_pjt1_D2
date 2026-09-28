@@ -4,7 +4,7 @@
   --ok: #1a8f4c; --ok-bg: #e3f4ea; --bad: #c62f2f; --bad-bg: #fbe6e6;
   --warn: #b7791f; --warn-bg: #fdf1dc; --accent: #2563eb; --accent-bg: #e3ecfd;
   --card2: #eef1f5; --art-glow: #dde5f0;
-  --ok-hover: #23b062; --warn-hover: #d8922a; --ok-ring: rgba(26, 143, 76, .55);   /* 🆕 9/28 버튼 이펙트 */
+  --ok-hover: #23b062; --warn-hover: #d8922a; --ok-ring: rgba(26, 143, 76, .55);   /* 버튼 이펙트 */
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -189,7 +189,7 @@ footer { padding: 4px 0 12px; }
 .srow-title { white-space: nowrap; }                 /* 🔄 9/27 소모품 이름 옆 '교체 완료' 버튼 때문에 '수세미'가 줄바꿈되던 것 */
 .btn.mini { white-space: nowrap; }
 
-/* ── 🆕 9/28 버튼 이펙트(황인재 · codepen "hover effects with box-shadow" 응용 · Sass 없이 CSS 변수로)
+/* ── 버튼 이펙트(codepen "hover effects with box-shadow" 응용 · Sass 없이 CSS 변수로)
    시작·재개·교체 완료 = 안쪽 채움(fill) · 중단 = 왼쪽에서 밀기(slide) · 일시 정지 = 들림(raise) · 재개 가능할 때 = 맥동(pulse) · 누르면 살짝 눌림 */
 .btn { transition: box-shadow .25s, transform .25s, background .25s, color .25s; }
 .btn:not(:disabled):active { transform: scale(.97); }
@@ -201,7 +201,7 @@ footer { padding: 4px 0 12px; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--ok-ring); } 100% { box-shadow: 0 0 0 1em transparent; } }
 @media (prefers-reduced-motion: reduce) { .btn, .btn.attn:not(:disabled) { transition: none; animation: none; } }
 
-/* ── 🆕 9/28 예외 알림창(모달) + 재개 알림(토스트) */
+/* ── 예외 알림창(모달) + 재개 알림(토스트) */
 .modal-bg { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
 .modal { background: var(--card); border: 2px solid var(--warn); border-radius: 16px; padding: 22px 26px; width: min(760px, 96vw); box-shadow: 0 20px 60px rgba(0, 0, 0, .5); animation: modal-in .2s ease-out; }
 @keyframes modal-in { from { opacity: 0; transform: translateY(12px); } }
@@ -219,7 +219,7 @@ footer { padding: 4px 0 12px; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -10px); } }
 
 
-/* ── 🆕 9/28(2) 황인재: 교체 완료 · KPI 기간 · 이력 [전체/문제만] 버튼에도 이펙트 — 교체 완료 = 파랑으로 채움 · 탭 = 아래에서 차오름 */
+/* ── 교체 완료 · KPI 기간 · 이력 [전체/문제만] 버튼에도 이펙트 — 교체 완료 = 파랑으로 채움 · 탭 = 아래에서 차오름 */
 .btn.mini:not(:disabled):hover, .btn.mini:not(:disabled):focus-visible { box-shadow: inset 0 0 0 2em var(--accent); color: #fff; border-color: var(--accent); }
 .tabs button { transition: box-shadow .25s, color .25s, transform .15s; }
 .tabs button:not(.on):hover, .tabs button:not(.on):focus-visible { box-shadow: inset 0 -3em 0 0 var(--accent-bg); color: var(--accent); }

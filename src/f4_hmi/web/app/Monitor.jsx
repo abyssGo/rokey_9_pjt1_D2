@@ -60,7 +60,7 @@ export default function Monitor() {
   const lastSoundMsg = useRef('');
   const s = d.state;
   if (lastRunning.current === null) lastRunning.current = recall();
-  // 🆕 9/28 멈춘 뒤에 연 화면(새 탭·태블릿)은 멈춘 단계를 못 봤다 → 브리지가 기억한 직전 단계(paused_from)를 쓴다
+  // 멈춘 뒤에 연 화면(새 탭·태블릿)은 멈춘 단계를 못 봤다 → 브리지가 기억한 직전 단계(paused_from)를 쓴다
   if (s && (s.step === 'PAUSED' || s.step === 'ERROR') && !lastRunning.current && d.paused_from) { lastRunning.current = d.paused_from; remember(d.paused_from); }
   if (s && RUNNING.includes(s.step) && lastRunning.current !== s.step) { lastRunning.current = s.step; remember(s.step); }
   if (s && (s.step === 'IDLE' || s.step === 'DONE') && lastRunning.current) { lastRunning.current = ''; remember(''); }
@@ -75,7 +75,7 @@ export default function Monitor() {
   }, [s?.message]);
   // 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
   const wasPaused = useRef(false);
-  // 🆕 9/28 황인재: 멈추면 **알림창**(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 톡(넛지)으로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
+  // 멈추면 알림창(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 톡(넛지)으로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const pauseSeq = useRef(0);
@@ -184,7 +184,7 @@ function Alarm({ d, step }) {
   );
 }
 
-// 🆕 9/28 예외 알림창 — 멈춤 원인 아이콘 + 멈춘 단계 그림 + 할 일 · 확인을 누르면 닫히고(안내 띠는 남는다) 재개 버튼(또는 톡)으로 이어 간다
+// 예외 알림창 — 멈춤 원인 아이콘 + 멈춘 단계 그림 + 할 일 · 확인을 누르면 닫히고(안내 띠는 남는다) 재개 버튼(또는 톡)으로 이어 간다
 function AlertModal({ m, a, onClose }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -357,7 +357,7 @@ function Pallet({ d }) {
   const filled = cells.filter((c) => c.filled).length;
   const full = cells.length > 0 && filled >= cells.length;       // 이번 회차가 칸을 다 채웠다 → 사람이 팔레트를 바꾼다
   const loading = cells.some((c) => c.loading);
-  const t = lifetime(d);                                          // 🔄 9/28 누적은 DB 전체 기록(없으면 메모리)
+  const t = lifetime(d);                                          // 누적은 DB 전체 기록(없으면 메모리)
   return (
     <section className={`card pallet-card ${full ? 'full' : ''}`}>
       <h2>이번 팔레트</h2>

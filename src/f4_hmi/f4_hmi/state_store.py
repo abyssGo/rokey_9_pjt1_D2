@@ -32,7 +32,7 @@ class StateStore:
         # 누적 — flow 가 계획을 마치고 DONE 으로 넘어가는 순간 한 회차로 센다. HMI 를 켠 뒤부터(끄면 사라진다 · 저장은 SQLite · db.py)
         self._rack_slots = int(rack_slots)
         self._totals = {'runs': 0, 'pallets': 0, 'bowls': 0, 'cups': 0, 'isolated': 0}
-        self._paused_from = None                            # 🆕 9/28 멈춤(PAUSED·ERROR) 직전에 하던 단계 — 멈춘 뒤에 연 화면(태블릿·새 탭)도 "닦기 단계에서 멈춤"을 안다
+        self._paused_from = None                            # 멈춤(PAUSED·ERROR) 직전에 하던 단계 — 멈춘 뒤에 연 화면(태블릿·새 탭)도 "닦기 단계에서 멈춤"을 안다
         self._listeners = []
 
     def subscribe(self, fn):

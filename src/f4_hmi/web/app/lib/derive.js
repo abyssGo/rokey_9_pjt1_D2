@@ -239,7 +239,7 @@ export function kpiCards(k) {
   ];
 }
 
-// 🆕 9/28 황인재 "처리한 팔레트·그릇·컵 수가 어디 있나" — '이번 팔레트' 카드 아래 누적 칸. DB 전체 기록(/api/kpi?period=all)이 있으면 그것(껐다 켜도 남는다),
+// '이번 팔레트' 카드 아래 누적 칸. DB 전체 기록(/api/kpi?period=all)이 있으면 그것(껐다 켜도 남는다),
 //    없으면 브리지 메모리 누적(totals · HMI 를 켠 뒤부터). 팔레트 = 칸을 다 채우고 끝난 실행 수(db.kpi.pallets · state_store._count_run 과 같은 기준)
 export function lifetime(d) {
   const k = d.kpiAll;
@@ -248,7 +248,7 @@ export function lifetime(d) {
   return { fromDb: false, pallets: t.pallets || 0, bowls: t.bowls || 0, cups: t.cups || 0, isolated: t.isolated || 0, runs: t.runs || 0 };
 }
 
-// 🆕 9/28 예외 알림창 — 원인 아이콘(public/illust/icons/*.svg 이름) · 멈춤이 풀렸을 때 토스트 문구
+// 예외 알림창 — 원인 아이콘(public/illust/icons/*.svg 이름) · 멈춤이 풀렸을 때 토스트 문구
 export function causeIcon(kind, containerKind) {
   const tool = containerKind === 'CUP' ? 'brush' : 'sponge';
   const vessel = containerKind === 'CUP' ? 'cup' : 'bowl';

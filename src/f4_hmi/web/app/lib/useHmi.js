@@ -25,7 +25,7 @@ export function useHmi() {
   const fetchExtra = useCallback(async () => {
     try {
       const [u, k, ka] = await Promise.all([fetch('/api/usage', { cache: 'no-store' }), fetch(`/api/kpi?period=${periodRef.current}`, { cache: 'no-store' }),
-                                          fetch('/api/kpi?period=all', { cache: 'no-store' })]);   // 🆕 9/28 전체 누적(팔레트 카드) — 기간 전환과 무관
+                                          fetch('/api/kpi?period=all', { cache: 'no-store' })]);   // 전체 누적(팔레트 카드) — 기간 전환과 무관
       if (u.ok) { const uj = await u.json(); setD((prev) => ({ ...prev, usage: uj.usage, notices: uj.notices, limits: uj.limits })); }
       if (k.ok) { const kj = await k.json(); setD((prev) => ({ ...prev, kpi: kj })); }
       if (ka.ok) { const aj = await ka.json(); setD((prev) => ({ ...prev, kpiAll: aj })); }
