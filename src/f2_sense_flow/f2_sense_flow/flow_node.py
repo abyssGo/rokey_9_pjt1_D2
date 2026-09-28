@@ -1,29 +1,31 @@
 # -*- coding: utf-8 -*-
-"""flow_node — PreWash-Cell 의 **메인 프로그램** (민범진). 통신 **배선**만 맡는다.
+"""flow_node — PreWash-Cell 의 메인 프로그램 (민범진). 통신 배선만 맡는다.
 
-이 셀에서 노드는 둘뿐이다: flow_node(여기)와 hmi_bridge(황인재).
-f1·f2·f3 는 노드가 아니라 그냥 함수이고, 이 파일의 **메인 스레드**가 차례로 부른다.
+이 셀에서 노드는 둘뿐이다: flow_node(여기)와 hmi_bridge(F4 · HMI 브리지).
+f1·f2·f3 는 노드가 아니라 그냥 함수이고, 이 파일의 메인 스레드가 차례로 부른다.
 
 왜 이렇게 하나 (TS-01 · SDD §3.2):
     두산 API 는 "혼자 위에서 아래로 도는 스크립트"를 전제로 만들어졌다. 로봇 명령마다 자기가
-    실행기를 돌려 응답을 기다리므로, **서비스 콜백 안에서 부르면 교착**한다.
+    실행기를 돌려 응답을 기다리므로, 서비스 콜백 안에서 부르면 교착한다.
     그래서 로봇을 움직이는 코드는 전부 메인 스레드에서 차례로 실행한다.
 
      ┌ 메인 스레드      : flow.run() → 기능 함수 호출        ← 로봇은 여기서만
      ├ 통신 노드 스레드 : Io — 서비스·타이머·발행기
-     │                    🚨 콜백은 **깃발만** 세운다 (규칙 ③)
+     │                    주의: 콜백은 깃발만 세운다 (규칙 ③)
      └ DSR 전용 노드    : cobot_common 이 관리 (우리는 안 건드린다)
 
-Ctrl+C 는 cobot_common.init() 이 단독으로 맡는다 (SDD §3.1, PR #3).
-  → 여기서는 signal.signal 을 걸지 않고 **try/finally 로 cc.shutdown() 만** 부른다.
+Ctrl+C 는 cobot_common.init() 이 단독으로 맡는다 (SDD §3.1).
+  → 여기서는 signal.signal 을 걸지 않고 try/finally 로 cc.shutdown() 만 부른다.
 
 실행 (SDD §10):
     ros2 launch prewash_bringup prewash.launch.py vel_scale:=0.3      # 실기
     ros2 launch prewash_bringup prewash_mock.launch.py                # 전부 가짜, 드라이버 없이
     PREWASH_USE_MOCK=f1,f3 ros2 run f2_sense_flow flow_node           # 손으로 돌릴 때
 
-🚨 flow_node 에는 name=·namespace=·--ros-args -r __node:= 를 주지 않는다 (SDD §10).
+주의: flow_node 에는 name=·namespace=·--ros-args -r __node:= 를 주지 않는다 (SDD §10).
    프로세스 안의 두 노드(flow_node · flow_node_dsr)에 모두 걸려 이름이 같아진다.
+
+표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import functools
 import traceback
@@ -44,10 +46,10 @@ FEATURES = ('f1', 'f2', 'f3')
 
 
 def safe_cb(what):
-    """ROS 콜백을 감싼다 — 🚨 콜백에서 예외가 나가면 **통신이 영구히 죽는다.**
+    """ROS 콜백을 감싼다 — 주의: 콜백에서 예외가 나가면 통신이 영구히 죽는다.
 
     rclpy 의 SingleThreadedExecutor 는 콜백 예외를 spin() 밖으로 다시 던지고,
-    cobot_common 의 spin 스레드는 그것을 잡아 로그만 남기고 **스레드를 끝낸다.**
+    cobot_common 의 spin 스레드는 그것을 잡아 로그만 남기고 스레드를 끝낸다.
     그러면 프로세스는 살아 있는데 /flow/state 가 멈추고 start·stop·resume 이
     영원히 응답하지 않는다 — 메인 스레드는 로봇을 계속 움직이는데 정지 버튼이 안 먹는다.
     """
@@ -69,7 +71,7 @@ def safe_cb(what):
 class Io:
     """통신 배선 — /flow/* 서비스 4개, /flow/state 타이머, /flow/event 발행기.
 
-    🚨 콜백에서 하는 일은 **깃발 세우기와 값 읽기뿐**이다. 로봇 함수를 부르지 않는다.
+    주의: 콜백에서 하는 일은 깃발 세우기와 값 읽기뿐이다. 로봇 함수를 부르지 않는다.
        콜백에서 로봇을 움직이면 TS-01 의 교착이 그대로 되살아난다.
     """
 
@@ -80,7 +82,7 @@ class Io:
         node.create_service(Trigger, '/flow/start', self._on_start)
         node.create_service(Trigger, '/flow/stop', self._on_stop)
         node.create_service(Trigger, '/flow/resume', self._on_resume)
-        node.create_service(Trigger, '/flow/abort', self._on_abort)      # 🆕 FLOW-03 (IRD §6)
+        node.create_service(Trigger, '/flow/abort', self._on_abort)      # FLOW-03 (IRD §6)
         self.state_pub = node.create_publisher(FlowState, '/flow/state', 10)
         self.event_pub = node.create_publisher(FlowEvent, '/flow/event', 10)
 
@@ -99,11 +101,11 @@ class Io:
 
     @safe_cb('/flow/stop')
     def _on_stop(self, req, res):
-        """일시 정지 — **즉시** 멈춘다 (IRD §6 · V-24).
+        """일시 정지 — 즉시 멈춘다 (IRD §6 · V-24).
 
-        🚨 cc.pause() 는 깃발만 세운다(motion.py 머리말) — 콜백에서 불러도 된다.
+        주의: cc.pause() 는 깃발만 세운다(motion.py 머리말) — 콜백에서 불러도 된다.
            이동 중이면 폴링 루프가 그 자리에서 세우고, 이동이 없으면 다음 이동이 출발하지 않는다.
-           깃발(stop)도 같이 세운다 — 단계 **사이**에서 멈추는 길이 따로 있다(SDD §5.1).
+           깃발(stop)도 같이 세운다 — 단계 사이에서 멈추는 길이 따로 있다(SDD §5.1).
         """
         self.sig.raise_('stop')
         cc.pause()
@@ -112,13 +114,13 @@ class Io:
 
     @safe_cb('/flow/resume')
     def _on_resume(self, req, res):
-        # 🚨 PAUSED 일 때만 받는다 (_on_start 와 같은 방식).
+        # 주의: PAUSED 일 때만 받는다 (_on_start 와 같은 방식).
         #    운전 중에 들어온 resume 을 그냥 세워 두면 깃발이 남아 있다가, 나중에
         #    사람이 확인해야 하는 정지(ROBOT_ERROR·RACK_FULL — SDD §7)에서 그것을
         #    바로 소비해 0 초 만에 재개해 버린다. HMI 가 버튼을 잠가도 REST /api/resume
         #    이나 ros2 service call 로 직접 들어올 수 있으므로 서버에서도 막는다.
-        #    🚨 이동 **도중** 멈추면 메인 스레드가 기능 함수 안에 갇혀 있어 step 이 아직
-        #       'PAUSED' 가 아니다 → cc.is_paused() 도 같이 본다(PM 9/21). 이게 없으면
+        #    주의: 이동 도중 멈추면 메인 스레드가 기능 함수 안에 갇혀 있어 step 이 아직
+        #       'PAUSED' 가 아니다 → cc.is_paused() 도 같이 본다. 이게 없으면
         #       "멈췄는데 재개가 거부되는" 막다른 길이 된다.
         if self.flow.step == 'PAUSED' or cc.is_paused():
             cc.resume()                              # 멈춰 있던 이동을 이어서 끝낸다
@@ -130,10 +132,10 @@ class Io:
 
     @safe_cb('/flow/abort')
     def _on_abort(self, req, res):
-        """🆕 중단 — 지금 용기를 접고 **다음 용기**로 간다 (IRD §6 · 결정 E11).
+        """중단 — 지금 용기를 접고 다음 용기로 간다 (IRD §6 · 결정 E11).
 
-        🚨 PAUSED 일 때만 받는다. 운전 중에 받으면 사람이 상태를 보지 않은 채 용기를 버린다.
-        🚨 ROBOT_ERROR 로 멈춘 것은 **거부**한다 — 로봇이 어디 있는지 모르는데 격리함까지
+        주의: PAUSED 일 때만 받는다. 운전 중에 받으면 사람이 상태를 보지 않은 채 용기를 버린다.
+        주의: ROBOT_ERROR 로 멈춘 것은 거부한다 — 로봇이 어디 있는지 모르는데 격리함까지
            이송하면 더 위험하다. 사람이 복구한 뒤 재개한다(SDD §7).
         cc.halt() 로 하던 이동을 끊는다(깃발만 세운다 — 콜백에서 불러도 된다).
         정리 순서는 메인 스레드의 flow.abort_container 가 한다.
@@ -171,6 +173,10 @@ class Io:
 
 
 def main():
+    """flow_node 의 진입점 — 설정을 읽어 로봇 유무를 정하고, cc.init → 문지기 → Flow·Io 를 만들어 메인 스레드에서 flow.run.
+
+    기능이 전부 가짜(use_mock 에 f1·f2·f3 모두)면 두산 드라이버 없이 돈다. 어떤 경우에도 finally 의 cc.shutdown() 이 정리한다.
+    """
     # ── init 전에 설정을 읽어 robot 여부를 정한다 (SDD §4.3·§5.1) ──
     #    런치 인자 use_mock 은 환경변수 PREWASH_USE_MOCK 으로 와서 로더가 이미 얹어 준다.
     #    cc.cfg() 는 init() 뒤에만 되므로 여기서는 config.load() 를 직접 부른다.
@@ -178,7 +184,7 @@ def main():
     cfg = cc_config.load()
     use_mock = cfg.get('flow', {}).get('use_mock') or []
     if isinstance(use_mock, str):
-        # 🚨 YAML 에 use_mock: "f1,f3" 처럼 문자열로 적으면 set() 이 글자 단위가 되어
+        # 주의: YAML 에 use_mock: "f1,f3" 처럼 문자열로 적으면 set() 이 글자 단위가 되어
         #    'f1' in use_mock 이 부분문자열 매칭으로 조용히 틀린 선택을 한다
         use_mock = cc_config.parse_use_mock(use_mock)
     use_mock = [m for m in use_mock if m in FEATURES]
@@ -189,21 +195,21 @@ def main():
         node = cc.io_node()
         log = node.get_logger()
         if robot:
-            # 🚨 첫 이동 전 문지기(TS-07) — 남이 펜던트에서 툴·TCP 를 바꿔 뒀으면 좌표 전체가 틀어진다.
+            # 주의: 첫 이동 전 문지기(TS-07) — 남이 펜던트에서 툴·TCP 를 바꿔 뒀으면 좌표 전체가 틀어진다.
             #    다르면 여기서 끝낸다(PreflightError → 아래 except 가 traceback 없이 종료 코드 2).
             require_controller(node, cc.cfg(), log)
-            warn_if_cable_tight(cc.cfg(), log)          # 🔗 시작 전 케이블 장력(경고만 · 약 5 s)
+            warn_if_cable_tight(cc.cfg(), log)          # 시작 전 케이블 장력(경고만 · 약 5 s)
         sig = Signals()
         log.info('기능 모듈:')
         features = load_features(use_mock, log)      # 진짜/가짜 선택 (IRD §10)
         # 전부 가짜면 물러날 로봇이 없다 → 후퇴를 부르지 않는다(cc.safe_retreat 는 뼈대라 예외를 낸다)
         flow = Flow(cc.cfg(), log, features=features,
                     safe_retreat=cc.safe_retreat if robot else None,
-                    # 🚨 이동이 도중에 서면(MoveIncomplete) 로봇 위치를 모른다 → 후퇴 금지,
-                    #    힘·순응만 끄고 사람이 확인한다 (9/21 결정 · SDD §7)
+                    # 주의: 이동이 도중에 서면(MoveIncomplete) 로봇 위치를 모른다 → 후퇴 금지,
+                    #    힘·순응만 끄고 사람이 확인한다 (SDD §7)
                     force_off=cc.force_off if robot else None,
                     no_retreat_errors=(cc.MoveIncomplete,) if robot else (),
-                    # 🆕 FLOW-03 — 정지·재개·중단 (IRD §6). flow 는 로봇을 모른다.
+                    # FLOW-03 — 정지·재개·중단 (IRD §6). flow 는 로봇을 모른다.
                     is_paused=cc.is_paused if robot else None,
                     halt=cc.halt if robot else None,
                     clear_halt=cc.clear_halt if robot else None,

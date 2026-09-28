@@ -1,5 +1,5 @@
 'use client';
-// 운영 화면 1장 — F4-00 §3. HMI 는 **보여 주고 전달만** 한다(흐름·복구 판단·로봇 동작은 하지 않는다).
+// 운영 화면 1장 — HMI 설계초안 §3. HMI 는 보여 주고 전달만 한다(흐름·복구 판단·로봇 동작은 하지 않는다).
 import { useEffect, useRef, useState } from 'react';
 import { useHmi } from './lib/useHmi';
 import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
@@ -9,7 +9,7 @@ import {
   kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime,
 } from './lib/derive';
 
-// 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트(황인재 9/21 · Claude 디자인 시안 승인). public/illust/ 에 있다
+// 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
 const stepArt = (step, kind) => `/illust/steps/${step}-${kind}.svg`;
 const iconArt = (name) => `/illust/icons/${name}.svg`;
 const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
@@ -20,6 +20,8 @@ function recall() { try { return sessionStorage.getItem(KEY) || ''; } catch { re
 function remember(v) { try { sessionStorage.setItem(KEY, v); } catch { /* 없어도 된다 */ } }
 
 let audioCtx = null;
+// 짧은 비프 1번 — Web Audio 로 freq Hz 사각파를 duration 초 울린다(기본 1000 Hz · 0.18 s · 음량 0.7). 오디오가 없거나 막힌 브라우저면 조용히 넘어간다
+//   끝 0.02 s 는 음량을 0 으로 내려 '딱' 하는 클릭음을 막는다 · audioCtx 는 브라우저 정책상 사용자가 버튼을 누른 뒤에만 켜진다
 function playBeep(freq = 1000, duration = 0.18, type = 'square', vol = 0.7) {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -43,6 +45,7 @@ function playBeep(freq = 1000, duration = 0.18, type = 'square', vol = 0.7) {
   }
 }
 
+// 짧은 두 음(1200 Hz 0.09 s → 120 ms 뒤 1600 Hz 0.11 s) — 멈춤이 풀렸다는 신호
 function playDoubleBeep() {
   playBeep(1200, 0.09, 'square', 0.7);
   setTimeout(() => playBeep(1600, 0.11, 'square', 0.7), 120);
@@ -52,7 +55,7 @@ export default function Monitor() {
   const { d, mode, press, replace, period, setPeriod } = useHmi();
   const [reply, setReply] = useState(null);
   // 일시 정지됐을 때 "어느 단계에서" 를 보여 주려고 기억한다 — flow 가 보내는 값(FlowState)에는 그 칸이 없다.
-  // 같은 탭에서 새로고침해도 잊지 않게 탭 저장소(sessionStorage)에도 둔다. 멈춘 **뒤에** 새 탭으로 열면 모른다.
+  // 같은 탭에서 새로고침해도 잊지 않게 탭 저장소(sessionStorage)에도 둔다. 멈춘 뒤에 새 탭으로 열면 모른다.
   const lastRunning = useRef(null);
   const lastSoundMsg = useRef('');
   const s = d.state;
@@ -62,7 +65,7 @@ export default function Monitor() {
   if (s && RUNNING.includes(s.step) && lastRunning.current !== s.step) { lastRunning.current = s.step; remember(s.step); }
   if (s && (s.step === 'IDLE' || s.step === 'DONE') && lastRunning.current) { lastRunning.current = ''; remember(''); }
 
-  // 🆕 톡톡(Nudge) 재개 감지 시 브라우저 비프음 재생 (1500Hz 기계음) — 케이블 경로는 flow 가 '재개 요청 감지' 문구를 보낸다(#93)
+  // 톡톡(넛지) 재개 감지 시 비프(1500 Hz · 0.16 s) — 케이블 경로에서 flow 가 '재개 요청 감지' 문구를 보낸다
   useEffect(() => {
     const msg = s?.message || '';
     if (msg.includes('재개 요청 감지') && lastSoundMsg.current !== msg) {
@@ -70,7 +73,7 @@ export default function Monitor() {
     }
     lastSoundMsg.current = msg;
   }, [s?.message]);
-  // 🆕 9/25 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
+  // 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
   const wasPaused = useRef(false);
   // 🆕 9/28 황인재: 멈추면 **알림창**(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 톡(넛지)으로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
   const [modal, setModal] = useState(null);
@@ -136,6 +139,7 @@ export default function Monitor() {
   );
 }
 
+// 맨 위 줄 — 제품 이름 · 연결 상태 알약(서버 → flow 순으로 판정) · 일시 정지 버튼(운전 중에만 활성)
 function TopBar({ d, can, onPress }) {
   const conn = !d.server ? { cls: 'bad', text: 'HMI 서버에 닿지 않는다' }
     : d.connected ? { cls: 'ok', text: 'flow 연결됨' }
@@ -154,6 +158,7 @@ function TopBar({ d, can, onPress }) {
   );
 }
 
+// 알람 상자 — 멈춤이면 원인별 제목·할 일(derive.alarm → GUIDE_KO), 운전 중이면 최근 원인 경고. 없으면 그리지 않는다
 function Alarm({ d, step }) {
   const a = alarm(d);
   if (!a) return null;
@@ -208,6 +213,7 @@ function AlertModal({ m, a, onClose }) {
   );
 }
 
+// 버튼 줄 — 시작 · 재개 · 중단과 flow 의 대답(reply)
 function Controls({ can, onPress, reply }) {
   return (
     <section className="controls">
@@ -230,7 +236,7 @@ function StepBar({ d, paused }) {
   const at = paused || step;                         // 일시 정지 중이면 멈춘 단계를 가리킨다
   const idx = FLOW.indexOf(at);
   const finished = step === 'DONE';
-  const broken = false;                                         // 🔄 9/27 황인재: 로봇 오류를 별도 예외로 보이지 않는다 — 붉은 단계 카드 없음(멈춤 카드는 주황 하나)
+  const broken = false;                                         // 로봇 오류를 별도 예외로 보이지 않는다 — 붉은 단계 카드 없음(멈춤 카드는 주황 하나)
   // 좁은 화면(태블릿)에서는 단계 줄이 옆으로 밀린다 — 지금 단계 카드가 가운데 오게 줄만 민다(화면 전체는 움직이지 않는다)
   const bar = useRef(null);
   useEffect(() => {
@@ -301,7 +307,7 @@ function Now({ d, last }) {
   if (!s) { pill = '연결 대기'; tone = 'idle'; title = '대기'; art = 'PICK'; desc = 'flow 의 방송을 기다린다'; }
   else if (step === 'IDLE') { pill = '대기'; tone = 'idle'; title = '대기'; art = 'PICK'; desc = '시작을 누르면 반납 구역부터 차례로 처리한다'; num = 0; }
   else if (step === 'DONE') { pill = '완료'; tone = 'idle'; title = '완료'; art = 'RACK'; desc = '계획한 용기를 모두 처리했다 — 팔레트를 확인한다'; num = 0; }
-  else if (step === 'PAUSED' && pauseKind(s) === 'robot_error') { pill = '멈춤 — 로봇 확인'; tone = 'paused'; }   // 🔄 9/27 일반 멈춤과 같은 색
+  else if (step === 'PAUSED' && pauseKind(s) === 'robot_error') { pill = '멈춤 — 로봇 확인'; tone = 'paused'; }   // 일반 멈춤과 같은 색
   else if (step === 'PAUSED') { pill = { cable: '멈춤 — 케이블 확인', tool_lost: '멈춤 — 툴 놓침', tool_fail: '멈춤 — 툴 집기 실패', leftover: '멈춤 — 잔반 남음', grip: '멈춤 — 집기 실패', rack_full: '멈춤 — 팔레트 가득' }[pauseKind(s)] || '일시 정지'; tone = 'paused'; }
   else if (step === 'ERROR') { pill = '오류'; tone = 'error'; }
   else if (step === 'ISOLATE') { pill = '격리 중'; tone = 'isolate'; num = '!'; }
@@ -339,7 +345,7 @@ function Now({ d, last }) {
   );
 }
 
-// 팔레트 — 실제 배치를 비스듬히 위에서 본 입체 그림(황인재 9/21 배치 그림 · Claude 디자인 시안)
+// 팔레트 — 실제 배치를 비스듬히 위에서 본 입체 그림
 //   넣는 순서 그릇 1 → 그릇 2 → 컵 1 → 컵 2 = params.yaml flow.rack_order. 칸 상태마다 그림 조각(palletArt.js)을 골라 뒤 → 앞으로 겹친다.
 //   적재됨 = 흰 그릇·컵 + ✓ · 넣는 중 = 파란 반투명 + ↓ · 비어 있음 = 점선 자리 + 넣는 순서 번호
 function Pallet({ d }) {
@@ -397,10 +403,12 @@ function Row({ icon, title, value, sub, children, tone = '' }) {
   );
 }
 
+// 큰 숫자 — v 뒤에 '/of' 와 단위를 붙인다
 function Big({ v, of, unit, cls = '' }) {
   return <span className={`big ${cls}`}>{v}{of != null && <span className="of">/{of}</span>}{unit && <span className="unit"> {unit}</span>}</span>;
 }
 
+// 가로 막대 — value/max 비율(%)만큼 채운다. max 가 없으면 0
 function Bar({ value, max, cls = '' }) {
   const pct = max ? Math.min(100, (value / max) * 100) : 0;
   return <div className="bar"><i style={{ width: `${pct}%` }} className={cls} /></div>;
@@ -467,7 +475,7 @@ function Stats({ d, onReplace }) {
   );
 }
 
-// 🆕 F4-05 누적 KPI — DB(/api/kpi) 값 · 기간 전환(이번 실행 · 오늘 · 전체)
+// 누적 KPI — DB(/api/kpi) 값 · 기간 전환(이번 실행 · 오늘 · 전체)
 function Kpi({ d, period, setPeriod }) {
   const cards = kpiCards(d.kpi);
   return (
@@ -492,7 +500,7 @@ function Kpi({ d, period, setPeriod }) {
 }
 
 // 이력 — 끝난 용기 1개 = /flow/event 1건. 최근 것부터 20건.
-//   지금은 브리지가 메모리에 들고 있는 최근 50건(HMI 를 켠 뒤부터) — 껐다 켜도 남게 하는 저장은 F4-04(SQLite).
+//   브리지가 들고 있는 최근 50건(켤 때 SQLite 에서 미리 채운다) — 전체는 터미널 hmi_db dump events.
 //   [전체 / 문제만] — 문제만 = 완료가 아닌 것(격리 · 오류 · 건너뜀).
 const HISTORY_ROWS = 20;
 

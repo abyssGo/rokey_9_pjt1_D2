@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""hmi_db — SQLite 기록을 터미널에서 본다(F4-04). ROS 없이 돈다.
+"""hmi_db — SQLite 기록을 터미널에서 본다. ROS 없이 돈다.
 
     ros2 run f4_hmi hmi_db tables                      표 5개의 줄 수
     ros2 run f4_hmi hmi_db dump events --limit 20      표 내용(최근 것부터)
@@ -7,7 +7,7 @@
     ros2 run f4_hmi hmi_db kpi --period today          KPI (run · today · all)
     ros2 run f4_hmi hmi_db replace sponge              교체 완료를 기록한다(화면 버튼과 같다)
     ros2 run f4_hmi hmi_db export --dir records        표 5개를 CSV 파일로(엑셀·LibreOffice 로 연다)
-파일 위치는 params.yaml hmi.db_path(**워크스페이스 루트 기준** · 기본 <ws>/prewash.db) — --db 로 바꿀 수 있다.
+파일 위치는 params.yaml hmi.db_path(워크스페이스 루트 기준 · 기본 <ws>/prewash.db) — --db 로 바꿀 수 있다.
 """
 import argparse
 import csv
@@ -19,6 +19,7 @@ from .paths import ws_path
 
 
 def _cfg():
+    """params.yaml 전체(설정을 못 읽으면 빈 dict)."""
     try:
         from cobot_common import config
         return config.load()
@@ -27,14 +28,17 @@ def _cfg():
 
 
 def _cfg_db_path():
+    """params.yaml 의 hmi.db_path(설정을 못 읽으면 prewash.db)."""
     return str((_cfg().get('hmi') or {}).get('db_path') or 'prewash.db')
 
 
 def _cfg_rack_slots():
+    """팔레트 한 장의 칸 수 = flow.rack_order 의 칸 합(kpi.pallets 의 기준 · hmi_bridge 와 같은 식)."""
     return sum(len(v or []) for v in ((_cfg().get('flow') or {}).get('rack_order') or {}).values())
 
 
 def _table(rows):
+    """dict 목록을 열 너비를 맞춘 표로 출력."""
     if not rows:
         print('(없음)')
         return
@@ -47,6 +51,7 @@ def _table(rows):
 
 
 def main(argv=None):
+    """명령행 → 하위 명령(tables · dump · usage · kpi · replace · export) 실행. 0 을 돌려준다."""
     p = argparse.ArgumentParser(prog='hmi_db', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--db', default=None, help='SQLite 파일 (기본: params.yaml hmi.db_path)')
     sub = p.add_subparsers(dest='cmd', required=True)

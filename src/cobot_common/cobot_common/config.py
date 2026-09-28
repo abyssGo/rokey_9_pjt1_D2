@@ -3,7 +3,7 @@
 
     from cobot_common import config
     cfg = config.load()                     # 보통은 cc.cfg() 로 쓴다
-    cfg['cell']['limits']['safe_z_mm']      # 공용 값 (주인 한석형)
+    cfg['cell']['limits']['safe_z_mm']      # 공용 값 (cell.yaml — 주인만 고친다)
     cfg['f3']['wipe_bowl']                  # 기능별 절 (자기 절만 수정)
     cfg['run']['vel_scale']                 # 실행할 때 정하는 값 (YAML 에 없다 — 아래 "실행 인자")
 

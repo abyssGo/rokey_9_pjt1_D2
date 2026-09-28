@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""V-20 실행 뼈대 확인 — 팀 코드(cobot_common + flow_node + f1·f2·f3 모듈)를 Virtual 에서 한 번에 돌린다. 🚨 Virtual 전용.
+"""V-20 실행 뼈대 확인 — 팀 코드(cobot_common + flow_node + f1·f2·f3 모듈)를 Virtual 에서 한 번에 돌린다. 주의: Virtual 전용.
 
-기능 모듈이 아직 골격(로봇을 안 움직임)이라, **각 기능 함수 앞에 작은 관절 왕복 1회**를 끼워 넣고
-민범진의 flow_node.main() 을 그대로 실행한다(모듈 파일은 고치지 않는다 — 이 프로세스 안에서만 감싼다).
+기능 모듈이 아직 골격(로봇을 안 움직임)이라, 각 기능 함수 앞에 작은 관절 왕복 1회를 끼워 넣고
+flow_node.main() 을 그대로 실행한다(모듈 파일은 고치지 않는다 — 이 프로세스 안에서만 감싼다).
 
 실행 (저장소 루트, 터미널 3개 · rosinfo 로 RANGE=LOCALHOST 확인)
     1) sod && sodvir                                              (이미 떠 있으면 그대로 쓴다)
@@ -13,6 +13,8 @@
 
 완료 기준(SDD §9.2 V-20): 함수 번갈아 2바퀴 · 모션 중 /flow/state 2 Hz · stop 수락(함수 사이) · 멈춰 있을 때 Ctrl+C 뒤 재실행 정상.
 시험 값은 같은 폴더의 rig_v20.yaml. probe 종료 코드 0(통과) / 1(실패).
+
+표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import functools
 import os
@@ -73,7 +75,7 @@ def run_flow() -> int:
         for name in (n for n in vars(api) if not n.startswith('_') and callable(getattr(api, n))):
             setattr(module, name, with_motion(getattr(module, name)))
     try:
-        flow_node.main()                                    # 민범진의 메인 프로그램 그대로
+        flow_node.main()                                    # flow_node 의 메인 프로그램 그대로
         return 0
     finally:
         shutil.rmtree(cfg_dir, ignore_errors=True)

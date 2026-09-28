@@ -2,11 +2,11 @@
 """웹 쪽 입 — 브라우저의 요청에 답하고(REST), 새 값을 밀어 준다(WebSocket). ROS 를 모른다(그래서 ROS 없이 시험할 수 있다).
 
     GET  /api/state                     지금 값 전부(연결·상태·그리퍼·힘·최근 이벤트·계획)
-    POST /api/start|stop|resume|abort   버튼 → flow 의 같은 이름 서비스 → {ok, message, latency_ms} 를 그대로 돌려준다 (F4-02)
+    POST /api/start|stop|resume|abort   버튼 → flow 의 같은 이름 서비스 → {ok, message, latency_ms} 를 그대로 돌려준다
     WS   /ws/state                      서버 → 브라우저. 붙자마자 type=state(전부) 1번, 그 뒤로 state · event · force · gripping · conn
-    GET  /                              운영 화면(F4-03 · Next.js 로 만든 web/out/) — 아직 안 만들었으면 시험 페이지
-    GET  /test                          시험 페이지(F4-01·02 점검용 — 그대로 둔다)
-    GET  /api/usage · /api/kpi?period=  소모품·잔반통 사용량(마지막 교체 뒤) · 누적 KPI(run/today/all)      (F4-04·05 · SQLite)
+    GET  /                              운영 화면(Next.js 로 만든 web/out/) — 아직 안 만들었으면 시험 페이지
+    GET  /test                          시험 페이지(브리지 점검용 — 그대로 둔다)
+    GET  /api/usage · /api/kpi?period=  소모품·잔반통 사용량(마지막 교체 뒤) · 누적 KPI(run/today/all)      (SQLite)
     POST /api/replace/{item}            교체 완료(sponge/brush/soap/waste_bin) → 사용량 0 부터
     GET  /api/db/{table}?limit=         표 내용(events/runs/pauses/commands/replacements) · /api/history = events
 응답 모양은 src/f4_hmi/README.md(REST·WS 계약) 과 docs/02_인터페이스_IRD.md §6·§7.
@@ -24,7 +24,7 @@ from .hub import Hub
 ITEM_KO = {'sponge': '수세미', 'brush': '솔', 'soap': '세제', 'waste_bin': '잔반통'}
 
 STATIC_DIR = Path(__file__).resolve().parent / 'static'
-WEB_DIR = Path(__file__).resolve().parent.parent / 'web' / 'out'   # F4-03 화면 — `cd src/f4_hmi/web && npm run build` 가 만든다(GitHub 에는 안 올림)
+WEB_DIR = Path(__file__).resolve().parent.parent / 'web' / 'out'   # 운영 화면 — `cd src/f4_hmi/web && npm run build` 가 만든다(GitHub 에는 안 올림)
 COMMANDS = ('start', 'stop', 'resume', 'abort')         # IRD §6 의 /flow/* 서비스 이름과 같다
 CONN_CHECK_S = 0.5                                      # 연결 끊김(conn)을 알아채는 간격 — 새 값이 안 와야 끊긴 것이라 기다리다 확인한다
 
@@ -32,12 +32,12 @@ CONN_CHECK_S = 0.5                                      # 연결 끊김(conn)을
 def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder=None) -> FastAPI:
     """store: StateStore · cfg: config.load() 결과 · command(name) → {ok, message, latency_ms}: 버튼을 flow 에 전하는 함수(RosLink.call).
     web_dir: 운영 화면 파일 묶음(index.html 이 있어야 쓴다 — 없으면 / 에 시험 페이지). 시험에서 바꿔 끼운다.
-    recorder: Recorder(F4-04) — 있으면 버튼을 기록하고 /api/usage·kpi·replace·db 가 산다. 없으면(시험) 그 주소들은 503."""
+    recorder: Recorder — 있으면 버튼을 기록하고 /api/usage·kpi·replace·db 가 산다. 없으면(시험) 그 주소들은 503."""
     app = FastAPI(title='PreWash-Cell HMI', docs_url='/api/docs', redoc_url=None)
 
     @app.middleware('http')
     async def _no_cache_html(request, call_next):
-        # 🆕 9/27(황인재 지적): npm run build 로 화면을 바꿨는데 브라우저가 옛 index.html·JS 를 캐시에서 보여 줘 "안 바뀌었다" —
+        # npm run build 로 화면을 바꿔도 브라우저가 옛 index.html·JS 를 캐시에서 보여 줄 수 있다 —
         #    HTML 과 /api 는 캐시 금지. 해시가 붙은 /_next/static 파일은 그대로(내용이 바뀌면 이름도 바뀐다).
         resp = await call_next(request)
         path = request.url.path
@@ -52,6 +52,7 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder
     app.state.hub = hub
 
     def full():
+        """/api/state 와 WS 첫 메시지의 몸통 — store.snapshot() + 계획(plan) + (기록이 있으면) 사용량·알림·한도."""
         extra = {}
         if recorder is not None:
             extra = {'usage': recorder.usage_view(), 'notices': recorder.notices(),
@@ -64,6 +65,7 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder
         return full()
 
     def make_button(name):
+        """버튼 이름 → POST 핸들러. 기록자가 있으면 대답까지 commands 표에 적는다."""
         def press():                                    # def(동기) → 웹 서버가 작업 스레드에서 돌린다: flow 를 기다려도 다른 요청이 안 막힌다
             if command is None:
                 return {'ok': False, 'message': 'flow 와 연결하는 부분이 없다 (시험 모드)', 'latency_ms': 0}
@@ -76,6 +78,7 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder
         app.post(f'/api/{name}')(make_button(name))
 
     def _need_recorder():
+        """기록(DB)이 꺼진 시험 서버면 503."""
         if recorder is None:
             raise HTTPException(status_code=503, detail='기록(DB)이 꺼져 있다 — hmi_bridge 로 띄우면 산다')
         return recorder
@@ -112,6 +115,7 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder
 
     @app.websocket('/ws/state')
     async def ws_state(ws: WebSocket):
+        """붙자마자 전부(type=state) 1번 → 큐에서 꺼내 보내며, CONN_CHECK_S 마다 연결 여부가 바뀌었으면 type=conn 을 보낸다."""
         await ws.accept()
         q = hub.join()
         try:

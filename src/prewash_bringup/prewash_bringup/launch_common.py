@@ -2,15 +2,15 @@
 """런치 2종이 같이 쓰는 부분. (SDD §10)
 
 런치가 띄우는 것
-    flow_node  (f2_sense_flow, 민범진) — 메인 프로그램. 이 프로세스 안에서 f1·f2·f3 함수가 돈다. 항상 1개
-    hmi_bridge (f4_hmi, 황인재)        — hmi:=true 일 때만. 통합 실행에서는 PC-B 에서 `ros2 run f4_hmi hmi_bridge` 로 따로 띄운다
+    flow_node  (f2_sense_flow) — 메인 프로그램. 이 프로세스 안에서 f1·f2·f3 함수가 돈다. 항상 1개
+    hmi_bridge (f4_hmi)        — hmi:=true 일 때만. 통합 실행에서는 PC-B 에서 `ros2 run f4_hmi hmi_bridge` 로 따로 띄운다
 
-런치 인자 → 프로그램: **환경변수**로 넘긴다 (cobot_common.config 가 읽어 cfg 에 얹는다)
+런치 인자 → 프로그램: 환경변수로 넘긴다 (cobot_common.config 가 읽어 cfg 에 얹는다)
     use_mock:="f1,f3"   → PREWASH_USE_MOCK  → cfg['flow']['use_mock']   (빈 값이면 전부 실제)
     vel_scale:=0.3      → PREWASH_VEL_SCALE → cfg['run']['vel_scale']   (0 초과 1 이하)
-  ROS 파라미터로 주지 않는 이유: flow 는 init() **전에** use_mock 을 보고 init(robot=False) 를 정해야 한다.
+  ROS 파라미터로 주지 않는 이유: flow 는 init() 전에 use_mock 을 보고 init(robot=False) 를 정해야 한다.
 
-🚨 flow_node 에 name=·namespace= 를 주지 않는다. 런치가 넣는 `-r __node:=…` 는 프로세스 안의 **모든** 노드에 걸려서,
+주의: flow_node 에 name=·namespace= 를 주지 않는다. 런치가 넣는 `-r __node:=…` 는 프로세스 안의 모든 노드에 걸려서,
    cobot_common.init() 이 만드는 통신 노드(flow_node)와 DSR 전용 노드(flow_node_dsr, ns dsr01)의 이름이 같아진다.
 """
 from ament_index_python.packages import PackageNotFoundError, get_package_prefix
@@ -49,7 +49,7 @@ def _spawn(context):
             actions.append(LogInfo(msg=f'[prewash] ⚠️ {package} 패키지가 아직 없어 {executable} 를 건너뛴다 (빌드했는지: cbc)'))
             continue
         actions.append(Node(package=package, executable=executable, output='screen', emulate_tty=True,
-                            additional_env=env))      # 🚨 name·namespace 를 주지 않는다 (맨 위 설명)
+                            additional_env=env))      # 주의: name·namespace 를 주지 않는다 (맨 위 설명)
     return actions
 
 

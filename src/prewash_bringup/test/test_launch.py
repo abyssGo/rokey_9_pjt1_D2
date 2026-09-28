@@ -46,7 +46,7 @@ def test_flow_only_and_env(monkeypatch):
     assert (flow.node_package, flow.node_executable) == launch_common.FLOW
     env = {''.join(s.text for s in k): ''.join(s.text for s in v) for k, v in flow.additional_env}
     assert env == {cc_config.ENV_USE_MOCK: 'f1,f3', cc_config.ENV_VEL_SCALE: '0.3'}
-    # 🚨 이름·네임스페이스를 주면 프로세스 안의 두 노드(flow_node · flow_node_dsr) 이름이 같아진다
+    # 주의: 이름·네임스페이스를 주면 프로세스 안의 두 노드(flow_node · flow_node_dsr) 이름이 같아진다
     assert flow._Node__node_name is None and flow._Node__node_namespace is None
 
 

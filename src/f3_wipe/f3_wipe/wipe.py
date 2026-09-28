@@ -1,4 +1,4 @@
-"""F3 접촉 닦기 — soap(F3-03) · wipe_bowl(F3-02) · wipe_cup(F3-03). 담당 박진용 (AGENTS.md · docs/00_현재상황_리마인드.md).
+"""F3 접촉 닦기 — soap · wipe_bowl · wipe_cup. 담당 박진용 (AGENTS.md · docs/00_현재상황_리마인드.md).
 
 soap 이 잡은 위치로 수세미/컵솔을 가려 작업 위치까지 데려가고(움직임), wipe_bowl·wipe_cup 은 호출된 자리에서
 바로 하강해 세척한 뒤 그 높이로만 복귀한다. 숫자는 params.yaml f3 절 · cell.yaml 에서 읽는다.
@@ -18,7 +18,7 @@ class JointGuardStop(RuntimeError):
 
 
 class ToolLostError(RuntimeError):
-    """쥔 폭이 soap 시작 때 기준보다 크게 벗어났다 — 닦는 도중 놓쳤다 (TOOL_LOST, 9/23 신설)."""
+    """쥔 폭이 soap 시작 때 기준보다 크게 벗어났다 — 닦는 도중 놓쳤다 (TOOL_LOST)."""
 
 
 START = 'HOME'                       # 닦기의 기준 자리 (cell.stations.HOME)
@@ -31,7 +31,7 @@ _tool_baseline_mm = None             # soap() 이 잡을 때 재는 기준 폭 �
 def _tool_lost_now():
     """기준 폭 대비 벗어났는지만 본다(예외 없음) — 기준 없으면(soap 안 거침) False. 감시 스레드가 반복 호출한다.
 
-    허용오차는 새로 만들지 않고 f2.slip_tol_mm 을 그대로 쓴다(9/23 실기로 재현성 확인 — 놓치면
+    허용오차는 새로 만들지 않고 f2.slip_tol_mm 을 그대로 쓴다(실기로 재현성 확인 — 놓치면
     변화량이 수세미 약 3 mm·솔 약 2 mm, 정상 흔들림은 0.1~0.2 mm 라 이 허용오차로 충분히 갈린다).
     """
     if _tool_baseline_mm is None:
@@ -41,9 +41,8 @@ def _tool_lost_now():
 
 
 def _tool_tol_mm():
-    """툴 놓침 판정 허용오차(mm) = f2.slip_tol_mm. 🔄 9/23 17:4x 이 값이 **종류별 dict**({BOWL: 1.0, CUP: 1.5} · PR #96)가 된 뒤
-    float() 이 TypeError 를 내며 감시 스레드와 soap 이 죽었다(17:43 실기 · flow ROBOT_ERROR). 툴 손잡이는 단단해 가장 작은 값(1.0)으로 본다.
-    숫자 하나면 그대로."""
+    """툴 놓침 판정 허용오차(mm) = f2.slip_tol_mm. 종류별 dict({BOWL: 1.0, CUP: 1.5})면 가장 작은 값을 쓴다
+    — 툴 손잡이는 단단해 작은 허용오차로 충분. 숫자 하나면 그대로."""
     tol = cc.cfg()['f2']['slip_tol_mm']
     if isinstance(tol, dict):
         return min(float(v) for v in tol.values())
@@ -51,7 +50,7 @@ def _tool_tol_mm():
 
 
 def _check_tool(where):
-    """벗어났으면 **즉시 멈추고**(stop_now) ToolLostError — move_periodic·move_spiral 은 이미 도는 중 반복 호출된다."""
+    """벗어났으면 즉시 멈추고(stop_now) ToolLostError — move_periodic·move_spiral 은 이미 도는 중 반복 호출된다."""
     if not _tool_lost_now():
         return
     cc.stop_now()
@@ -100,7 +99,7 @@ def _guarded_move_rel(dx, dy, dz, frame, vel_mm_s, acc_mm_s2):
     """move_rel 은 통짜 호출이라 도중에 검사할 틈이 없다 — 별도 스레드로 폭을 지켜보다 놓치면 cc.halt() 로 그 자리에서 멈춘다.
 
     cc.halt()/is_halted() 는 다른 스레드에서 불러도 안전하다(motion.py 명시). halt 로 멈추면 move_rel 이
-    MotionHalted 를 던지는데, **우리가 건 halt**면 clear_halt() 로 직접 풀고 ToolLostError 로 바꿔서 올린다
+    MotionHalted 를 던지는데, 우리가 건 halt 면 clear_halt() 로 직접 풀고 ToolLostError 로 바꿔서 올린다
     (안 풀면 다음 이동을 아무것도 못 보낸다 — 재개가 막힌다). 남이 건 halt(HMI 등)면 그대로 올린다.
     """
     lost = {'via_halt': False}
@@ -112,7 +111,7 @@ def _guarded_move_rel(dx, dy, dz, frame, vel_mm_s, acc_mm_s2):
                 lost['via_halt'] = True
                 cc.halt()
                 return
-            time.sleep(0.02)
+            time.sleep(0.02)                                   # 20 ms 주기로 폭을 본다
 
     def _lost_error():
         cc.clear_halt()
@@ -129,7 +128,7 @@ def _guarded_move_rel(dx, dy, dz, frame, vel_mm_s, acc_mm_s2):
             raise
         raise _lost_error() from None
     else:
-        # 🚨 halt 가 걸린 바로 그 순간 이동이 자연스럽게 끝나버리면 move_rel 이 예외 없이 돌아올 수 있다
+        # 주의: halt 가 걸린 바로 그 순간 이동이 자연스럽게 끝나버리면 move_rel 이 예외 없이 돌아올 수 있다
         #    (motion.py 의 폴링과 우리 감시 스레드 사이의 경합) — 그래도 우리가 halt 를 걸었던 거면 놓침이다.
         if lost['via_halt']:
             raise _lost_error() from None
@@ -139,7 +138,7 @@ def _guarded_move_rel(dx, dy, dz, frame, vel_mm_s, acc_mm_s2):
 
 
 def soap(count: int, kind: str = None) -> Result:
-    """세제 담금 — F3-03. kind 는 안 쓴다(쥔 위치로 스스로 판정)."""
+    """세제 담금. kind 는 안 쓴다(쥔 위치로 스스로 판정)."""
     _set_baseline()
     return _soap_twist_updown()
 
@@ -202,7 +201,7 @@ def _soap_twist_updown() -> Result:
             if time.monotonic() - t0 > duration:
                 cc.stop_now()
                 raise cc.MotionTimeout(f'soap: {duration:g} s 안에 비틀기를 못 끝냈다')
-            time.sleep(0.05)
+            time.sleep(0.05)                                      # 50 ms 마다 진행 확인
 
         updown = float(p['updown_mm'])
         up_period = float(p['updown_period_s'])
@@ -215,7 +214,7 @@ def _soap_twist_updown() -> Result:
             if time.monotonic() - t0 > duration:
                 cc.stop_now()
                 raise cc.MotionTimeout(f'soap: {duration:g} s 안에 왕복을 못 끝냈다')
-            time.sleep(0.05)
+            time.sleep(0.05)                                      # 50 ms 마다 진행 확인
         _halt_check('작업 위치로 이동')
         if time.monotonic() - t0 > duration:
             raise cc.MotionTimeout(f'soap: {duration:g} s 안에 작업 위치로 이동을 못 끝냈다')
@@ -244,7 +243,7 @@ def _soap_twist_updown() -> Result:
 
 
 def wipe_bowl() -> WipeBowlResult:
-    """그릇 안쪽을 수세미로 닦는다 — F3-02, 고정 좌표 방식. 호출된 자리에서 바로 하강한다."""
+    """그릇 안쪽을 수세미로 닦는다 — 고정 좌표 방식. 호출된 자리에서 바로 하강한다."""
     p = cc.cfg()['f3']['wipe_bowl']
     t0 = time.monotonic()
     log = _Log(p, t0)
@@ -263,7 +262,7 @@ def wipe_bowl() -> WipeBowlResult:
         z_contact = cc.where()[2]
         _info(f'wipe_bowl 바닥: 빠르게 {p["fast_down_mm"]:g} mm + 찾기 {depth:.1f} mm · 접촉 힘 {f:.1f} N '
               f'· 바닥 Z {z_contact:.1f} · 공중 기준 Fz {log.base[2]:.2f} N')
-        if depth >= float(p['find_max_mm']) - 0.5:
+        if depth >= float(p['find_max_mm']) - 0.5:       # 0.5 mm 여유: 최대 깊이까지 다 내려갔다 = 바닥이 없었다
             raise RuntimeError(f'{p["find_max_mm"]:g} mm 를 내려가도 바닥을 못 찾았다 — 그릇·좌표 확인')
         _bowl_settle_at_contact(p, z_contact)                # 순응은 contact_down 이 켜 둔 채로 넘어온다
         _halt_check('바닥 나선')
@@ -312,7 +311,7 @@ def _bowl_zero(log):
 def _bowl_settle_at_contact(p, z_contact):
     """밀렸으면(0.05mm 넘게) 찾은 높이로만 되돌린다. 순응은 끄지 않는다."""
     dz = z_contact - cc.where()[2]
-    if abs(dz) > 0.05:
+    if abs(dz) > 0.05:                                  # 0.05 mm 아래는 밀린 게 아니라 측정 잡음으로 본다
         _bowl_move_z(dz, p['press_vel_mm_s'], p['press_acc_mm_s2'])
     _info(f'wipe_bowl 순응 유지 · Z {z_contact:.1f} → {cc.where()[2]:.1f} mm')
 
@@ -326,7 +325,7 @@ def _bowl_spiral(p, log):
     cc.move_spiral(rev, r_wall, float(p['spiral_time_s']))
     rmax_seen = _bowl_sample_spiral(p, log, p0)
     _info(f'wipe_bowl 나선: 최대 반지름 {rmax_seen:.1f} mm (목표 {r_wall:.1f})')
-    if rmax_seen < r_wall * 0.5:
+    if rmax_seen < r_wall * 0.5:                        # 목표 반지름의 절반도 못 나갔으면 나선이 돌지 않은 것
         raise RuntimeError(f'나선이 돌지 않았다(최대 {rmax_seen:.1f} mm)')
     return r_wall
 
@@ -341,7 +340,7 @@ def _bowl_sample_spiral(p, log, p0):
         rmax = max(rmax, math.hypot(now[0] - p0[0], now[1] - p0[1]))
         if cc.motion_done():
             return rmax
-        if time.monotonic() - t0 > float(p['spiral_time_s']) + 5.0:
+        if time.monotonic() - t0 > float(p['spiral_time_s']) + 5.0:   # 나선 명령 시간 + 5 s 여유
             raise cc.MotionTimeout('나선이 끝나지 않는다')
         if log.over_time():
             raise cc.MotionTimeout(f'wipe_bowl: 전체 {p["duration_s"]} s 초과(나선)')
@@ -368,7 +367,7 @@ def _bowl_wall(p, log, r_wall):
     n = int(p['turns'] * per)
     dth = -2 * math.pi / per
     chord = 2 * r_wall * abs(math.sin(dth / 2))
-    radius = min(float(p['blend_radius_mm']), chord * 0.45)
+    radius = min(float(p['blend_radius_mm']), chord * 0.45)   # 블렌딩 반지름은 현(chord)의 절반 미만이어야 원호가 겹치지 않는다
     tw = float(p['twist_deg'])
 
     def pose(th, rz):
@@ -424,6 +423,7 @@ def _bowl_finish(p, started, moved, bowl_check_z, code=None):
     _finish_rise(rise)
 
 
+# ── 아래 cup_hops · _Trip 은 치구(rig_v10 · sim_f3_seq) 전용 — 제품 흐름(wipe_bowl · wipe_cup)은 쓰지 않는다. 사이의 _fast_z 는 wipe_cup 도 쓴다 ──
 def cup_hops(p):
     """HOME → 컵 위 상대 이동 [(dx, dy, dz), ...] — rig_v10 전용 도구, 제품 코드는 안 쓴다."""
     up, dy = float(p['over_cup_up_mm']), float(p['over_cup_dy_mm'])
@@ -431,7 +431,7 @@ def cup_hops(p):
 
 
 def _fast_z(p, dz):
-    """빠른 하강·상승 (BASE z 상대 이동, 컵 전용 속도)."""
+    """빠른 하강·상승 (BASE z 상대 이동, 컵 전용 속도) — wipe_cup 과 _Trip 이 같이 쓴다."""
     _guarded_move_rel(0.0, 0.0, float(dz), 'BASE',
                       float(p['fast_vel_mm_s']) * _scale(), float(p['fast_acc_mm_s2']) * _scale())
 
@@ -538,7 +538,7 @@ def _scale():
 
 
 def wipe_cup() -> WipeCupResult:
-    """컵 안을 솔로 닦는다 — F3-03. 호출된 자리에서 바로 하강해 삽입만 힘으로 찾는다."""
+    """컵 안을 솔로 닦는다. 호출된 자리에서 바로 하강해 삽입만 힘으로 찾는다."""
     p = cc.cfg()['f3']['wipe_cup']
     t0 = time.monotonic()
     log = _Log(p, t0)
@@ -631,9 +631,8 @@ def _scrub_cup(p, log):
     q0 = cc.joints()
     spin_room(q0[5], p)
     amp, period = cup_periodic(p, stroke)
-    # 🆕 9/23 박진용: soap() 의 비틀기는 회전 속도를 미리 계산해서 로봇 한계(rot_vel_limit_deg_s)를 넘으면
-    #    움직이기 전에 멈추는데, wipe_cup 은 이 검사가 없었다(spin_room 은 조인트 각도만 본다) — 값을
-    #    잘못 줄이면 컨트롤러 자체 한계를 조용히 넘길 위험이 있어 같은 검사를 여기도 넣는다.
+    # soap() 처럼 회전 속도를 미리 계산해 로봇 한계(rot_vel_limit_deg_s)를 넘으면 움직이기 전에 멈춘다
+    #    (spin_room 은 조인트 각도만 본다) — period_s 를 잘못 줄이면 컨트롤러 한계를 조용히 넘길 수 있다.
     if period[5]:
         peak = 2.0 * math.pi * amp[5] / period[5]
         limit = float(p['rot_vel_limit_deg_s'])
@@ -658,7 +657,7 @@ def _scrub_cup(p, log):
         _check_tool('세척 도는 중')
         time.sleep(float(p['sample_s']))
     end = cc.joints()[5]
-    if abs(end - q0[5]) > 5.0:
+    if abs(end - q0[5]) > 5.0:                                 # 5° 넘게 어긋나면 주기 운동이 시작 각으로 안 돌아온 것
         _warn(f'wipe_cup: 끝난 뒤 6번 조인트 {end:.1f}° — 시작 {q0[5]:.1f}° 로 돌아오지 않았다')
     cc.move_rel(0.0, 0.0, -stroke, 'BASE',
                 vel_mm_s=float(p['lift_vel_mm_s']) * _scale())
