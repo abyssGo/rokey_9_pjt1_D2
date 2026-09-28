@@ -75,6 +75,11 @@ function useAnimatedText(text, ms = 600) {
 }
 function Anim({ v }) { return useAnimatedText(String(v)); }
 
+// 예외로 멈췄을 때 — 같은 음 세 번(황인재 9/28). 풀릴 때의 두 음(낮음→높음)과 구별된다
+function playAlertBeep() {
+  [0, 220, 440].forEach((t) => setTimeout(() => playBeep(880, 0.15, 'square', 0.75), t));
+}
+
 function playDoubleBeep() {
   playBeep(1200, 0.09, 'square', 0.7);
   setTimeout(() => playBeep(1600, 0.11, 'square', 0.7), 120);
@@ -115,9 +120,10 @@ export default function Monitor() {
   const showToast = (t) => { setToast(t); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 6000); };
   useEffect(() => {
     const step = s?.step;
-    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다)
+    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다) + 세 음
       pauseSeq.current += 1;
       setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
+      playAlertBeep();
     }
     if (wasPaused.current && step && step !== 'PAUSED') {              // 멈춤이 풀렸다(버튼·넛지·중단)
       setModal(null);
