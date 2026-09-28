@@ -51,7 +51,7 @@ test('알람 — 멈춤은 원인별 안내(제목·할 일) · 로봇 오류도
   assert.match(D.robotErrorGuide('x — 로봇 오류 · 빈손.').title, /로봇 확인/);        // 빈손도 같은 안내(경우 합침 · 9/27)
   assert.match(D.robotErrorGuide('HOME 복귀 실패(1/3)').title, /HOME/);
   for (const k of Object.keys(D.GUIDE_KO)) { const g = D.GUIDE_KO[k]; assert.ok(!g.what && g.steps.length <= 3 && g.steps.every((x) => x.length <= 24), `${k} 안내가 길다`); }
-  assert.ok(D.HIDE_FLOW_MSG.includes('robot_error') && D.HIDE_FLOW_MSG.includes('cable'));
+  assert.ok(D.HIDE_FLOW_MSG.includes('robot_error') && D.HIDE_FLOW_MSG.includes('cable') && D.HIDE_FLOW_MSG.includes('waste_bin'));
   assert.match(D.alarm(d(st({ step: 'PAUSED', last_code: 'TOOL_FAIL' }))).guide.title, /툴 집기 실패/);
   assert.equal(D.alarm(d(st({ step: 'PAUSED', last_code: 'ROBOT_ERROR', message: '케이블 …' }))).level, 'pause');
   assert.equal(D.alarm(d(st({ step: 'WIPE', last_code: 'TOOL_LOST' }))).level, 'warn');       // 재개해 진행 중 — 노란 경고

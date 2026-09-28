@@ -51,7 +51,7 @@ export const GUIDE_KO = {
   robot_error_home: { title: '멈춤 — HOME 복귀 실패', steps: ['펜던트로 팔 옮기기', '재개'] },
 };
 // flow 문구를 화면에 같이 보이지 않는 갈래 — 안내가 이미 그 내용이라 겹치면 글이 너무 길다
-export const HIDE_FLOW_MSG = ['cable', 'tool_lost', 'tool_fail', 'robot_error'];
+export const HIDE_FLOW_MSG = ['cable', 'tool_lost', 'tool_fail', 'robot_error', 'waste_bin'];   // 잔반통 멈춤은 HMI 가 보낸 stop 이라 flow 문구('운영자 요청')가 어긋난다
 
 // 로봇 오류 멈춤의 안내 — flow 의 message 로 신호 2(그리퍼 열림) · HOME 복귀 실패 · 신호 1(그 밖)을 가른다
 export function robotErrorGuide(message) {
