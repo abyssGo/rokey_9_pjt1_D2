@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -65,7 +65,7 @@ export default function Monitor() {
   if (s && RUNNING.includes(s.step) && lastRunning.current !== s.step) { lastRunning.current = s.step; remember(s.step); }
   if (s && (s.step === 'IDLE' || s.step === 'DONE') && lastRunning.current) { lastRunning.current = ''; remember(''); }
 
-  // 톡톡(넛지) 재개 감지 시 비프(1500 Hz · 0.16 s) — 케이블 경로에서 flow 가 '재개 요청 감지' 문구를 보낸다
+  // 넛지 재개 감지 시 비프(1500 Hz · 0.16 s) — 케이블 경로에서 flow 가 '재개 요청 감지' 문구를 보낸다
   useEffect(() => {
     const msg = s?.message || '';
     if (msg.includes('재개 요청 감지') && lastSoundMsg.current !== msg) {
@@ -75,7 +75,7 @@ export default function Monitor() {
   }, [s?.message]);
   // 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
   const wasPaused = useRef(false);
-  // 멈추면 알림창(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 톡(넛지)으로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
+  // 멈추면 알림창(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 넛지로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const pauseSeq = useRef(0);
@@ -90,7 +90,7 @@ export default function Monitor() {
       pauseSeq.current += 1;
       setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
     }
-    if (wasPaused.current && step && step !== 'PAUSED') {              // 멈춤이 풀렸다(버튼·톡·중단)
+    if (wasPaused.current && step && step !== 'PAUSED') {              // 멈춤이 풀렸다(버튼·넛지·중단)
       setModal(null);
       showToast(resumeToast(Date.now() - lastResumePress.current < 15000, lastRunning.current || '', step));
       if (RUNNING.includes(step)) playDoubleBeep();
@@ -100,26 +100,31 @@ export default function Monitor() {
 
   const can = buttons(d);
   const ITEM_KO = { sponge: '수세미', brush: '솔', soap: '세제', waste_bin: '잔반통' };
-  async function onReplace(item) {
-    if (!window.confirm(`${ITEM_KO[item]}을(를) 새것으로 바꿨습니까? 사용량을 0부터 다시 셉니다.`)) return;
-    const r = await replace(item);
-    setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${r.message || ''}` });
+  // 확인창(교체 완료 · 중단) — 브라우저 기본 창(window.confirm) 대신 알림창과 같은 모양. c = { icon, title, body, ok, tone, onOk }
+  const [confirm, setConfirm] = useState(null);
+  function onReplace(item) {
+    setConfirm({ icon: item === 'waste_bin' ? 'tank' : item, title: `${ITEM_KO[item]} 교체 완료?`, body: '새것으로 바꿨으면 확인 — 사용량을 0부터 다시 셉니다.', ok: '확인', tone: 'go',
+      onOk: async () => { const r = await replace(item); setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${r.message || ''}` }); } });
   }
-  async function onPress(name) {
+  async function send(name) {
+    if (name === 'resume') lastResumePress.current = Date.now();      // 토스트에 '재개 버튼'/'넛지' 를 가르는 근거
+    setReply({ pending: true, text: `${BTN_KO[name]} 보내는 중…` });
+    const r = await press(name);
+    setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${BTN_KO[name]}: ${r.message}${r.latency_ms != null ? ` (${r.latency_ms} ms)` : ''}` });
+  }
+  function onPress(name) {
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     } catch {}
-    if (name === 'abort' && !window.confirm('이 용기를 격리 구역으로 보내고 다음 용기로 넘어갑니다.\n중단할까요?')) return;
-    if (name === 'resume') lastResumePress.current = Date.now();      // 토스트에 '재개 버튼'/'톡' 을 가르는 근거
-    setReply({ pending: true, text: `${BTN_KO[name]} 보내는 중…` });
-    const r = await press(name);
-    setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${BTN_KO[name]}: ${r.message}${r.latency_ms != null ? ` (${r.latency_ms} ms)` : ''}` });
+    if (name === 'abort') { setConfirm({ icon: 'crate', title: '이 용기를 중단할까요?', body: '격리 구역으로 보내고 다음 용기로 넘어갑니다.', ok: '중단', tone: 'warn', onOk: () => send('abort') }); return; }
+    send(name);
   }
 
   return (
     <div className="page">
       {modal && alarm(d)?.level === 'pause' && <AlertModal m={modal} a={alarm(d)} onClose={() => setModal(null)} />}
+      {confirm && <ConfirmModal c={confirm} onClose={() => setConfirm(null)} />}
       {toast && <div className="toast" role="status">✔ {toast.text}{toast.sub && <div className="toast-sub">{toast.sub}</div>}</div>}
       <TopBar d={d} can={can} onPress={onPress} />
       <Alarm d={d} step={lastRunning.current || null} />
@@ -184,7 +189,7 @@ function Alarm({ d, step }) {
   );
 }
 
-// 예외 알림창 — 멈춤 원인 아이콘 + 멈춘 단계 그림 + 할 일 · 확인을 누르면 닫히고(안내 띠는 남는다) 재개 버튼(또는 톡)으로 이어 간다
+// 예외 알림창 — 멈춤 원인 아이콘 + 멈춘 단계 그림 + 할 일 · 확인을 누르면 닫히고(안내 띠는 남는다) 재개 버튼(또는 넛지)으로 이어 간다
 function AlertModal({ m, a, onClose }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -205,8 +210,33 @@ function AlertModal({ m, a, onClose }) {
           <ol className="modal-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
         </div>
         <div className="modal-foot">
-          <div className="dim small">처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼(또는 손목 톡). 톡으로 풀리면 이 창은 저절로 닫힙니다.</div>
+          <div className="dim small">처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼 또는 로봇 손목 두드리기({NUDGE.word}). 두드려서 풀리면 이 창은 저절로 닫힙니다.</div>
           <button className="btn go" onClick={onClose} autoFocus>확인</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 확인창 — 교체 완료 · 중단. 확인/취소 두 버튼 · Esc 나 바깥 클릭은 취소
+function ConfirmModal({ c, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const ok = () => { onClose(); c.onOk(); };
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className={`modal ask ${c.tone === 'warn' ? 'warn' : ''}`} role="dialog" aria-modal="true" aria-label={c.title} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <img src={iconArt(c.icon)} alt="" />
+          <div className="modal-title">{c.title}</div>
+        </div>
+        <div className="modal-text">{c.body}</div>
+        <div className="modal-foot right">
+          <button className="btn plain" onClick={onClose}>취소</button>
+          <button className={`btn ${c.tone === 'warn' ? 'warn' : 'go'}`} onClick={ok} autoFocus>{c.ok}</button>
         </div>
       </div>
     </div>

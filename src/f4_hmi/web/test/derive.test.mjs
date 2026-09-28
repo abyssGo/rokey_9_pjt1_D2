@@ -110,7 +110,7 @@ test('소모품 — DB 값(usage)이 있으면 그것을 쓰고 잔반통은 g/�
 test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토스트는 버튼/톡·중단을 가른다(9/28)', () => {
   assert.equal(D.causeIcon('tool_lost', 'CUP'), 'brush'); assert.equal(D.causeIcon('tool_fail', 'BOWL'), 'sponge');
   assert.equal(D.causeIcon('cable', 'BOWL'), 'cable'); assert.equal(D.causeIcon('robot_error', 'CUP'), 'robot'); assert.equal(D.causeIcon('nope', 'BOWL'), 'timer');
-  assert.match(D.resumeToast(false, 'WIPE', 'WIPE').text, /톡/); assert.match(D.resumeToast(false, 'WIPE', 'WIPE').sub, /닦기 단계부터/);
+  assert.match(D.resumeToast(false, 'WIPE', 'WIPE').text, /넛지\(손목 두드림\)/); assert.ok(D.GUIDE_KO.tool_lost.steps[1] === D.NUDGE.step && !/톡/.test(D.NUDGE.step)); assert.match(D.resumeToast(false, 'WIPE', 'WIPE').sub, /닦기 단계부터/);
   assert.match(D.resumeToast(true, 'SOAP', 'SOAP').text, /재개 버튼/);
   assert.match(D.resumeToast(true, 'SOAP', 'ISOLATE').text, /중단/);
 });

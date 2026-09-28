@@ -26,7 +26,7 @@ export function pauseKind(s) {
   switch (s.last_code) {
     case 'ROBOT_ERROR': return 'robot_error';
     case 'TOOL_LOST': return 'tool_lost';
-    case 'TOOL_FAIL': return 'tool_fail';         // E52 — 홀더에서 못 집음 → 멈춤(격리 X) · 홀더 확인 → 톡
+    case 'TOOL_FAIL': return 'tool_fail';         // E52 — 홀더에서 못 집음 → 멈춤(격리 X) · 홀더 확인 → 넛지
     case 'LEFTOVER_REMAIN': return 'leftover';
     case 'GRIP_FAIL': return 'grip';
     case 'RACK_FULL': return 'rack_full';
@@ -34,13 +34,17 @@ export function pauseKind(s) {
   }
 }
 
+// 넛지(Nudge · 로봇 손목을 힘 15 N 넘게 한 번 두드리면 재개 신호) 를 화면에서 부르는 말 — 한곳에서 바꾼다.
+//   step: 안내 카드의 할 일 한 줄 · done: 풀렸을 때 토스트 · word: 이름
+export const NUDGE = { step: '손목 두드리기 (또는 재개)', done: '넛지(손목 두드림)', word: '넛지' };
+
 // 멈춤 원인별 운영자 안내 — 제목 + 할 일 2~3줄, 각 줄 몇 단어. 설명 문장 없음(what 은 비워 둔다 · 있으면 한 줄).
-//    설명·근거는 SDD §7 · 대본에. 로봇 오류는 신호 1(확인 → 톡/재개) · 신호 2(받아 치움 → 재개) · HOME 실패 세 장만(경우를 합쳤다).
+//    설명·근거는 SDD §7 · 대본에. 로봇 오류는 신호 1(확인 → 넛지/재개) · 신호 2(받아 치움 → 재개) · HOME 실패 세 장만(경우를 합쳤다).
 export const GUIDE_KO = {
   operator: { title: '일시 정지', steps: ['재개 — 이어서', '중단 — 이 용기 격리'] },
-  cable: { title: '케이블 확인', steps: ['케이블 정리', '손목 톡 (또는 재개)'] },
-  tool_lost: { title: '툴 놓침', steps: ['홀더에 다시 꽂기', '손목 톡 (또는 재개)'] },
-  tool_fail: { title: '툴 집기 실패', steps: ['홀더에 툴 바로 꽂기', '손목 톡 (또는 재개)'] },
+  cable: { title: '케이블 확인', steps: ['케이블 정리', NUDGE.step] },
+  tool_lost: { title: '툴 놓침', steps: ['홀더에 다시 꽂기', NUDGE.step] },
+  tool_fail: { title: '툴 집기 실패', steps: ['홀더에 툴 바로 꽂기', NUDGE.step] },
   leftover: { title: '잔반 남음', steps: ['잔반 덜어내기', '재개 (또는 중단)'] },
   grip: { title: '집기 실패', steps: ['용기 위치 확인', '재개 (또는 중단)'] },
   rack_full: { title: '팔레트 가득', steps: ['새 팔레트로 교체', '재개'] },
@@ -257,7 +261,7 @@ export function causeIcon(kind, containerKind) {
 }
 export function resumeToast(viaButton, pausedStep, nextStep) {
   if (nextStep === 'ISOLATE') return { text: '중단 — 이 용기를 격리 구역으로 보냅니다', sub: '정리가 끝나면 다음 용기로 갑니다' };
-  const how = viaButton ? '재개 버튼' : '톡(넛지)';
+  const how = viaButton ? '재개 버튼' : NUDGE.done;
   const from = STEP_KO[nextStep] ? `${STEP_KO[nextStep]} 단계부터 이어 갑니다` : '이어 갑니다';
   return { text: `재개되었습니다 — ${how}`, sub: from };
 }
