@@ -75,15 +75,10 @@ function useAnimatedText(text, ms = 600) {
 }
 function Anim({ v }) { return useAnimatedText(String(v)); }
 
-// 예외로 멈췄을 때 — 같은 음 세 번(황인재 9/28). 풀릴 때의 두 음(낮음→높음)과 구별된다
-function playAlertBeep() {
-  [0, 220, 440].forEach((t) => setTimeout(() => playBeep(880, 0.15, 'square', 0.75), t));
-}
-
-function playDoubleBeep() {
-  playBeep(1200, 0.09, 'square', 0.7);
-  setTimeout(() => playBeep(1600, 0.11, 'square', 0.7), 120);
-}
+// 소리는 한 가지 음으로 두 경우만(황인재 9/28): 로봇이 멈추면 1번 · 다시 움직이면 2번
+const TONE = 1000;
+function playStopBeep() { playBeep(TONE, 0.18, 'square', 0.75); }
+function playResumeBeep() { playBeep(TONE, 0.18, 'square', 0.75); setTimeout(() => playBeep(TONE, 0.18, 'square', 0.75), 260); }
 
 export default function Monitor() {
   const { d, mode, press, replace, period, setPeriod } = useHmi();
@@ -91,7 +86,6 @@ export default function Monitor() {
   // 일시 정지됐을 때 "어느 단계에서" 를 보여 주려고 기억한다 — flow 가 보내는 값(FlowState)에는 그 칸이 없다.
   // 같은 탭에서 새로고침해도 잊지 않게 탭 저장소(sessionStorage)에도 둔다. 멈춘 뒤에 새 탭으로 열면 모른다.
   const lastRunning = useRef(null);
-  const lastSoundMsg = useRef('');
   const s = d.state;
   if (lastRunning.current === null) lastRunning.current = recall();
   // 멈춘 뒤에 연 화면(새 탭·태블릿)은 멈춘 단계를 못 봤다 → 브리지가 기억한 직전 단계(paused_from)를 쓴다
@@ -99,14 +93,6 @@ export default function Monitor() {
   if (s && RUNNING.includes(s.step) && lastRunning.current !== s.step) { lastRunning.current = s.step; remember(s.step); }
   if (s && (s.step === 'IDLE' || s.step === 'DONE') && lastRunning.current) { lastRunning.current = ''; remember(''); }
 
-  // 넛지 재개 감지 시 비프(1500 Hz · 0.16 s) — 케이블 경로에서 flow 가 '재개 요청 감지' 문구를 보낸다
-  useEffect(() => {
-    const msg = s?.message || '';
-    if (msg.includes('재개 요청 감지') && lastSoundMsg.current !== msg) {
-      playBeep(1500, 0.16, 'square', 0.75);
-    }
-    lastSoundMsg.current = msg;
-  }, [s?.message]);
   // 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
   const wasPaused = useRef(false);
   // 멈추면 알림창(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 넛지로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
@@ -123,12 +109,12 @@ export default function Monitor() {
     if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다) + 세 음
       pauseSeq.current += 1;
       setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
-      playAlertBeep();
+      playStopBeep();
     }
     if (wasPaused.current && step && step !== 'PAUSED') {              // 멈춤이 풀렸다(버튼·넛지·중단)
       setModal(null);
       showToast(resumeToast(Date.now() - lastResumePress.current < 15000, lastRunning.current || '', step));
-      if (RUNNING.includes(step)) playDoubleBeep();
+      if (RUNNING.includes(step)) playResumeBeep();
     }
     wasPaused.current = step === 'PAUSED';
   }, [s?.step]);
@@ -162,7 +148,7 @@ export default function Monitor() {
     if (key === lastEvent.current) return;
     lastEvent.current = key;
     const t = skipToast(e);
-    if (t) { showToast(t); playBeep(900, 0.22, 'square', 0.6); }
+    if (t) showToast(t);                                                  // 로봇이 멈추지 않으니 소리는 없다
   }, [d.events]);
 
   const can = buttons(d);
