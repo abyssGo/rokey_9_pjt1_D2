@@ -68,7 +68,7 @@
 | 인터페이스 | 형식 | 내용 |
 |---|---|---|
 | `/flow/start` | srv `std_srvs/Trigger` | 구역 계획대로 전부 처리 시작 (IDLE에서만). **즉시 응답**하고 실행은 메인 스레드가 한다 |
-| `/flow/stop` | srv `std_srvs/Trigger` | ✅ **즉시 일시 정지**(황인재 9/20): 로봇이 **하던 이동을 그 자리에서 멈추고** `PAUSED` — 두산 `move_pause`(이동 함수는 비동기 + 폴링, V-24). 구현은 `cobot_common`의 `cc.pause()`·`cc.resume()`(#34). 🚨 먹는 범위: 이동 함수를 거치는 모든 이동(접촉 하강·닦기의 걸음 포함 — 순응·힘제어는 켜진 채 선다). **안착 탐색(`move_periodic`)·그리퍼·무게 대기는 그 동작을 마친 뒤** 멈춘다. 힘이 걸린 채 멈추는 동작은 9/22 실기 확인 대상. 이동 중이 아니면 다음 단계로 가기 전에 멈춘다. HMI의 **일시 정지** 버튼("E-STOP"이라 부르지 않는다). 이름·타입은 그대로 → `cobot_msgs` 변경 없음 |
+| `/flow/stop` | srv `std_srvs/Trigger` | ✅ **즉시 일시 정지**(황인재 9/20): 로봇이 **하던 이동을 그 자리에서 멈추고** `PAUSED` — 두산 `move_pause`(이동 함수는 비동기 + 폴링, V-24). 구현은 `cobot_common`의 `cc.pause()`·`cc.resume()`(#34). 🚨 먹는 범위: 이동 함수를 거치는 모든 이동(접촉 하강·닦기의 걸음 포함 — 순응·힘제어는 켜진 채 선다). **안착 탐색(`move_periodic`)·그리퍼·무게 대기는 그 동작을 마친 뒤** 멈춘다. 실기는 V-24 빈손 통과(9/22) · 힘이 걸린 채 멈추는 동작은 9/29 확인. 이동 중이 아니면 다음 단계로 가기 전에 멈춘다. HMI의 **일시 정지** 버튼("E-STOP"이라 부르지 않는다). 이름·타입은 그대로 → `cobot_msgs` 변경 없음 |
 | `/flow/resume` | srv `std_srvs/Trigger` | `PAUSED`일 때만 받는다. ✅ 사람이 확인하고 **문제없으면 마저 한다**(황인재 9/20): 일시 정지였으면 **하던 이동을 이어서**(`move_resume`), 실패로 멈춘 경우(`RACK_FULL` 등)는 **실패한 그 단계부터 다시** |
 | `/flow/abort` | srv `std_srvs/Trigger` | 🆕 ✅ 신설(황인재 9/20) — `PAUSED`일 때만. 사람이 **문제가 있다고 판단하면 지금 용기를 접는다**: **먼저 `HOME` 자세로**(✅ 황인재 9/20 17:25 — 이동에서 안전 높이 경유를 없앴으므로 임의의 자세에서 다음 자리로 곧장 가지 않게) → 쥐고 있는 툴 반납 → 용기를 격리 구역(`ISOLATE`)에 놓기(`f1.place('ISOLATE', kind)`) → `HOME` → **다음 용기**부터. 이벤트는 `ISOLATED`. 🚨 `ROBOT_ERROR`로 멈춘 경우는 **거부**한다(로봇 위치를 모른다 — 사람이 복구, SDD §7) |
 | `/flow/state` | msg `cobot_msgs/FlowState` @2 Hz | 아래 정의. HMI는 2 s 이상 안 오면 "연결 끊김" 표시 |
@@ -81,7 +81,7 @@
 
 외부 ROS 인터페이스(우리가 정의하지 않음, `cobot_common`만 사용): 두산 드라이버 `/dsr01/dsr_controller2/*`(DSR_ROBOT2 API 경유), 그리퍼 드라이버 `/onrobot/sendCommand`(srv) + 🟡 현재 폭을 읽는 경로(**V-05에서 확정**). 드라이버(`OnRobotRGControllerServer`)는 `OnRobotRGInput`을 **발행하지 않는다**(9/19 소스 확인: 나가는 것은 `/joint_states`→`/onrobot_joint_states` remap의 `JointState`뿐, 서비스는 `/onrobot/sendCommand`·`/onrobot/pose`·`/onrobot/restartPower`). 후보: `/onrobot_joint_states`의 관절각을 폭으로 환산 / 드라이버의 그리퍼 action 결과.
 
-## 7. 메시지 정의 (정본: [interfaces/](interfaces/))
+## 7. 메시지 정의 (정본: [src/cobot_msgs/msg/](../src/cobot_msgs/msg/))
 ```
 # FlowState.msg
 string step            # §2 흐름 상태

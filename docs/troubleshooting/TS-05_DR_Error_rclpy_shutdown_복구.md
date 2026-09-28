@@ -82,7 +82,7 @@ finally:
 
 | 방법 | 어디에 |
 |---|---|
-| **두산 함수는 `cobot_common` 안에서만** 부르고, 인자는 부르기 전에 검사한다(값이 없으면 `KeyError` 로 멈추고 로봇을 움직이지 않는다) | `force.py` · `motion.py` · `gripper.py` · `weigh.py` (AGENTS §3 규칙 4·6) |
+| **두산 함수는 `cobot_common` 안에서만** 부르고, 인자는 부르기 전에 검사한다(값이 없으면 `KeyError` 로 멈추고 로봇을 움직이지 않는다) | `force.py` · `motion.py` · `gripper.py` · `weigh.py` |
 | 선택 인자(`vel`·`acc`·`radius`·`ref`·`mod`)를 **빠짐없이** 넘긴다. 특히 `amove_*` 계열 | 모든 호출부 |
 | 접촉 구간은 **짧게** 켜고 **`finally` 에서 반드시 끈다.** `force_off()` 는 하나가 실패해도 둘 다 시도한다 | `force.py`(9/20 수정) |
 | 새 동작을 실기에서 처음 돌리기 전에 **Virtual 에서 같은 인자로** 한 번 돌린다 — 인자 오류는 Virtual 에서도 똑같이 난다 | 모든 rig |
@@ -94,4 +94,4 @@ finally:
 
 - 확인: 설치본 `DR_error2.py` 73번째 줄 `rclpy.shutdown()` · `DSR_ROBOT2.py` 의 `raise DR_Error` 896곳이 인자 검사라는 점 · 9/19 V-03 1회차에서 실제로 순응이 남았고 `release_force.py` 로 풀린 것.
 - 남은 확인: 컨트롤러 쪽 오류(예: 충돌 정지·안전 정지)일 때도 같은 경로인지 — 그때는 `DR_Error` 가 아니라 서비스가 실패값을 돌려줄 수 있다(그건 `RuntimeError` 로 올라와 프로세스는 살아 있다).
-- 설치본은 **고치지 않는다**(강사 배포, AGENTS §1).
+- 설치본은 **고치지 않는다**(강사 배포본).

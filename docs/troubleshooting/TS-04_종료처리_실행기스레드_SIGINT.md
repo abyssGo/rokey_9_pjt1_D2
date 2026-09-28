@@ -72,7 +72,7 @@ C++ 표준에서 `joinable` 한 `std::thread` 가 파괴되면 `std::terminate()
 `except KeyboardInterrupt:` 블록이 실행될 시점에는 **컨텍스트가 이미 죽어 있어서** `get_logger().info()` 가 `/rosout` 에 발행하지 못한다.
 
 🚨 **실기에서 문제인 이유**: [SDD §5.1](../03_설계_SDD.md)은 *"`SIGINT` 처리기가 `cobot_common.shutdown()` 을 불러 **동작 정지 명령을 먼저 보낸다**"* 로 정해 두었다.
-컨텍스트가 먼저 죽으면 **정지 명령 자체를 못 보낸다.** [AGENTS.md §5](../../AGENTS.md) 함정표: *"움직이는 중에 그냥 죽이면 드라이버가 그 요청에 갇혀 브링업부터 다시"*.
+컨텍스트가 먼저 죽으면 **정지 명령 자체를 못 보낸다.** 팀 환경 함정 기록: *"움직이는 중에 그냥 죽이면 드라이버가 그 요청에 갇혀 브링업부터 다시"*.
 
 ---
 
@@ -147,7 +147,7 @@ TS 번호를 따로 붙일 만큼은 아니지만, 같은 벽에 부딪힐 수 �
 
 ### ① `ros2 daemon stop` 을 해야 노드가 보인다 — 🔴 **전원 해당**
 
-9/19 격리 설정(AGENTS §3 규칙 13)을 넣은 뒤, 노드를 띄웠는데 `ros2 topic list` 에 안 잡혔다.
+9/19 격리 설정(결정기록 S1)을 넣은 뒤, 노드를 띄웠는데 `ros2 topic list` 에 안 잡혔다.
 
 **원인**: `ros2` 데몬이 **이전 discovery 설정을 물고 있다.** 환경변수만 바꾸면 이미 떠 있는 데몬에는 반영되지 않는다.
 **해결**: `ros2 daemon stop` — `solo`·`team60` 별칭에 이미 들어 있다. 별칭을 쓰지 않고 손으로 `export` 했다면 직접 해야 한다.
@@ -161,7 +161,7 @@ pluggy._manager.PluginValidationError: Plugin 'launch_testing' for hook 'pytest_
 ```
 
 **원인**: ROS 2 Jazzy는 **pytest 7.4.4** 기준이다. venv 안의 새 pytest(9.x)와 `launch_testing` 플러그인의 훅 형식이 맞지 않는다.
-**확인**: 시스템 pytest(`/usr/bin/python3 -m pytest`)로는 그냥 된다. 팀 표준은 **시스템 colcon·pytest**(AGENTS §5 — *"colcon은 시스템 설치, venv는 HMI 전용"*).
+**확인**: 시스템 pytest(`/usr/bin/python3 -m pytest`)로는 그냥 된다. 팀 표준은 **시스템 colcon·pytest**(*"colcon은 시스템 설치, venv는 HMI 전용"*).
 **해결**: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest ...` 또는 시스템 python 사용.
 
 > 민범진 PC는 venv 가 기본 활성화돼 있어 이 문제가 난다. 통합(L3·L4) 때 **PC-A 는 민범진 PC 를 쓰지 않기로** 했으므로(9/19 결정) 환경은 그대로 둔다.
