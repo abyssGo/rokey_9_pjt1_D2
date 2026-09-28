@@ -58,16 +58,18 @@ function useAnimatedText(text, ms = 600) {
     const a = String(from).match(NUM_RE) || [], b = String(text).match(NUM_RE) || [];
     if (!a.length || a.length !== b.length || reduceMotion()) { setShown(text); return undefined; }
     const dec = b.map((s) => (s.split('.')[1] || '').length);
-    const t0 = performance.now();
+    let t0 = null;                                                     // 시계는 rAF 가 주는 시각 하나만 쓴다(performance.now 와 섞으면 헤드리스 캡처에서 멈춘 값이 찍힌다)
     let raf = 0;
     const tick = (now) => {
+      if (t0 === null) t0 = now;
       const p = Math.min(1, (now - t0) / ms), e = 1 - (1 - p) ** 3;
       let i = 0;
       setShown(String(text).replace(NUM_RE, () => { const v = +a[i] + (+b[i] - +a[i]) * e; return v.toFixed(dec[i++]); }));
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const settle = setTimeout(() => { cancelAnimationFrame(raf); setShown(text); }, ms + 200);   // 숨은 탭·캡처처럼 rAF 가 안 도는 곳에서도 끝값은 반드시 보인다
+    return () => { cancelAnimationFrame(raf); clearTimeout(settle); };
   }, [text, ms]);
   return shown;
 }
@@ -141,7 +143,9 @@ export default function Monitor() {
     document.addEventListener('pointerdown', on);
     return () => document.removeEventListener('pointerdown', on);
   }, []);
-  const [panel, setPanel] = useState(null);                            // 'kpi' | 'history' — 누적 KPI 와 이력은 버튼을 누르면 창으로(황인재: 한 화면에 다 보이게)
+  const [panel, setPanel] = useState(() => {                           // 'kpi' | 'history' — 누적 KPI 와 이력은 버튼을 누르면 창으로(황인재: 한 화면에 다 보이게)
+    try { const q = new URLSearchParams(window.location.search).get('panel'); return q === 'kpi' || q === 'history' ? q : null; } catch { return null; }   // ?panel=kpi 로 열면 창이 열린 채 시작(캡처·태블릿용)
+  });
 
   // 빈 구역 — 새 이벤트가 '건너뜀' 이면 주황 알림 + 짧은 음(로봇은 멈추지 않는다 · 황인재 9/28). 켤 때 이미 있던 이벤트는 알리지 않는다
   const lastEvent = useRef(undefined);
