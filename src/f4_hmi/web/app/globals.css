@@ -240,3 +240,21 @@ footer { padding: 4px 0 12px; }
 .modal-foot.right { justify-content: flex-end; }
 .btn.plain:not(:disabled):hover, .btn.plain:not(:disabled):focus-visible { box-shadow: inset 0 0 0 2em var(--card2); border-color: var(--dim); }
 .modal-foot > .dim { flex: 1 1 320px; min-width: 0; }   /* 설명 글이 길어도 버튼을 아래로 밀지 않고 옆에서 줄바꿈 */
+
+/* ── 숫자 움직임(막대는 폭이 미끄러진다) · 물결 · KPI/이력 창 · KPI 도움말 */
+.bar i { transition: width .6s ease-out; }
+.btn, .tabs button { position: relative; overflow: hidden; }
+.ripple { position: absolute; border-radius: 50%; background: currentColor; opacity: .28; transform: scale(0); pointer-events: none; animation: ripple .55s ease-out forwards; }
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
+.morebar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.morebar .btn { font-size: 18px; padding: 12px 22px; }
+.badge { margin-left: 8px; padding: 2px 9px; border-radius: 999px; background: var(--accent-bg); color: var(--accent); font-size: 14px; font-weight: 700; vertical-align: middle; }
+.panel-bg { z-index: 40; align-items: flex-start; padding-top: 5vh; }
+.modal.panel { border-color: var(--line); width: min(1200px, 96vw); max-height: 90vh; overflow: auto; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.modal.panel .modal-title { color: var(--ink); }
+.modal.panel .card { border: 0; padding: 0; }
+.kpi { cursor: default; outline: none; }
+.kpi.on { box-shadow: 0 0 0 2px var(--accent); }
+.kpi .q { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--line); color: var(--dim); font-size: 11px; font-weight: 700; margin-left: 6px; }
+.kpi-helpline { margin-top: 10px; min-height: 1.5em; }

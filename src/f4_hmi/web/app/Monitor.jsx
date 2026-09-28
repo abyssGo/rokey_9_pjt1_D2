@@ -46,6 +46,33 @@ function playBeep(freq = 1000, duration = 0.18, type = 'square', vol = 0.7) {
 }
 
 // 짧은 두 음(1200 Hz 0.09 s → 120 ms 뒤 1600 Hz 0.11 s) — 멈춤이 풀렸다는 신호
+// 숫자 움직임 — 글 속 숫자만 이전 값에서 새 값으로 0.6 s 동안 움직인다(올라가든 내려가든). 숫자 개수가 다르거나 '움직임 줄이기' 설정이면 바로 새 값
+const NUM_RE = /-?\d+(?:\.\d+)?/g;
+const reduceMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+function useAnimatedText(text, ms = 600) {
+  const [shown, setShown] = useState(text);
+  const prev = useRef(text);
+  useEffect(() => {
+    const from = prev.current; prev.current = text;
+    if (from === text) return undefined;
+    const a = String(from).match(NUM_RE) || [], b = String(text).match(NUM_RE) || [];
+    if (!a.length || a.length !== b.length || reduceMotion()) { setShown(text); return undefined; }
+    const dec = b.map((s) => (s.split('.')[1] || '').length);
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / ms), e = 1 - (1 - p) ** 3;
+      let i = 0;
+      setShown(String(text).replace(NUM_RE, () => { const v = +a[i] + (+b[i] - +a[i]) * e; return v.toFixed(dec[i++]); }));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [text, ms]);
+  return shown;
+}
+function Anim({ v }) { return useAnimatedText(String(v)); }
+
 function playDoubleBeep() {
   playBeep(1200, 0.09, 'square', 0.7);
   setTimeout(() => playBeep(1600, 0.11, 'square', 0.7), 120);
@@ -98,6 +125,24 @@ export default function Monitor() {
     wasPaused.current = step === 'PAUSED';
   }, [s?.step]);
 
+  // 물결 효과 — 버튼을 누른 자리에서 원이 퍼진다(.btn · 탭). 움직임 줄이기 설정이면 없음
+  useEffect(() => {
+    const on = (e) => {
+      const b = e.target && e.target.closest ? e.target.closest('.btn, .tabs button') : null;
+      if (!b || b.disabled || reduceMotion()) return;
+      const r = b.getBoundingClientRect(), dia = Math.max(r.width, r.height) * 2;
+      const s = document.createElement('span');
+      s.className = 'ripple';
+      s.style.cssText = `width:${dia}px;height:${dia}px;left:${e.clientX - r.left - dia / 2}px;top:${e.clientY - r.top - dia / 2}px`;
+      b.appendChild(s);
+      s.addEventListener('animationend', () => s.remove());
+      setTimeout(() => s.remove(), 800);                                // 애니메이션 끝 이벤트가 안 와도(숨은 탭 등) 치운다
+    };
+    document.addEventListener('pointerdown', on);
+    return () => document.removeEventListener('pointerdown', on);
+  }, []);
+  const [panel, setPanel] = useState(null);                            // 'kpi' | 'history' — 누적 KPI 와 이력은 버튼을 누르면 창으로(황인재: 한 화면에 다 보이게)
+
   const can = buttons(d);
   const ITEM_KO = { sponge: '수세미', brush: '솔', soap: '세제', waste_bin: '잔반통' };
   // 확인창(교체 완료 · 중단) — 브라우저 기본 창(window.confirm) 대신 알림창과 같은 모양. c = { icon, title, body, ok, tone, onOk }
@@ -135,8 +180,16 @@ export default function Monitor() {
         <Pallet d={d} />
         <Stats d={d} onReplace={onReplace} />
       </div>
-      <Kpi d={d} period={period} setPeriod={setPeriod} />
-      <History d={d} />
+      <section className="morebar">
+        <button className="btn plain" onClick={() => setPanel('kpi')}>누적 KPI{d.kpi ? <span className="badge"><Anim v={`${d.kpi.done_bowl + d.kpi.done_cup}개`} /></span> : null}</button>
+        <button className="btn plain" onClick={() => setPanel('history')}>이력<span className="badge">{(d.events || []).length}</span></button>
+        <span className="dim small">누르면 창으로 열립니다 · 닫아도 기록은 계속 쌓입니다</span>
+      </section>
+      {panel && (
+        <PanelModal title={panel === 'kpi' ? '누적 KPI' : '이력'} onClose={() => setPanel(null)}>
+          {panel === 'kpi' ? <Kpi d={d} period={period} setPeriod={setPeriod} /> : <History d={d} />}
+        </PanelModal>
+      )}
       <footer className="dim small">
         받는 방식: {mode} · 받은 상태 메시지 {d.received}건 · 점검용 <a href="/test">시험 페이지</a>
       </footer>
@@ -238,6 +291,23 @@ function ConfirmModal({ c, onClose }) {
           <button className="btn plain" onClick={onClose}>취소</button>
           <button className={`btn ${c.tone === 'warn' ? 'warn' : 'go'}`} onClick={ok} autoFocus>{c.ok}</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// 창 — 누적 KPI · 이력을 화면 위에 띄운다. 닫기 · Esc · 바깥 클릭
+function PanelModal({ title, onClose, children }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="modal-bg panel-bg" onClick={onClose}>
+      <div className="modal panel" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="panel-head"><div className="modal-title">{title}</div><button className="btn plain" onClick={onClose}>닫기</button></div>
+        {children}
       </div>
     </div>
   );
@@ -409,10 +479,10 @@ function Pallet({ d }) {
         dangerouslySetInnerHTML={{ __html: art }} />
       <h2 className="gap">지금까지 처리 — 전체</h2>
       <div className="tiles four">
-        <div><span>팔레트</span><b>{t.pallets}<small> 장</small></b></div>
-        <div><span>그릇</span><b>{t.bowls}</b></div>
-        <div><span>컵</span><b>{t.cups}</b></div>
-        <div><span>격리</span><b className={t.isolated ? 'warn' : ''}>{t.isolated}</b></div>
+        <div><span>팔레트</span><b><Anim v={t.pallets} /><small> 장</small></b></div>
+        <div><span>그릇</span><b><Anim v={t.bowls} /></b></div>
+        <div><span>컵</span><b><Anim v={t.cups} /></b></div>
+        <div><span>격리</span><b className={t.isolated ? 'warn' : ''}><Anim v={t.isolated} /></b></div>
       </div>
       <div className="dim tiny">{t.fromDb ? '전체 기록(SQLite) · 껐다 켜도 이어진다' : 'HMI 를 켠 뒤부터(기록 없음)'} · 실행 {t.runs}회 · 팔레트 = 칸 {cells.length || 4}개를 다 채우고 끝난 실행</div>
     </section>
@@ -435,7 +505,7 @@ function Row({ icon, title, value, sub, children, tone = '' }) {
 
 // 큰 숫자 — v 뒤에 '/of' 와 단위를 붙인다
 function Big({ v, of, unit, cls = '' }) {
-  return <span className={`big ${cls}`}>{v}{of != null && <span className="of">/{of}</span>}{unit && <span className="unit"> {unit}</span>}</span>;
+  return <span className={`big ${cls}`}><Anim v={v} />{of != null && <span className="of">/{of}</span>}{unit && <span className="unit"> {unit}</span>}</span>;
 }
 
 // 가로 막대 — value/max 비율(%)만큼 채운다. max 가 없으면 0
@@ -508,6 +578,7 @@ function Stats({ d, onReplace }) {
 // 누적 KPI — DB(/api/kpi) 값 · 기간 전환(이번 실행 · 오늘 · 전체)
 function Kpi({ d, period, setPeriod }) {
   const cards = kpiCards(d.kpi);
+  const [help, setHelp] = useState(null);                              // 마우스를 올린(또는 누른) 칸의 뜻을 아래 한 줄에
   return (
     <section className="card">
       <div className="history-head">
@@ -516,15 +587,17 @@ function Kpi({ d, period, setPeriod }) {
       </div>
       {!cards.length ? <div className="dim">아직 값이 없다</div> : (
         <div className="kpi-grid">
-          {cards.map((c) => (
-            <div key={c.label} className={`kpi ${c.tone || ''}`}>
-              <div className="dim small">{c.label}</div>
-              <div className="kpi-v">{c.value}</div>
+          {cards.map((c, i) => (
+            <div key={c.label} className={`kpi ${c.tone || ''} ${help === i ? 'on' : ''}`} tabIndex={0}
+              onMouseEnter={() => setHelp(i)} onMouseLeave={() => setHelp((h) => (h === i ? null : h))} onFocus={() => setHelp(i)} onClick={() => setHelp(i)}>
+              <div className="dim small">{c.label}<span className="q" aria-hidden="true">?</span></div>
+              <div className="kpi-v"><Anim v={c.value} /></div>
               <div className="dim tiny">{c.sub}</div>
             </div>
           ))}
         </div>
       )}
+      <div className="kpi-helpline dim small">{help != null && cards[help] ? <><b>{cards[help].label}</b> — {cards[help].help}</> : '칸에 마우스를 올리거나 누르면 뜻이 여기에 나옵니다'}</div>
     </section>
   );
 }

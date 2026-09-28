@@ -234,12 +234,15 @@ export function kpiCards(k) {
   const n = (v, unit = '') => (v == null ? '-' : `${v}${unit}`);
   const kg = (g) => (g == null ? '-' : g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${Math.round(g)} g`);
   return [
-    { label: '처리량', value: n(k.done_bowl + k.done_cup, '개'), sub: `그릇 ${k.done_bowl} · 컵 ${k.done_cup}${k.pallets != null ? ` · 팔레트 ${k.pallets}장` : ''}` },
-    { label: '처리율', value: n(k.success_pct, '%'), sub: `격리 ${k.isolated} · 오류 ${k.error} · 건너뜀 ${k.skipped}`, tone: k.success_pct != null && k.success_pct < 90 ? 'warn' : '' },
-    { label: '용기당 평균', value: `${n(k.avg_s_bowl, 's')} / ${n(k.avg_s_cup, 's')}`, sub: '그릇 / 컵' },
-    { label: '시간당', value: n(k.per_hour, '개'), sub: k.per_hour == null ? '5분 넘게 돌면 계산' : '완료 기준' },
-    { label: '멈춤', value: n(k.pauses, '회'), sub: k.pauses ? `${Math.round(k.pause_s)}초 · 잦은 원인 ${PAUSE_KO[k.pause_top] || k.pause_top || '-'}` : '없음', tone: k.pauses ? 'warn' : '' },
-    { label: '잔반', value: n(k.leftover_pct, '%'), sub: `그릇 중 잔반 있던 비율 · 버린 양 ${kg(k.waste_g)}` },
+    { label: '처리량', value: n(k.done_bowl + k.done_cup, '개'), sub: `그릇 ${k.done_bowl} · 컵 ${k.done_cup}${k.pallets != null ? ` · 팔레트 ${k.pallets}장` : ''}`,
+      help: '완료(적재까지 끝난) 용기 수 = 그릇 + 컵. 팔레트 1장 = 칸 4개를 다 채우고 끝난 실행 1번.' },
+    { label: '처리율', value: n(k.success_pct, '%'), sub: `격리 ${k.isolated} · 오류 ${k.error} · 건너뜀 ${k.skipped}`, tone: k.success_pct != null && k.success_pct < 90 ? 'warn' : '',
+      help: '완료 ÷ (완료 + 격리 + 오류 + 건너뜀) × 100. 90 % 아래면 주황.' },
+    { label: '용기당 평균', value: `${n(k.avg_s_bowl, 's')} / ${n(k.avg_s_cup, 's')}`, sub: '그릇 / 컵', help: '완료한 용기 1개에 걸린 평균 시간(집기 → 적재). 그릇과 컵을 따로 낸다.' },
+    { label: '시간당', value: n(k.per_hour, '개'), sub: k.per_hour == null ? '5분 넘게 돌면 계산' : '완료 기준', help: '완료 수 ÷ (첫 용기부터 마지막 용기까지 걸린 시간). 5분 넘게 돌아야 낸다.' },
+    { label: '멈춤', value: n(k.pauses, '회'), sub: k.pauses ? `${Math.round(k.pause_s)}초 · 잦은 원인 ${PAUSE_KO[k.pause_top] || k.pause_top || '-'}` : '없음', tone: k.pauses ? 'warn' : '',
+      help: '멈춤(PAUSED)에 들어간 횟수, 멈춰 있던 시간의 합, 가장 잦은 원인.' },
+    { label: '잔반', value: n(k.leftover_pct, '%'), sub: `그릇 중 잔반 있던 비율 · 버린 양 ${kg(k.waste_g)}`, help: '무게를 잰 그릇 중 잔반(50 g 이상)이 있던 비율과, 털어서 버린 잔반 무게의 합.' },
   ];
 }
 
