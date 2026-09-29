@@ -13,7 +13,7 @@ from collections import deque
 RECENT_EVENTS = 50              # 메모리에 들고 있는 최근 이벤트 수(화면 이력) — 전체는 SQLite(db.py)
 RUNNING_STEPS = ('PICK', 'WEIGH', 'SHAKE', 'SEAT', 'SOAP', 'WIPE', 'RINSE', 'RACK', 'ISOLATE')   # 멈추기 직전 단계(paused_from)를 기억하는 데 쓴다
 FORCE_FRESH_S = 0.5             # /cell/force 는 닦는 동안만 온다 → 이 시간 넘게 없으면 '지금은 닦지 않는다'(None)
-WEIGH_FRESH_S = 30.0            # /flow/weigh 는 무게를 재는 동안만 온다 → 마지막 값이 이보다 오래됐으면 지난 측정이라 내보내지 않는다(None)
+WEIGH_CLEAR_STEPS = ('PICK', 'IDLE')   # 이 단계로 **들어가면** 무게 측정값을 지운다 — 새 용기를 집으러 가거나 회차가 끝났다(지난 용기의 무게다)
 
 
 class StateStore:
@@ -28,7 +28,7 @@ class StateStore:
         self._state, self._state_at = None, None
         self._gripping = None
         self._force, self._force_at = None, None
-        self._weigh, self._weigh_at = None, None            # 재는 중인 무게(표본 목록 · 중앙값) — /flow/weigh
+        self._weigh, self._weigh_at = None, None            # 지금 용기의 무게 측정(표본 목록 · 중앙값) — /flow/weigh. 새 용기·대기로 가면 지운다
         self._events = deque(maxlen=RECENT_EVENTS)
         self._count = 0                                     # 받은 /flow/state 수 (시험·진단용)
         # 누적 — flow 가 계획을 마치고 DONE 으로 넘어가는 순간 한 회차로 센다. HMI 를 켠 뒤부터(끄면 사라진다 · 저장은 SQLite · db.py)
@@ -60,6 +60,8 @@ class StateStore:
             before = self._state.get('step') if self._state else None
             if before is not None and before != 'DONE' and fields.get('step') == 'DONE':   # 회차가 끝났다(처음 받은 값이 DONE 이면 세지 않는다 — 못 본 회차)
                 self._count_run(fields)
+            if fields.get('step') in WEIGH_CLEAR_STEPS and before != fields.get('step'):
+                self._weigh, self._weigh_at = None, None
             if fields.get('step') in ('PAUSED', 'ERROR'):
                 if before in RUNNING_STEPS:
                     self._paused_from = before
@@ -131,7 +133,7 @@ class StateStore:
         """그 순간의 사본(dict) — 락 안에서 복사한다.
             connected: /flow/state 를 disconnect_after_s 안에 받았는가 · age_s: 마지막 state 뒤 지난 초(없으면 None) · received: 받은 state 수
             state: 마지막 FlowState 필드(없으면 None) · gripping: 마지막 /cell/gripping(없으면 None) · force_n: FORCE_FRESH_S 안에 온 힘(N), 아니면 None
-            weigh: WEIGH_FRESH_S 안에 온 무게 측정({kind, target_n, samples_g, done, median_g, stamp, age_s}), 아니면 None
+            weigh: 지금 용기의 무게 측정({kind, target_n, samples_g, done, median_g, stamp, age_s}) — 새 용기 집기(PICK)·대기(IDLE)로 들어가면 None
             events: 최근 이벤트 목록(최근 것이 앞 · RECENT_EVENTS 개) · totals: 누적(runs·pallets·bowls·cups·isolated) + rack_slots"""
         with self._lock:
             now = self._clock()
@@ -139,7 +141,7 @@ class StateStore:
             fresh = self._force_at is not None and now - self._force_at <= FORCE_FRESH_S
             weigh_age = None if self._weigh_at is None else now - self._weigh_at
             weigh = None
-            if weigh_age is not None and weigh_age <= WEIGH_FRESH_S:
+            if weigh_age is not None:
                 weigh = {**self._weigh, 'samples_g': list(self._weigh['samples_g']), 'age_s': round(weigh_age, 2)}
             return {
                 'connected': age is not None and age <= self._limit,

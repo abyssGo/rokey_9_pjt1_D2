@@ -48,7 +48,8 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder
     plan = {'plan': flow.get('plan') or [], 'rack_order': flow.get('rack_order') or {},
             'consumables': flow.get('consumables') or {},
             'policy': flow.get('policy') or {},          # 실패 정책 — 화면이 '자동 재시도 중' 을 가릴 때 쓴다(derive.retryPolicy)
-            'leftover_threshold_g': (cfg.get('f2') or {}).get('leftover_threshold_g')}   # 잔반 판정 기준(g) — 무게 측정 칸의 '잔반 있음/없음'
+            'leftover_threshold_g': (cfg.get('f2') or {}).get('leftover_threshold_g'),   # 잔반 판정 기준(g) — 무게 측정 칸의 '잔반 있음/없음'
+            'weigh_samples': (cfg.get('f2') or {}).get('weigh_samples')}                 # 무게 표본 수 — 재기 전에도 빈 칸을 그 수만큼 그린다
     hub = Hub()
     store.subscribe(hub.from_ros)
     app.state.hub = hub

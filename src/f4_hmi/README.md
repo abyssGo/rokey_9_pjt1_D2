@@ -26,8 +26,8 @@ python3 -m venv --system-site-packages ~/venvs/hmi
 | 알람 상자 | 멈춤(PAUSED)이면 **원인별 제목·할 일**(2~3줄 · 운영자 정지·잔반 남음·집기 실패·팔레트 가득은 flow 문구도 함께 · `derive.pauseKind` → `GUIDE_KO`): 운영자 정지 · 케이블 이상(코드 ROBOT_ERROR 에 '케이블' 문구) · 툴 놓침(TOOL_LOST) · 툴 집기 실패(TOOL_FAIL) · 잔반 남음(LEFTOVER_REMAIN) · 집기 실패(GRIP_FAIL) · 팔레트 가득(RACK_FULL) · 잔반통 교체 · **로봇 오류 = 일반 멈춤 카드(주황) '멈춤 — 로봇 확인'**(사람이 복구 · 중단 버튼 없음 · 신호 1 → 그리퍼 열림 → 받아 치움 → 재개 버튼 · E54 · E55). 운전 중에 마지막 코드가 정상이 아니면 노란 '최근 원인' | last_code · message |
 | 버튼 | 시작(IDLE 만) · 재개(PAUSED 만) · 중단(PAUSED · 로봇 오류 멈춤 제외 — 케이블 이상은 가능) · 끊기면 전부 비활성 · 누르면 flow 의 대답 문구와 지연(ms) | `/api/start|stop|resume|abort` |
 | 단계 표시줄 | 8단계 그림 카드 + 격리 · 지금 = 파랑 · 멈춤(로봇 오류 포함) = 주황(멈춘 단계를 기억해 가리킴) | step · 탭 저장소 |
-| 지금 하는 일 | 큰 그림 · 한 줄 설명 · 이번 용기 경과 · 몇 번째 · 다음 할 일 · 상태 알약(`진행 중`·`일시 정지`·`멈춤 — 툴 놓침` …) | step · kind · 수량 |
-| 무게 측정 | '지금 하는 일' 카드 안 — 무게를 재는 동안 표본을 읽는 대로 한 칸씩(방금 읽은 칸 강조) · 다 재면 **중앙값** 과 잔반 판정(`잔반 있음/없음 (기준 50 g)`) · 다 잰 뒤 10 s 동안 보이고 사라진다 · 0 g 아래(센서 오차)는 0 으로(이력의 무게와 같은 규칙) | `/flow/weigh` · `plan.leftover_threshold_g` |
+| 지금 하는 일 | 큰 그림 · 한 줄 설명 · 상태 알약(`진행 중`·`일시 정지`·`멈춤 — 툴 놓침` …) · 아래쪽에 **이번 용기 작업 시간** 과 **무게 측정** 칸 | step · kind |
+| 무게 측정 | '지금 하는 일' 카드 아래쪽 — 칸은 늘 그린다(표본 수만큼 · 재기 전에는 빈 칸). 무게를 재는 동안 표본을 읽는 대로 한 칸씩(방금 읽은 칸 강조) · 다 재면 **중앙값** 과 잔반 판정(`잔반 있음/없음 (기준 50 g)`) · 잰 값은 그 용기를 처리하는 동안 남고 새 용기를 집으러 가면 비운다 · 0 g 아래(센서 오차)는 0 으로(이력의 무게와 같은 규칙) | `/flow/weigh` · `plan.leftover_threshold_g` · `plan.weigh_samples` |
 | 이번 팔레트 | 4칸 입체 그림(넣는 순서 ① 그릇 1 → ④ 컵 2) · 가득 차면 교체 안내 · 아래에 **지금까지 처리 — 전체**(팔레트 · 그릇 · 컵 · 격리 · DB 전체 기록) | done_* · `flow.rack_order` · `/api/kpi?period=all` |
 | 진행 · 사이클 · 소모품 | 그릇/컵 수량 막대 · 반납 구역 남은 수·상태(`비었음` 포함) · 격리 수 · 용기 1개 시간 · 수세미/세제 교체까지 | state · `/flow/event` · `flow.consumables` |
 | 이력 | **버튼을 누르면 창으로** — [전체 / 문제만 / 멈춤 기록] · 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀 · 집기 다시 시도는 주황) · 원인(운영자 중단 · 잔반이 남음 · 빈 구역 · 툴 놓침 …) · **멈춤 기록** = 멈춘 적마다 시각·단계·원인·코드·풀림(재개 버튼/넛지/중단/재시작)·걸린 시간(DB pauses) | `/flow/event` · `/api/db/pauses` |
@@ -42,10 +42,11 @@ cc.weigh() 가 표본 1개를 읽는다 → flow_node 가 /flow/weigh 발행 →
 |---|---|
 | 토픽 `/flow/weigh` (`cobot_msgs/WeighLive`) | `kind` · `target_n`(잴 횟수) · `samples_g[]`(지금까지 읽은 값 **전부** · 잰 순서 · 빈 용기 기준값을 뺀 g) · `done` · `median_g`(done 일 때만) · `stamp`. 표본마다 1건 + 다 재면 1건 |
 | WebSocket `/ws/state` | `{"type": "weigh", "weigh": {kind, target_n, samples_g, done, median_g, stamp}}` — 값은 0.1 g 으로 반올림 · `median_g` 는 다 재기 전에는 `null` |
-| `GET /api/state` · WS `type=state` | `weigh`: 위와 같은 모양 + `age_s`(마지막 값 뒤 지난 초). 30 s 넘게 새 값이 없으면 `null` · `plan.leftover_threshold_g`: 잔반 판정 기준(g) |
+| `GET /api/state` · WS `type=state` | `weigh`: 위와 같은 모양 + `age_s`(마지막 값 뒤 지난 초) — 지금 용기의 측정값. step 이 `PICK`(새 용기) · `IDLE`(대기)로 들어가면 `null` · `plan.leftover_threshold_g`: 잔반 판정 기준(g) · `plan.weigh_samples`: 표본 수(빈 칸 수) |
 
 - 메시지마다 지금까지 읽은 값이 전부 들어 있다 → 중간에 하나를 놓치거나 화면을 도중에 열어도 칸이 맞는다.
-- 표본 수·간격은 `params.yaml f2.weigh_samples` · `f2.weigh_sample_gap_s`. 화면은 `target_n` 만큼 칸을 그린다(설정을 바꿔도 화면은 그대로 따라간다).
+- 표본 수·간격은 `params.yaml f2.weigh_samples`(30) · `f2.weigh_sample_gap_s`(0.5 s). 화면은 `target_n` 만큼 칸을 그린다(설정을 바꿔도 화면은 그대로 따라간다).
+- 팔레트 그림·진행 수는 flow 의 완료·격리 수를 따른다 — flow 는 **시작할 때마다 0 부터** 센다(사람이 팔레트를 새로 놓고 시작을 누른다).
 - 가짜 flow(`fake_state_pub`)도 무게 단계에서 같은 토픽을 낸다 — 로봇 없이 이 칸을 볼 수 있다(`scenarios/_defaults.yaml` 의 `weigh`).
 
 ## 화면(`web/` — Next.js 정적 내보내기)

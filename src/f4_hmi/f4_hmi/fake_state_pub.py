@@ -244,7 +244,7 @@ class FakeFlow(Node):
         if self._weigh_scene != self.index:                 # 새 무게 장면
             self._weigh_scene, self._weigh_sent, self._weigh_done = self.index, 0, False
         w = self.scn.get('weigh') or {}
-        n, span = int(w.get('samples', 15)), float(w.get('span', 0.7))
+        n, span = int(w.get('samples', 30)), float(w.get('span', 0.7))
         frac = (self.t - sc.start_of(self.scenes, self.index)) / max(self.scene.duration_s, 1e-6)
         due = min(n, int(frac / span * n) + 1) if span > 0 else n
         values = sc.weigh_samples(self.scn, st.get('kind') or '', n)

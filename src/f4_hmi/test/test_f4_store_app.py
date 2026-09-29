@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from f4_hmi.state_store import FORCE_FRESH_S, RECENT_EVENTS, WEIGH_FRESH_S, StateStore
+from f4_hmi.state_store import FORCE_FRESH_S, RECENT_EVENTS, StateStore
 
 
 class Clock:
@@ -71,7 +71,16 @@ def test_store_weigh_keeps_samples_and_median_only_when_done():
     assert w['done'] is True and w['median_g'] == 79.8 and len(w['samples_g']) == 3
     w['samples_g'].append(1.0)                                              # 사본이다
     assert len(store.snapshot()['weigh']['samples_g']) == 3
-    clock.t += WEIGH_FRESH_S + 0.1                                          # 지난 측정은 내보내지 않는다
+    clock.t += 120.0                                                        # 그 용기를 처리하는 동안은 남는다(닦기·헹굼·적재)
+    for step in ('WEIGH', 'SEAT', 'WIPE', 'PAUSED', 'RACK'):
+        store.put_state({'step': step})
+        assert store.snapshot()['weigh']['median_g'] == 79.8, step
+    store.put_state({'step': 'PICK'})                                       # 새 용기를 집으러 간다 → 지난 용기의 무게는 지운다
+    assert store.snapshot()['weigh'] is None
+    store.put_weigh({'kind': 'CUP', 'target_n': 15, 'samples_g': [1.0], 'done': False, 'median_g': 0.0, 'stamp': 3.0})
+    store.put_state({'step': 'WEIGH'}); store.put_state({'step': 'DONE'})
+    assert store.snapshot()['weigh'] is not None                            # 완료 화면에는 마지막 용기의 값이 남고
+    store.put_state({'step': 'IDLE'})                                       # 대기로 돌아가면 지운다
     assert store.snapshot()['weigh'] is None
 
 
