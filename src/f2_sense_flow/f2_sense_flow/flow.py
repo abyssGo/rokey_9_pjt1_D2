@@ -772,19 +772,10 @@ class Flow:
                     if not self._retreat():   # 주의: 후퇴 실패 → 더 움직이지 않는다
                         action = PAUSE
                         break
-                    # 그릇 닦기는 첫 시도와 같은 자리(HOME)에서 다시 부른다 — 후퇴 높이(safe_z)는 HOME 보다 높아 바닥 찾기 깊이가
-                    #    모자랄 수 있고, 나선·벽면 도중 실패면 가운데·손목이 어긋나 있다. 컵은 부르는 높이가 safe_z 보다 높아 해당 없다.
-                    if fname == 'wipe_bowl':
-                        first_code = r.code
-                        home = self.call_fn('f1', 'move_to', 'HOME', True)
-                        if self._halted:      # 이동 중 일시 정지 → 중단 — 정책을 타지 않고 지금 정리한다(깃발을 다음 용기로 넘기지 않는다)
-                            self._halted = False
-                            return self.abort_container(sig)
-                        if not home.ok:       # HOME 으로 못 갔다 → 다시 하지 않고 사람을 부른다(후퇴 실패와 같게)
-                            r = home
-                            action = PAUSE
-                            break
-                        self.last_code = first_code   # 재시도 중임을 화면에 그대로 보인다(HOME 이동 성공이 OK 로 덮지 않게)
+                    # 주의: 그릇 닦기 재시도 전에 HOME 관절 자세(move_to 'HOME')로 가지 않는다 — 닦기는 툴 집기 자세의 손목 방향
+                    #    (J6 ≈ 140°)을 그대로 두고 HOME 좌표로만 옮겨 와서 하므로, HOME 관절 자세(J6 0°)로 가면 수세미를 쥔 채
+                    #    손목을 약 140° 돌리고(케이블 꼬임) 이어지는 툴 반납의 회전 방향이 정해지지 않는다. 재시도는 곧게 올라온 자리
+                    #    (safe_z)에서 다시 부른다 — 바닥 찾기 여유가 얇아 못 찾으면 로봇 오류로 그 자리에 선다(움직이지 않는다).
                     r = self.call_fn(mod, fname, *args)
                     if self._halted:
                         self._halted = False

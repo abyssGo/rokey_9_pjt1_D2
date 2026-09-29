@@ -1152,13 +1152,14 @@ def _e61_flow(monkeypatch, fail_on, kind='BOWL', width=25.6, policy=None):
     return f, calls, events
 
 
-def test_bowl_wipe_retry_goes_home_first_then_done(monkeypatch):
+def test_bowl_wipe_retry_does_not_go_to_home_joint_pose(monkeypatch):
+    """그릇 닦기 재시도는 곧게 후퇴한 자리에서 다시 부른다 — HOME 관절 자세로 가면 수세미를 쥔 채 손목을 약 140° 돌린다."""
     for code in ('FORCE_LIMIT', 'TIMEOUT'):
         f, calls, events = _e61_flow(monkeypatch, [f'wipe_bowl:{code}:1'])
         f.run_plan(PauseWatcher())
         mock.reset()
         i = calls.index('wipe_bowl')
-        assert calls[i + 1:i + 4] == ['retreat', 'move_to HOME', 'wipe_bowl'], f'{code}: 재시도 앞에 HOME 이 없다 {calls}'
+        assert calls[i + 1:i + 3] == ['retreat', 'wipe_bowl'], f'{code}: 재시도 앞에 다른 이동이 끼었다 {calls}'
         assert [e['result'] for e in events] == ['DONE'], code
 
 
@@ -1177,19 +1178,6 @@ def test_no_failure_call_list_unchanged_by_e61(monkeypatch):
     mock.reset()
     assert 'move_to HOME' not in calls[calls.index('wipe_bowl'):calls.index('wipe_bowl') + 2]
     assert calls.count('wipe_bowl') == 1 and 'retreat' not in calls and [e['result'] for e in events] == ['DONE']
-
-
-def test_bowl_wipe_retry_home_failure_pauses_without_retry(monkeypatch):
-    f, calls, events = _e61_flow(monkeypatch, ['wipe_bowl:FORCE_LIMIT:1', 'move_to:ROBOT_ERROR:1'])
-    sig = PauseWatcher()
-    f.run_plan(sig)
-    mock.reset()
-    i = calls.index('wipe_bowl')
-    assert calls[i + 1:i + 3] == ['retreat', 'move_to HOME'], calls
-    assert sig.resumes >= 1, 'HOME 이동 실패인데 멈추지 않았다'
-    assert f.isolated == 0, 'HOME 이동 실패로 격리하면 안 된다(위치를 모른다)'
-    assert calls.count('wipe_bowl') == 1 or calls[calls.index('move_to HOME') + 1] != 'wipe_bowl', \
-        f'HOME 이동 실패 직후 닦기를 다시 불렀다 {calls}'
 
 
 def test_bowl_wipe_retry_with_empty_gripper_goes_to_tool_lost(monkeypatch):
@@ -1230,23 +1218,25 @@ def test_abort_during_tool_lost_pause_does_not_return_a_tool(monkeypatch):
     assert [e['result'] for e in events] == ['ISOLATED']
 
 
-def test_abort_during_bowl_retry_home_move_is_handled_now(monkeypatch):
-    """재시도의 HOME 이동 중 일시 정지 → 중단 — 그 자리에서 정리하고 끝낸다(중단 깃발을 다음 용기로 넘기지 않는다)."""
+def test_abort_during_bowl_retry_wipe_is_handled_now(monkeypatch):
+    """재시도 닦기 중 일시 정지 → 중단 — 그 자리에서 정리하고 끝낸다(중단 깃발을 다음 동작·다음 용기로 넘기지 않는다)."""
     f, calls, events = _e61_flow(monkeypatch, ['wipe_bowl:FORCE_LIMIT:1'])
     orig = f.call_fn
-    once = {'done': False}
+    seen = {'n': 0}
 
-    def halt_on_home(mod, fname, *a):
+    def halt_on_retry_wipe(mod, fname, *a):
         r = orig(mod, fname, *a)
-        if not once['done'] and calls and calls[-1] == 'move_to HOME':
-            once['done'] = True
-            f._halted = True                                    # 재시도의 HOME 이동이 중단으로 끊겼다(한 번만)
+        if fname == 'wipe_bowl':
+            seen['n'] += 1
+            if seen['n'] == 2:
+                f._halted = True                                # 재시도 닦기가 중단으로 끊겼다
         return r
-    f.call_fn = halt_on_home
+    f.call_fn = halt_on_retry_wipe
     f.plan = [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 2}]
     f.run_plan(PauseWatcher())
     mock.reset()
-    assert calls[calls.index('move_to HOME') + 1] != 'wipe_bowl', f'중단했는데 재시도 닦기를 또 불렀다(로봇이 다시 내려간다) {calls}'
+    j = [k for k, c in enumerate(calls) if c == 'wipe_bowl'][1]
+    assert calls[j + 1] != 'tool', f'중단했는데 다음 단계(툴 반납)를 이어서 했다 {calls}'
     assert [e['result'] for e in events] == ['ISOLATED', 'DONE'], f'중단한 용기만 격리 · 다음 용기는 정상이어야 한다 {events}'
     assert f._halted is False
 
