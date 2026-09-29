@@ -99,15 +99,15 @@ _install_signal_handling()
 → 컨텍스트가 살아 있는 상태에서 정리하므로 로그도 `/rosout` 에 정상으로 나가고, 실기에서는 정지 명령을 보낼 틈이 생긴다.
 
 🚨 **그래서 `flow_node`·`rig_f*.py` 는 `signal.signal` 을 걸지 않는다.** `try/finally: cc.shutdown()` 만 쓴다(SDD §3.1).
-두 곳에서 처리기를 걸면 서로 덮어써 정리가 꼬인다. 9/19 PR 검토에서 **`signal.signal` 이 거절 사유**(CONTRIBUTING §4.1)로 들어갔다.
+두 곳에서 처리기를 걸면 서로 덮어써 정리가 꼬인다. 이 규칙은 [결정기록 S2](../meetings/20260918_결정기록_구조_인터페이스.md)(Ctrl+C 의 주인)로 정했다.
 
 ---
 
 ## 5. 현재 코드 확인 (2026-09-19)
 
-`src/cobot_common/cobot_common/bootstrap.py` 에 둘 다 들어가 있다:
+`src/cobot_common/cobot_common/bootstrap.py` 에 둘 다 들어가 있다(줄 번호는 9/19 당시 값 — 코드가 바뀌면 움직이므로 내용 칸의 문구로 찾는다):
 
-| 항목 | 줄 | 내용 |
+| 항목 | 줄(9/19 당시) | 내용 |
 |---|---|---|
 | 기본 처리기 끄기 | 73 | `rclpy.init(signal_handler_options=SignalHandlerOptions.NO)` |
 | 두 번 불려도 안전 | 118 | `if not _started: return` |

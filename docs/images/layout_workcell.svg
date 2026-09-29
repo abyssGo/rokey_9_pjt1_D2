@@ -3,7 +3,7 @@
 <defs><pattern id="g" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#e2e8f0" stroke-width=".8"/></pattern><marker id="a" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#4b5563"/></marker></defs>
 <rect width="1000" height="1040" fill="#fff"/><rect width="1000" height="1040" fill="url(#g)"/>
 <text x="500.0" y="30" font-size="18" font-weight="700" fill="#0f172a" text-anchor="middle">PreWash-Cell 배치도 — 위에서 본 그림</text>
-<text x="500.0" y="48" font-size="11" fill="#64748b" text-anchor="middle">괄호 안 = cell.yaml 의 자리 이름 · 점선 = 배치 미정</text>
+<text x="500.0" y="48" font-size="11" fill="#64748b" text-anchor="middle">괄호 안 = cell.yaml 의 자리 이름</text>
 <rect x="300" y="68" width="400" height="88" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.2"/>
 <text x="500.0" y="103.0" font-size="14.0" font-weight="700" fill="#0c4a6e" text-anchor="middle">헹굼 구역 (RINSE)</text>
 <text x="500.0" y="121.0" font-size="11.0" fill="#0c4a6e" text-anchor="middle">흐르는 물에 담갔다 뺀다</text>
@@ -30,13 +30,12 @@
 <ellipse cx="265" cy="465" rx="46" ry="70" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
 <text x="265" y="461" font-size="12.5" font-weight="700" fill="#1e3a8a" text-anchor="middle">그릇 적재 1</text>
 <text x="265" y="477" font-size="10.0" fill="#1e3a8a" text-anchor="middle">RET_B 슬롯 1</text>
-<text x="190" y="566" font-size="10.5" fill="#1e293b" text-anchor="middle">그릇은 벽을 세로로, 컵은 몸통을 잡는다</text>
+<text x="190" y="566" font-size="10.5" fill="#1e293b" text-anchor="middle">그릇은 벽을 세로로, 컵은 테두리를 위에서 집는다</text>
 <rect x="440" y="200" width="92" height="70" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2.2"/>
 <text x="486.0" y="226.0" font-size="13.0" font-weight="700" fill="#78350f" text-anchor="middle">솔 홀더</text>
 <text x="486.0" y="244.0" font-size="10.5" fill="#78350f" text-anchor="middle">TOOL_BRUSH</text>
-<circle cx="585" cy="235" r="38" fill="#fff7ed" stroke="#d97706" stroke-width="2" stroke-dasharray="6 5"/>
-<text x="585" y="232" font-size="12.5" font-weight="700" fill="#78350f" text-anchor="middle">세제 통</text>
-<text x="585" y="248" font-size="9.5" fill="#78350f" text-anchor="middle">SOAP · 미정</text>
+<text x="585" y="232" font-size="12.5" font-weight="700" fill="#78350f" text-anchor="middle">세제</text>
+<text x="585" y="248" font-size="9.5" fill="#78350f" text-anchor="middle">= 홀더 비눗물</text>
 <rect x="638" y="200" width="102" height="70" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2.2"/>
 <text x="689.0" y="226.0" font-size="13.0" font-weight="700" fill="#78350f" text-anchor="middle">수세미 홀더</text>
 <text x="689.0" y="244.0" font-size="10.5" fill="#78350f" text-anchor="middle">TOOL_SPONGE</text>
