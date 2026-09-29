@@ -4,9 +4,9 @@
 검증 시나리오:
 1. 정상 상태: jitter_g <= max_weigh_spread_g -> 정상 진행
 2. 케이블 이상: jitter_g > max_weigh_spread_g -> CableTightError -> PAUSED 전환 및 대시보드 안내 메시지
-3. 넛지 후 정상: 넛지 감지 -> 재검증(jitter 정상) -> 작업 재개(RETRY_STEP)
-4. 넛지 후 이상 지속: 넛지 감지 -> 재검증(jitter 초과) -> PAUSED 유지
-5. HMI 신호: resume 신호 시 재검증 후 재개 / abort 신호 시 안전 중단
+3. 넛지·화면 재개: 제자리 재측정 없이 바로 작업 재개(RETRY_STEP) — 무게 단계를 다시 하며 그 무게가 케이블을 다시 본다
+4. 아직 떨리면: 다시 잰 무게가 CableTightError → 같은 케이블 멈춤이 다시 걸린다
+5. abort 신호 시 안전 중단
 """
 import pytest
 import types
@@ -138,10 +138,13 @@ def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
         }
     }
 
+    def no_recheck(conf):
+        raise AssertionError('밀면 바로 재개한다 — 제자리 재측정을 하지 않는다')
+
     # f2 모듈 모의
     mock_f2 = types.SimpleNamespace(
         wait_for_nudge=lambda conf, sig, timeout_s: 'nudge',
-        recheck_cable=lambda conf: (True, 15.0, 50.0)  # 정상 재검증
+        recheck_cable=no_recheck,
     )
 
     flow = Flow(cfg, log, features={'f2': mock_f2})
@@ -152,46 +155,48 @@ def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
     outcome = flow.handle_cable_tight(sig)
     assert outcome == RETRY_STEP
     assert flow.step == 'WEIGH'
-    assert '케이블 정상 확인' in flow.message
+    assert '재개' in flow.message
     assert flow.last_code == OK
 
 
-def test_flow_handle_cable_tight_maintains_paused_when_tight_persists(monkeypatch):
-    """Flow 통합: 케이블 이상 지속 시 PAUSED 유지 및 메시지 갱신."""
-    log = MockLogger()
-    cfg = {
-        'flow': {
-            'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}],
-            'policy': {}
-        }
-    }
+def test_cable_still_tight_after_nudge_pauses_again_with_the_same_alert(monkeypatch):
+    """밀어서 재개 → 무게 단계를 다시 한다 → 아직 떨리면(CableTightError) **같은 케이블 멈춤·같은 안내**가 다시 걸린다 →
+    다시 밀면 재개 → 이번엔 정상 → 다음 단계로. 사람 신호 없이 스스로 다시 재지 않는다(멈춤마다 밀기 1번)."""
+    from f2_sense_flow import mock
+    from f2_sense_flow.flow import load_features
 
-    attempts = [0]
-    def mock_wait(conf, sig, timeout_s):
-        attempts[0] += 1
-        if attempts[0] == 1:
-            return 'nudge'
-        # 2번째에서는 abort 로 빠져나오도록 유도하여 무한루프 방지
-        return 'abort'
+    mods = load_features(['f1', 'f2', 'f3'])
+    weighs, pauses, nudges = [], [], []
 
-    def mock_recheck(conf):
-        return (False, 75.0, 50.0)  # 이상 지속
+    def leftover_loop(kind, n=2):
+        weighs.append(kind)
+        if len(weighs) <= 2:
+            raise CableTightError('케이블 장력 이상 감지 (떨림 103 g > 상한 80 g)')
+        return mods['f2'].leftover_loop(kind, n)
 
-    mock_f2 = types.SimpleNamespace(
-        wait_for_nudge=mock_wait,
-        recheck_cable=mock_recheck
-    )
+    def wait_for_nudge(conf, sig, timeout_s):
+        nudges.append(1)
+        return 'nudge'
 
-    flow = Flow(cfg, log, features={'f2': mock_f2})
-    flow.step = 'WEIGH'
-    flow._prev_step = 'WEIGH'
-    sig = Signals()
+    f2 = types.SimpleNamespace(**{n: getattr(mods['f2'], n) for n in dir(mods['f2']) if not n.startswith('_')})
+    f2.leftover_loop, f2.wait_for_nudge = leftover_loop, wait_for_nudge
+    cfg = {'flow': {'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}], 'policy': {}}}
+    flow = Flow(cfg, MockLogger(), features={'f1': mods['f1'], 'f2': f2, 'f3': mods['f3']})
+    to_paused = flow.to_paused
 
-    # abort_container 가 호출되면 ABORTED 관련 종료
-    outcome = flow.handle_cable_tight(sig)
-    # 1번째 넛지 후 재검증 실패로 메시지가 '케이블 이상 지속'으로 갱신되었는지 확인
-    # (최종적으로 abort 되어 격리 완료됨)
-    assert outcome == 'go_on'  # abort_container 반환값
+    def watch_pause(why, sig=None):
+        to_paused(why, sig)
+        pauses.append(why)
+    flow.to_paused = watch_pause
+    try:
+        flow.run_plan(Signals())
+    finally:
+        mock.reset()
+
+    assert len(weighs) == 3, f'무게를 다시 잰 횟수 {len(weighs)}'
+    assert pauses == ['케이블 장력 이상 — 케이블 상태 확인 및 넛지 재개 대기'] * 2, pauses
+    assert len(nudges) == 2, '멈춤마다 밀기 1번으로 재개'
+    assert flow.done_bowl == 1 and flow.isolated == 0
 
 
 def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
@@ -243,38 +248,29 @@ def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
     assert outcome == RETRY_STEP
 
 
-def test_cable_recheck_failure_waits_for_a_new_signal(monkeypatch):
-    """화면 재개로 풀었는데 재검증이 실패하면 — 다시 멈춤 상태로 들어가 **새 신호**(넛지·재개)를 기다린다.
-    남은 재개 깃발로 사람 신호 없이 다시 재거나 출발하지 않는다."""
+def test_cable_screen_resume_restarts_at_once_and_consumes_the_signal(monkeypatch):
+    """화면 재개로 풀면 제자리 재측정 없이 바로 RETRY_STEP — 쓴 재개 깃발은 남기지 않는다(남으면 다음 멈춤이 사람 없이 풀린다)."""
     log = MockLogger()
     cfg = {'flow': {'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}], 'policy': {}}}
-    polls, rechecks = [0], []
+    polls = [0]
 
     def wait_like_real(conf, sig, timeout_s):
-        """실제 sense.wait_for_nudge 처럼 resume 깃발은 peek(안 내림)으로만 본다.
-        3번째 폴에서 화면 재개를 누르고, 12번째 폴에 넛지(새 신호)가 온다. 50번 넘게 폴하면 끝나지 않는 것."""
+        """실제 sense.wait_for_nudge 처럼 resume 깃발은 peek(안 내림)으로만 본다. 3번째 폴에서 화면 재개."""
         polls[0] += 1
         if polls[0] > 50:
-            raise AssertionError(f'끝나지 않는다 — 재검증 {len(rechecks)}회')
+            raise AssertionError('끝나지 않는다')
         if polls[0] == 3:
-            sig.raise_('resume')                          # 멈춘 뒤 화면 재개
-        if sig.peek('resume'):
-            return 'resume'
-        if polls[0] == 12:
-            return 'nudge'
-        return None
+            sig.raise_('resume')
+        return 'resume' if sig.peek('resume') else None
 
-    def recheck(conf):
-        rechecks.append(1)
-        return (len(rechecks) >= 2, 90.0 if len(rechecks) < 2 else 40.0, 80.0)   # 1번째 실패 · 2번째 통과
+    def no_recheck(conf):
+        raise AssertionError('제자리 재측정을 하지 않는다')
 
-    flow = Flow(cfg, log, features={'f2': types.SimpleNamespace(wait_for_nudge=wait_like_real, recheck_cable=recheck)})
+    flow = Flow(cfg, log, features={'f2': types.SimpleNamespace(wait_for_nudge=wait_like_real, recheck_cable=no_recheck)})
     flow.step = 'WEIGH'
     flow._prev_step = 'WEIGH'
     sig = Signals()
     outcome = flow.handle_cable_tight(sig)
     assert outcome == RETRY_STEP
-    assert len(rechecks) == 2, f'재검증 실패 뒤 새 신호 없이 다시 쟀다 ({len(rechecks)}회 · 폴 {polls[0]}회)'
-    assert polls[0] == 12, f'넛지(새 신호)를 기다리지 않고 다시 쟀다 (폴 {polls[0]}회)'
+    assert polls[0] == 3
     assert not sig.peek('resume'), '쓴 재개 신호가 남아 있다'
-

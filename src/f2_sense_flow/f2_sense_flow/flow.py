@@ -836,15 +836,17 @@ class Flow:
         return order[done] if done < len(order) else (order[-1] if order else '')
 
     def handle_cable_tight(self, sig):
-        """케이블 장력 이상 감지 시 정지(PAUSED) 후 사용자 개입(넛지 또는 resume) 및 상태 재검증.
+        """케이블 장력 이상 감지 시 정지(PAUSED) 후 사용자 개입(넛지 또는 resume)을 기다렸다가 그 단계부터 다시 한다.
 
         1. to_paused 로 상태를 PAUSED 로 변경하고 대시보드 안내 메시지 설정
         2. 현재 모션 즉시 PAUSE (후퇴 없이 그 자리에서 멈춤)
         3. 사용자 넛지(외력 변화량) 또는 HMI resume 대기
-        4. 넛지 또는 resume 감지 시: 케이블 상태(jitter_g) 재측정
-        5. 정상: 모션 resume 후 RETRY_STEP 돌려주어 그 단계부터 재개
-        6. 이상 지속: PAUSED 유지 및 메시지 갱신 후 다시 대기
-        7. abort 요청: abort_container(sig) 로 정리
+        4. 넛지 또는 resume 감지 시: 모션 resume 후 RETRY_STEP — 무게 단계를 다시 하며 그 무게 재기가 케이블을 다시 본다
+           (아직 떨리면 같은 케이블 멈춤이 다시 걸린다)
+        5. abort 요청: abort_container(sig) 로 정리
+        🚨 제자리 재측정(sense.recheck_cable)은 쓰지 않는다 — 민 직후 약 8 s 동안 가만히 재는 사이 손이 닿거나 다시 밀면
+           떨림이 수천 g 으로 튀어 '이상 지속'으로 다시 멈췄고, 소리·화면 변화가 없어 밀기를 못 알아들은 것처럼 보였다(실기).
+           다른 넛지 멈춤처럼 밀면 바로 재개(비프 2번)하고, 판정은 다시 재는 무게(표본 30개)에 맡긴다.
         """
         self.to_paused('케이블 장력 이상 — 케이블 상태 확인 및 넛지 재개 대기', sig)
         self.message = '케이블 상태를 확인해주세요. 확인 후 로봇팔을 가볍게 밀어 주세요.'
@@ -855,7 +857,6 @@ class Flow:
 
         sense_mod = self.f.get('f2')
         wait_fn = getattr(sense_mod, 'wait_for_nudge', None)
-        recheck_fn = getattr(sense_mod, 'recheck_cable', None)
 
         while True:
             ev = None
@@ -876,10 +877,9 @@ class Flow:
                 return self.abort_container(sig)
 
             if ev in ('nudge', 'resume') or sig.take('resume'):
-                sig.clear('resume')                            # 이 신호는 여기서 쓴다 — 남기면 재검증이 실패해도 사람 신호 없이 다시 잰다
+                sig.clear('resume')                            # 이 신호는 여기서 쓴다
                 sig.clear('stop')
-                self.log.info(f'재개 요청 감지(유형: {ev}) — 케이블 상태 재확인 중...')
-                self.message = '재개 요청 감지 — 케이블 상태를 재확인하고 있습니다...'
+                self.log.info(f'재개 요청 감지(유형: {ev}) — 무게를 다시 재며 케이블을 확인한다')
 
                 # 주의: 넛지 때 강한 외력(예: >35 N)으로 제어기가 SAFE_STOP(5)에 걸릴 수 있다(실기).
                 #    자동 복구(set_robot_control 2)를 시도하고 STANDBY 로 돌아올 때까지 대기.
@@ -889,34 +889,14 @@ class Flow:
                 except Exception:
                     pass
                 if callable(getattr(cc, 'recover_robot_if_needed', None)):
-                    cc.recover_robot_if_needed(timeout_s=timeout_s)
-
-                is_ok = True                                       # recheck 함수가 없으면(가짜 모듈) 정상으로 보고 지나간다
-                jitter = 0.0
-                limit = 50.0                                       # 떨림 상한 기본 50 g(recheck_cable 이 실제 값을 돌려준다)
-                if callable(recheck_fn):
-                    try:
-                        is_ok, jitter, limit = recheck_fn(conf=None)
-                    except Exception as e:
-                        self.log.warn(f'케이블 재검증 중 오류({e!r}) — 정지 유지')
-                        is_ok = False
-
-                if is_ok:
-                    self.log.info(f'케이블 상태 정상 확인(떨림 {jitter:.1f} g <= {limit:.1f} g) — 작업 재개')
-                    # 이동 재개 전 로봇 상태가 STANDBY(1)인지 최종 확인 및 복구
-                    if callable(getattr(cc, 'recover_robot_if_needed', None)):
-                        if not cc.recover_robot_if_needed(timeout_s=timeout_s):
-                            if callable(getattr(cc, 'wait_robot_ready', None)) and not cc.wait_robot_ready(timeout_s):
-                                self.log.warn(f'재개 전 로봇이 {timeout_s:g} s 안에 STANDBY 로 안 돌아왔다 — 그래도 이어간다')
-                    self._guard(self._resume, what='resume')
-                    self.step = self._prev_step
-                    self.message = '케이블 정상 확인 — 작업을 재개합니다'
-                    self.last_code = OK
-                    return RETRY_STEP
-                else:
-                    self.log.warn(f'케이블 이상 지속(떨림 {jitter:.1f} g > {limit:.1f} g) — 정지 유지 · 새 신호를 기다린다')
-                    self.to_paused('케이블 이상 지속', sig)       # 멈춤을 다시 건다 — 남은 재개 신호를 지우고, 사람이 다시 밀거나 재개할 때까지 기다린다
-                    self.message = f'케이블 이상 지속(떨림 {jitter:.0f} g > 상한 {limit:.0f} g): 케이블 확인 후 다시 로봇팔을 가볍게 밀어 주세요'
+                    if not cc.recover_robot_if_needed(timeout_s=timeout_s):
+                        if callable(getattr(cc, 'wait_robot_ready', None)) and not cc.wait_robot_ready(timeout_s):
+                            self.log.warn(f'재개 전 로봇이 {timeout_s:g} s 안에 STANDBY 로 안 돌아왔다 — 그래도 이어간다')
+                self._guard(self._resume, what='resume')
+                self.step = self._prev_step
+                self.message = '재개 — 무게를 다시 재며 케이블을 확인합니다'
+                self.last_code = OK
+                return RETRY_STEP
 
     def handle_failure(self, sig, action=None):
         """실패를 정책대로 마무리한다 (재시도는 process_one 이 이미 끝냈다).
