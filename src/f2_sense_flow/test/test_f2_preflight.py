@@ -63,7 +63,7 @@ def test_pass_when_names_match():
 
 
 def test_refuse_when_tcp_unset():
-    """9/22 11:22 — TCP 가 풀려 있으면 같은 좌표가 208 mm 아래로 간다. 시작을 거부한다."""
+    """실기 사고 — TCP 가 풀려 있으면 같은 좌표가 208 mm 아래로 간다. 시작을 거부한다."""
     with pytest.raises(P.PreflightError, match="tcp: 기대 'GripperDA_v1' · 지금 ''"):
         P.require_controller(_node(tcp=''), CFG)
 
@@ -153,7 +153,7 @@ def test_cable_skips_without_config_or_on_virtual(monkeypatch):
     assert P.warn_if_cable_tight(_cable_cfg(), _Log2()) == (None, [])
 
 
-# ────────────────────────────────── 🚨 낮은 자세에서 HOME (9/22 테이블 충돌)
+# ────────────────────────────────── 🚨 낮은 자세에서 HOME (테이블 충돌)
 class _FakeCC:
     """cobot_common 흉내 — 부른 순서를 적는다."""
 

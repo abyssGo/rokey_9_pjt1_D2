@@ -1,11 +1,11 @@
 # 🚨 Virtual 시험 전용 설정 — rig_motion.py 가 PREWASH_CONFIG_DIR 로 이 폴더를 가리킨다. **실기에 쓰지 않는다**(좌표가 우리 셀과 무관하다).
-# 진짜 값은 src/cobot_common/config/cell.yaml 에 한석형이 티칭으로 채운다. 여기 좌표는 HOME 자세(posj 0 0 90 0 90 0)의
+# 진짜 값은 src/cobot_common/config/cell.yaml 에 티칭으로 채운다. 여기 좌표는 HOME 자세(posj 0 0 90 0 90 0)의
 # 툴 위치 [368, 6.25, 425, 45, 180, 45] 주변의, 가상 로봇이 닿는 아무 점이다.
 cell:
   limits:
     vel_free_pct: 60
     vel_carry_pct: 30
-    safe_z_mm: 350                      # 후퇴 높이(safe_retreat) — 이동은 이 값을 쓰지 않는다(9/20 E7)
+    safe_z_mm: 350                      # 후퇴 높이(safe_retreat) — 이동은 이 값을 쓰지 않는다(E7)
   motion:                               # 100 % 기준 속도 (Virtual 시험 값)
     vel_tcp_max_mm_s: 400
     acc_tcp_max_mm_s2: 800
@@ -18,7 +18,7 @@ cell:
   stations:
     HOME:        {posj: [0.0, 0.0, 90.0, 0.0, 90.0, 0.0]}
     WEIGH:       {posx: [368.0, 156.25, 425.0, 45.0, 180.0, 45.0]}      # 티칭 자세까지 곧장 간다
-    TOOL_SPONGE: {posx: [468.0, -143.75, 200.0, 45.0, 180.0, 45.0]}     # 후퇴 높이(350)보다 낮아도 그 자세까지 간다(9/20 E7)
+    TOOL_SPONGE: {posx: [468.0, -143.75, 200.0, 45.0, 180.0, 45.0]}     # 후퇴 높이(350)보다 낮아도 그 자세까지 간다(E7)
     SOAP:        {posx: }                                               # 일부러 비워 둠 → 움직이지 않고 KeyError
   beds:
     SPONGE_BED_B:

@@ -6,7 +6,7 @@
     soc && ros2 launch prewash_bringup prewash.launch.py use_mock:="f3"  # L2 통합: F3 만 가짜
     PC-B:  soc && ros2 run f4_hmi hmi_bridge          (PC 1대로 할 때는 여기에 hmi:=true)
 
-주의: 실기 로봇이 움직인다. 팀 확인 뒤에만, 첫 실기는 vel_scale 0.2~0.3 (AGENTS.md §3 규칙 1).
+주의: 실기 로봇이 움직인다. 첫 실기는 vel_scale 0.2~0.3.
    끌 때는 멈춰 있을 때 Ctrl+C 한 번. 급하면 Ctrl+C 가 아니라 E-Stop.
 """
 from prewash_bringup.launch_common import make_description

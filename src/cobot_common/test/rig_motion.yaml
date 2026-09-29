@@ -8,7 +8,7 @@ slow:                           # move_rel 속도 선택 인자 시험 (force.py
   vel_mm_s: 10
   acc_mm_s2: 40
   min_time_s: 1.5               # 이보다 빨리 끝나면 속도 인자가 안 먹은 것
-shake:                          # move_joint_rel 시험 (민범진 shake 의 J5 왕복 흉내)
+shake:                          # move_joint_rel 시험 (f2 shake 의 J5 왕복 흉내)
   joint: 5
   amp_deg: 15
   half_period_s: 0.3

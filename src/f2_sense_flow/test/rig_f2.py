@@ -16,7 +16,7 @@
 준비(손으로): 용기를 그리퍼에 쥐여 준다. weigh 시험은 100 g·200 g 추(TC-03).
 같은 함수를 연속 3회 이상 부른다(SDD §3.2 ⑧ — "첫 번째만 되는" 결함은 한 번으로는 안 보인다).
 
-🚨 로봇을 움직이기 전에 `rosinfo` 로 RANGE=LOCALHOST 인지 확인한다 (AGENTS §3 규칙 13).
+🚨 로봇을 움직이기 전에 `rosinfo` 로 RANGE=LOCALHOST 인지 확인한다.
    격리가 안 되어 있으면 내 movej 가 남의 Virtual·실기에도 간다.
 
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
@@ -29,7 +29,7 @@ import cobot_common as cc
 from cobot_api import F2Api, check_api
 
 from f2_sense_flow import sense
-from f2_sense_flow.preflight import go_home_safely, require_controller, warn_if_cable_tight   # 🆕 TS-07 — 움직이기 전 툴·TCP 확인 · 🔗 케이블
+from f2_sense_flow.preflight import go_home_safely, require_controller, warn_if_cable_tight   # TS-07 — 움직이기 전 툴·TCP 확인 · 🔗 케이블
 
 
 def main():
@@ -47,7 +47,7 @@ def main():
                     help='두산 드라이버 없이 (브링업 없이 함수 반환만 확인)')
     ap.add_argument('--no-home', action='store_true',
                     help='🚨 shake·dip·loop 앞의 HOME 경유를 끈다 (E15 — 이미 HOME 에 있을 때만)')
-    # 🆕 9/22 — 값 찾기용 덮어쓰기: 설정 파일을 안 고치고 이번 실행에서만 f2.shake.<mode> 를 바꾼다(메모리에서). 찾은 값은 params.yaml 에 적는다
+    # 값 찾기용 덮어쓰기: 설정 파일을 안 고치고 이번 실행에서만 f2.shake.<mode> 를 바꾼다(메모리에서). 찾은 값은 params.yaml 에 적는다
     ap.add_argument('--amp', type=float, help='shake 진폭 덮어쓰기 — 직선이면 mm(amp_mm) · 관절이면 °(amp_deg)')
     ap.add_argument('--period', type=float, help='shake 주기(s) 덮어쓰기')
     ap.add_argument('--acc', type=float, help='shake 직선 왕복 가속도(mm/s²) 덮어쓰기 — 상한은 cell.motion.acc_tcp_max × vel_scale')
@@ -81,20 +81,20 @@ def main():
     if a.no_robot:
         log.warn('--no-robot — 두산 드라이버 없이 함수 반환만 확인한다')
     else:
-        require_controller(cc.io_node(), cc.cfg(), log)   # 🆕 TS-07 — 다르면 PreflightError 로 여기서 끝
+        require_controller(cc.io_node(), cc.cfg(), log)   # TS-07 — 다르면 PreflightError 로 여기서 끝
         warn_if_cable_tight(cc.cfg(), log)                # 🔗 케이블 장력(경고만)
     if a.which == 'shake':
-        _override_shake(a, log)                          # 🆕 --amp/--period/--acc/--tilt (이번 실행만)
+        _override_shake(a, log)                          # --amp/--period/--acc/--tilt (이번 실행만)
     try:
-        # 🚨 9/21 결정 E15 — 잔반통(로봇 **뒤**) ↔ 저울·수조·반납 구역(**앞**) 사이는 HOME 을 거친다.
+        # 🚨 결정 E15 — 잔반통(로봇 **뒤**) ↔ 저울·수조·반납 구역(**앞**) 사이는 HOME 을 거친다.
         #    앞뒤로 곧장 가면 로봇 몸통을 가로지르고(E7 로 안전 높이 경유가 없다) 6번 관절이 163°
-        #    돌아 그리퍼 케이블이 꼬인다(9/21 08:40 실기).
+        #    돌아 그리퍼 케이블이 꼬인다(실기).
         #    flow 에서는 leftover_loop 이 알아서 거치지만, 여기서는 **직전에 어디 있었는지 모른다** —
         #    V-02(앞, WEIGH)를 돌린 뒤 바로 shake(뒤, WASTE)를 부르거나, 그 반대로
         #    털기 뒤에 다시 weigh 를 부르면 그 대각선 이동이 그대로 난다.
         #    → 시험대에서는 항상 HOME 에서 시작한다. `--no-home` 으로 끌 수 있다(이유가 있을 때만).
         #    --no-robot 일 때는 건너뛴다 — 여기는 _as_result 바깥이라 두산 API 가 없으면
-        #    그대로 예외가 터져 나가고, 뒤의 '함수 반환만 확인' 을 못 한다(9/21 발견).
+        #    그대로 예외가 터져 나가고, 뒤의 '함수 반환만 확인' 을 못 한다.
         if a.which in ('shake', 'dip', 'loop', 'weigh') and not a.no_home and not a.no_robot:
             log.info('E15 — 먼저 HOME 으로 간다 (앞뒤를 가로지르지 않으려고 · 낮으면 곧게 올라온 뒤에)')
             go_home_safely(a.kind, log)
@@ -125,14 +125,14 @@ def _override_shake(a, log):
 def _close_target(kind, preset):
     """그 종류에 맞는 **닫는 목표 폭**(드라이버 값 — 영점 포함)을 고른다.
 
-    · CUP  : 🚨 9/21 결정 E19 — 정해진 폭(`grip_target_mm`)까지 **만** 닫고 멈춘다.
+    · CUP  : 🚨 결정 E19 — 정해진 폭(`grip_target_mm`)까지 **만** 닫고 멈춘다.
              끝까지 닫으면 RG2 최저 힘 5 N 으로도 컵이 눌린다(20 N 에서는 안전 스위치가 걸렸다).
              대가로 빈손과 구분이 안 되므로 **파지 확인을 하지 않는다**.
     · BOWL : SDD §5.2 — 기대 폭보다 `2 × 허용오차` 만큼 **작게** 준다.
              기대 폭을 그대로 주면 **빈손으로도 그 폭에서 멈춰** 쥔 것처럼 보인다.
     """
     zero = float(preset.get('grip_zero_mm') or 0.0)          # 결정 E16 D-A — 명령에는 영점을 더한다
-    target = preset.get('grip_target_mm')                    # 🔄 9/22 저녁: 종류가 아니라 **키**로 고른다 — 컵도 벽을 집으면(CELL-05) 폭 판정
+    target = preset.get('grip_target_mm')                    # 종류가 아니라 **키**로 고른다 — 컵도 벽을 집으면(CELL-05) 폭 판정
     if target is not None:
         return float(target), '고정 폭(E19) — 파지 확인 안 함'
     expect = float(preset['grip_width_mm'])
@@ -168,13 +168,13 @@ def _hold_container(a):
        힘은 그리퍼가 움직이거나 닫혀 있을 때만 읽히고(gripper.py 머리말),
        그 값은 **프로그램마다 새로** 잡는다. release 를 따로 돌리고 나가면
        그리퍼가 활짝 열린 채 멈춰 effort 0(= 모름)만 오므로, 다음 프로그램의
-       grip 이 첫 줄에서 RuntimeError 로 죽는다(9/21 발견 — 절차서가 그렇게 시켰다).
+       grip 이 첫 줄에서 RuntimeError 로 죽는다(예전 절차서가 그렇게 시켰다).
        🚨 반대로 grip 앞에 release 를 넣는 것도 위험하다 — 힘을 모르면 release 가
           **빈손인 줄 알고 한 번 끝까지 닫는다**. 그래서 여는 것이 먼저, 대 주는 것이 나중이다.
     """
     cc.init('rig_f2', robot=True)
     log = cc.io_node().get_logger()
-    require_controller(cc.io_node(), cc.cfg(), log)   # 🆕 TS-07
+    require_controller(cc.io_node(), cc.cfg(), log)   # TS-07
     try:
         if a.which == 'release':
             cc.release()                             # 열기 + (첫 호출이면) 힘 기준 맞추기
@@ -194,7 +194,7 @@ def _hold_container(a):
         got = cc.grip(target, force)
         log.info(f'  실제 폭 {got:.2f} mm')
 
-        if preset.get('grip_target_mm') is not None:  # E19 고정 폭 — 폭으로 판정하지 않는다(9/22 저녁부터 컵은 벽 집기라 여기 안 옴)
+        if preset.get('grip_target_mm') is not None:  # E19 고정 폭 — 폭으로 판정하지 않는다(지금 컵은 벽 집기라 여기 안 옴)
             log.warn('  고정 폭 파지는 확인을 하지 않는다(E19) — 눈으로 보고, 살짝 당겨 보세요')
             return
         zero = float(preset.get('grip_zero_mm') or 0.0)
@@ -221,12 +221,12 @@ def _measure_empty(a):
     """
     cc.init('rig_f2', robot=True)
     log = cc.io_node().get_logger()
-    require_controller(cc.io_node(), cc.cfg(), log)   # 🆕 TS-07
+    require_controller(cc.io_node(), cc.cfg(), log)   # TS-07
     try:
         # 🚨 재기 전에 **그 종류의 WEIGH 자세로 간다.** 하중 옵셋(+42~45 g)은 자세마다 다르므로
         #    잰 자세와 실제 운전에서 재는 자세가 같아야 판정식 `측정값 − 기준값` 에서 상쇄된다.
         #    전에는 이 함수가 로봇을 **전혀 움직이지 않아서**, 직전에 서 있던 자리(다른 종류의
-        #    WEIGH 나 safe_retreat 로 올라간 높이)에서 잰 값을 설정에 넣게 되어 있었다(9/21 발견).
+        #    WEIGH 나 safe_retreat 로 올라간 높이)에서 잰 값을 설정에 넣게 되어 있었다.
         #    🚨 용기가 바닥에 닿아 있으면 무게가 바닥으로 빠진다 — WEIGH 자세는 들어 올린 자세다.
         log.info('E15 — HOME 을 거쳐 WEIGH 자세로 간다 (앞뒤를 가로지르지 않으려고 · 낮으면 곧게 올라온 뒤에)')
         cc.force_off()
@@ -236,7 +236,7 @@ def _measure_empty(a):
             cc.move_rel(0.0, 0.0, -up, 'BASE')
         samples = cc.cfg()['f2']['weigh_samples']
         settle = float(cc.cfg()['f2'].get('weigh_settle_s') or 0.0)
-        # 🔄 9/22 발견: 여기는 cc.weigh 를 직접 불러 sense.weigh 의 정지 대기(weigh_settle_s)를 건너뛰었다
+        # 전에는 여기서 cc.weigh 를 직접 불러 sense.weigh 의 정지 대기(weigh_settle_s)를 건너뛰었다
         #    → 도착 직후 5 s 동안 +30 g 높게 읽히는 구간을 그대로 기준값에 넣고 있었다. 실제 운전과 같게 기다린다
         log.info(f'도착 — {settle:.1f} s 정지 뒤 잰다 (f2.weigh_settle_s · 실제 운전과 같게)')
         time.sleep(settle)

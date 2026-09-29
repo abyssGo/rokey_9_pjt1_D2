@@ -4,11 +4,12 @@
 wipe.py·params.yaml 은 손대지 않는다. 툴 픽업(BRUSH, PICK) → soap → wipe_cup → 툴 반납(BRUSH, RETURN)
 만 돌리는 최소 왕복 — 반납 구역 pick·rack_place 등 나머지 시나리오는 뺐다(속도 값 확인이 목적).
 
-🆕 TOOL x축에 SIDE_AMP_MM(1.0mm) 진폭을 얹어서 위아래+6번 조인트 회전과 동시에 살짝 옆으로도 움직인다 —
+TOOL x축에 SIDE_AMP_MM(1.0mm) 진폭을 얹어서 위아래+6번 조인트 회전과 동시에 살짝 옆으로도 움직인다 —
    wipe.cup_periodic() 을 이 스크립트 안에서만 monkeypatch(런타임 교체)한다. wipe.py 원본은 그대로.
    되는 게 확인되면 그때 wipe.py/params.yaml 에 반영한다.
 
-    cd ~/cobot1/rokey_9_pjt1_D2 && soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_cup_speed_probe.py
+    # 저장소 루트에서
+    soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_cup_speed_probe.py
 
 준비(손으로): 컵을 SPONGE_BED_C 자리에 놓고, 그리퍼는 빈손으로 시작.
 """
@@ -21,8 +22,8 @@ from cobot_api import BRUSH, PICK, RETURN
 from f1_handling import handling as f1
 from f3_wipe import wipe
 
-SIDE_AMP_MM = 5.0                       # 8 → 5(9/23: 8mm·정상속도에서 6번 조인트 실측 326.5°/s로 한계 225 초과 확인됨 — 그 결과 확인용)
-PERIOD_SCALE = 1.0                      # 정상 속도로 되돌림(9/23: ×0.5 는 컨트롤러가 조용히 무시 — 알람도 없이 세척 자체가 빠짐)
+SIDE_AMP_MM = 5.0                       # 8 → 5(실기: 8mm·정상속도에서 6번 조인트 실측 326.5°/s로 한계 225 초과 확인됨 — 그 결과 확인용)
+PERIOD_SCALE = 1.0                      # 정상 속도로 되돌림(실기: ×0.5 는 컨트롤러가 조용히 무시 — 알람도 없이 세척 자체가 빠짐)
 
 _orig_cup_periodic = wipe.cup_periodic
 _actual_period_s = [None]               # 실제로 보낸 주기 — 리포트에서 예측치 계산에 쓴다
@@ -48,8 +49,8 @@ _orig_joints = cc.joints
 
 
 def _joints_logging():
-    """cc.joints() 를 감싸서 부를 때마다 기록한다 — 새 스레드를 안 만든다(로봇 함수는 메인 스레드에서만,
-    AGENTS §3 규칙 4). wipe.py 의 세척 루프가 이미 메인 스레드에서 매 걸음 cc.joints() 를 부르므로
+    """cc.joints() 를 감싸서 부를 때마다 기록한다 — 새 스레드를 안 만든다(로봇 함수는 메인 스레드에서만).
+    wipe.py 의 세척 루프가 이미 메인 스레드에서 매 걸음 cc.joints() 를 부르므로
     거기 얹혀서 공짜로 표본을 얻는다."""
     v = _orig_joints()
     _j6_samples.append((time.monotonic(), v[5]))

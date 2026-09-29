@@ -18,7 +18,7 @@ def test_return_types():
 
 
 def test_no_robot_becomes_robot_error_not_crash():
-    """🚨 로봇·설정이 없으면 **예외가 아니라 Result.fail(ROBOT_ERROR)** 여야 한다 (AGENTS §4).
+    """🚨 로봇·설정이 없으면 **예외가 아니라 Result.fail(ROBOT_ERROR)** 여야 한다.
 
     F2-01·F2-02 로 속을 채우기 전에는 "전부 ok=True" 를 봤지만, 이제 실제로 로봇을 부른다.
     여기서 보는 것은 "되는가" 가 아니라 **"예외가 밖으로 새지 않는가"** 다 —

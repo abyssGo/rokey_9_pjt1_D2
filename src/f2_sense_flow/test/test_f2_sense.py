@@ -26,10 +26,10 @@ CFG = {'f2': {
     'limits': {'max_amp_deg': 45.0, 'max_depth_mm': 150.0, 'max_hold_s': 5.0,
                'max_settle_s': 5.0, 'min_net_g': -30.0},
     'shake': {'WASTE': {'joint': 5, 'amp_deg': 15.0, 'cycles': 4, 'period_s': 0.6},
-              'RINSE': {'joint': 4, 'amp_deg': 30.0, 'period_s': 0.7, 'acc_deg_s2': 600.0, 'at': 'RINSE_SHAKE', 'fast': True, 'smooth': True}},   # 🔄 9/23 E36
+              'RINSE': {'joint': 4, 'amp_deg': 30.0, 'period_s': 0.7, 'acc_deg_s2': 600.0, 'at': 'RINSE_SHAKE', 'fast': True, 'smooth': True}},   # E36
     'dip': {'RINSE': {'depth_mm': 60.0, 'hold_s': 0.2}},
 }, 'cell': {'stations': {'RINSE': {}, 'RINSE_SHAKE': {}, 'WASTE': {}, 'WEIGH': {}, 'HOME': {}},
-            'motion': {'vel_joint_max_deg_s': 100.0, 'acc_joint_max_deg_s2': 200.0}, 'limits': {'vel_carry_pct': 30}}}   # 🆕 shake at=<스테이션> · smooth 복구 검사용
+            'motion': {'vel_joint_max_deg_s': 100.0, 'acc_joint_max_deg_s2': 200.0}, 'limits': {'vel_carry_pct': 30}}}   # shake at=<스테이션> · smooth 복구 검사용
 
 
 class Rec:
@@ -63,15 +63,15 @@ class Rec:
         return types.SimpleNamespace(get_logger=lambda: log)
 
     def move_to(self, station, carrying, kind=None):
-        # 🚨 kind 까지 적어 둔다 — 안 넘기면 실기에서 ValueError 가 난다(9/20 E8)
+        # 🚨 kind 까지 적어 둔다 — 안 넘기면 실기에서 ValueError 가 난다(E8)
         self._note('move_to', station, carrying, kind)
         return self._up
 
     def move_rel(self, dx, dy, dz, frame, **kw):
-        self._note('move_rel', dx, dy, dz, frame, **kw)      # 🆕 vel_mm_s 등 키워드도 기록(직선 왕복 시험)
+        self._note('move_rel', dx, dy, dz, frame, **kw)      # vel_mm_s 등 키워드도 기록(직선 왕복 시험)
 
     def move_joint_rel(self, joint, delta_deg, *, time_s=None, carrying=True, **kw):
-        self._note('move_joint_rel', joint, delta_deg, time_s, **kw)          # 🆕 scale=False(E36 fast) 도 기록
+        self._note('move_joint_rel', joint, delta_deg, time_s, **kw)          # scale=False(E36 fast) 도 기록
 
     def joints(self):
         self._note('joints')
@@ -174,7 +174,7 @@ def test_weigh_uses_configured_sample_count(monkeypatch):
 
 
 def test_weigh_exception_becomes_robot_error(monkeypatch):
-    """🚨 기능 함수는 예외를 밖으로 내보내지 않는다 (AGENTS §4)."""
+    """🚨 기능 함수는 예외를 밖으로 내보내지 않는다."""
     r = Rec(weights=[180.0], raise_on='move_to')
     s = _sense(monkeypatch, r)
     out = s.weigh('BOWL')
@@ -235,7 +235,7 @@ def test_leftover_stops_when_shake_fails(monkeypatch):
 
 # ────────────────────────────────── shake
 def test_shake_splits_period_into_segments(monkeypatch):
-    """🚨 period_s 는 **한 주기** 다. time_s 는 **한 구간** 이라 나눠 써야 한다(황인재 9/20).
+    """🚨 period_s 는 **한 주기** 다. time_s 는 **한 구간** 이라 나눠 써야 한다.
 
     가운데 → 끝 = period/4 · 끝 → 반대쪽 끝 = period/2 · 끝 → 가운데 = period/4
     그대로 넘기면 4배 느려진다.
@@ -248,7 +248,7 @@ def test_shake_splits_period_into_segments(monkeypatch):
 
 
 def test_shake_tilts_first_then_returns(monkeypatch):
-    """🆕 tilt_deg — 기울이기(+tilt) → 왕복 → 되돌리기(−tilt). 합은 0, 흔들기는 기울인 자세를 가운데로."""
+    """tilt_deg — 기울이기(+tilt) → 왕복 → 되돌리기(−tilt). 합은 0, 흔들기는 기울인 자세를 가운데로."""
     import copy
     cfg = copy.deepcopy(CFG)
     cfg['f2']['shake']['WASTE']['tilt_deg'] = 60.0
@@ -269,7 +269,7 @@ def test_shake_tilts_first_then_returns(monkeypatch):
 
 
 def test_shake_linear_axis_moves_with_move_rel(monkeypatch):
-    """🆕 axis·amp_mm — BASE X 로 +amp → −2amp → +amp (mm) · 속도 = amp ÷ (period/4) · 관절은 안 돈다."""
+    """axis·amp_mm — BASE X 로 +amp → −2amp → +amp (mm) · 속도 = amp ÷ (period/4) · 관절은 안 돈다."""
     import copy
     cfg = copy.deepcopy(CFG)
     cfg['f2']['shake']['RINSE'] = {'axis': 'x', 'amp_mm': 20.0, 'period_s': 0.5}
@@ -289,7 +289,7 @@ def test_shake_linear_axis_moves_with_move_rel(monkeypatch):
 
 
 def test_shake_params_per_kind(monkeypatch):
-    """🆕 f2.shake.<mode> 에 BOWL/CUP 묶음이 있으면 kind 것을 쓴다 · 없으면 공용 · 한쪽만 있으면 KeyError(조용히 안 돈다)."""
+    """f2.shake.<mode> 에 BOWL/CUP 묶음이 있으면 kind 것을 쓴다 · 없으면 공용 · 한쪽만 있으면 KeyError(조용히 안 돈다)."""
     import copy
     cfg = copy.deepcopy(CFG)
     cfg['f2']['shake']['RINSE'] = {'BOWL': {'joint': 5, 'amp_deg': 10.0, 'period_s': 0.5},
@@ -313,7 +313,7 @@ def test_shake_params_per_kind(monkeypatch):
 
 
 def test_shake_linear_passes_acc(monkeypatch):
-    """🆕 acc_mm_s2 — 있으면 move_rel 에 그대로, 없으면 None(기본)."""
+    """acc_mm_s2 — 있으면 move_rel 에 그대로, 없으면 None(기본)."""
     import copy
     cfg = copy.deepcopy(CFG)
     cfg['f2']['shake']['RINSE'] = {'axis': 'x', 'amp_mm': 20.0, 'period_s': 0.5, 'acc_mm_s2': 800.0}
@@ -428,7 +428,7 @@ def test_shake_detects_slip_by_width(monkeypatch):
 
 
 def test_slip_tol_per_kind(monkeypatch):
-    """🔄 9/23 11:41 실기: 컵 테두리는 HOLD 로 쥐면 1.0 mm 눌린다 → f2.slip_tol_mm 를 {BOWL: 1.0, CUP: 1.5} 처럼 종류별로 둘 수 있다.
+    """실기: 컵 테두리는 HOLD 로 쥐면 1.0 mm 눌린다 → f2.slip_tol_mm 를 {BOWL: 1.0, CUP: 1.5} 처럼 종류별로 둘 수 있다.
     같은 1.0 mm 변화가 그릇에서는 GRIP_FAIL, 컵에서는 통과(놓친 컵은 다음 weigh 가 잡는다)."""
     r = Rec(widths=[12.2, 12.2, 11.2])             # 컵 98 g 3회차 실기 값 (첫 읽기는 사전 확인 · 그다음 HOLD 전 · NORMAL 뒤)
     s = _sense(monkeypatch, r)
@@ -464,14 +464,14 @@ def test_shake_rinse_uses_its_own_preset(monkeypatch):
     r = Rec()
     s = _sense(monkeypatch, r)
     s.shake('RINSE', 1, 'CUP')
-    spl = r.of('move_joints_via')[0]           # 🔄 E36 RINSE: 스플라인 한 번 · J4 ±30 · 100 deg/s(4·30/1.2) · vel_scale 예외
+    spl = r.of('move_joints_via')[0]           # E36 RINSE: 스플라인 한 번 · J4 ±30 · 100 deg/s(4·30/1.2) · vel_scale 예외
     assert [q[3] for q in spl[1][0]] == [30.0, -30.0, 0.0] and spl[2] == {'vel_deg_s': pytest.approx(4 * 30 / 0.7), 'acc_deg_s2': 600.0, 'scale': False}
     assert not r.of('move_joint_rel')
 
 
-# ────────────────────────────────── 🆕 9/23 E36 물 털기 재설계 — 접근 높이에서 J4 좌우 · 빠르게
+# ────────────────────────────────── E36 물 털기 재설계 — 접근 높이에서 J4 좌우 · 빠르게
 def test_shake_rinse_rises_then_goes_to_shake_station(monkeypatch):
-    """E36(황인재 9/23): 담금 뒤 수조 안에서 부르면 ① move_to(RINSE) = 접근점(같은 x·y)까지 곧게 위로 ② move_to(RINSE_SHAKE) 관절 이동으로 털기 자세.
+    """E36: 담금 뒤 수조 안에서 부르면 ① move_to(RINSE) = 접근점(같은 x·y)까지 곧게 위로 ② move_to(RINSE_SHAKE) 관절 이동으로 털기 자세.
     **내려가지 않는다**(move_rel 없음) · 끝나도 거기 · HOLD → 흔들기 → NORMAL."""
     r = Rec(up=248.6)
     s = _sense(monkeypatch, r)
@@ -545,7 +545,7 @@ def test_shake_fast_is_joint_only_and_at_is_validated(monkeypatch):
 
 
 def test_shake_and_dip_refuse_to_move_when_gripper_is_open(monkeypatch):
-    """🆕 9/23: 첫 폭이 100 mm 넘게 열려 있으면(빈손) shake·dip 은 **움직이기 전에** GRIP_FAIL — 08:4x 실기(열린 채 담금 시작)."""
+    """첫 폭이 100 mm 넘게 열려 있으면(빈손) shake·dip 은 **움직이기 전에** GRIP_FAIL — 실기(열린 채 담금 시작)."""
     for call in (lambda s: s.shake('RINSE', 3, 'CUP'), lambda s: s.dip('RINSE', 2, 'CUP')):
         r = Rec(widths=[110.6])
         s = _sense(monkeypatch, r)
@@ -555,7 +555,7 @@ def test_shake_and_dip_refuse_to_move_when_gripper_is_open(monkeypatch):
 
 
 def test_shake_and_dip_refuse_to_move_when_gripper_is_closed_empty(monkeypatch):
-    """🆕 9/23: 폭 판정 프리셋(벽 집기)에서 폭 ≤ 영점 + 허용오차 = **꽉 닫힌 빈손** → 움직이기 전에 GRIP_FAIL(08:4x 실기 10.5 mm).
+    """폭 판정 프리셋(벽 집기)에서 폭 ≤ 영점 + 허용오차 = **꽉 닫힌 빈손** → 움직이기 전에 GRIP_FAIL(실기 10.5 mm).
     고정 폭 프리셋(grip_target_mm · 옆면 컵)은 이 판정을 하지 않는다."""
     for call in (lambda s: s.shake('RINSE', 3, 'BOWL'), lambda s: s.dip('RINSE', 2, 'BOWL')):
         r = RecCell(widths=[10.5])                          # BOWL: 영점 10.58 · tol 0.6 → 11.18 이하 = 빈손
@@ -625,11 +625,11 @@ def test_dip_zero_count_does_nothing(monkeypatch):
 
 
 # ══════════════════════════════════════════════════════════════════
-# 검토(2026-09-20 다중 에이전트)에서 "코드를 일부러 망가뜨려도 통과하던" 구멍들.
+# 코드를 일부러 망가뜨려도 통과하던 구멍(변형 시험으로 찾음).
 # 아래 시험들은 그 변형을 각각 잡는다 — 무엇을 잡는지 주석에 적어 둔다.
 # ══════════════════════════════════════════════════════════════════
 
-# ── 🚨 실패하면 안전 높이로 물러나는가 (AGENTS §4)
+# ── 🚨 실패하면 안전 높이로 물러나는가
 #    flow.call() 은 **예외가 올라올 때만** 후퇴한다. sense 는 예외를 Result 로 바꾸므로
 #    여기서 직접 후퇴해야 한다 — 안 하면 용기를 수조 안에 담근 채 멈춘다.
 def test_exception_retreats_to_safe_height(monkeypatch):
@@ -725,7 +725,7 @@ def test_shake_and_dip_go_to_their_station(monkeypatch):
 
 
 def test_every_move_passes_kind(monkeypatch):
-    """🚨 세 함수 모두 move_to 에 kind 를 넘겨야 한다 (9/20 결정 E8 · PR #36).
+    """🚨 세 함수 모두 move_to 에 kind 를 넘겨야 한다 (결정 E8).
 
     WEIGH·WASTE·RINSE 자세가 cell.yaml 에서 BOWL/CUP 으로 갈렸다. 안 넘기면 cc.move_to 가
     "골라야 하는데 안 줬다"로 ValueError 를 내고 **기능 셋이 통째로 멈춘다**.
@@ -738,7 +738,7 @@ def test_every_move_passes_kind(monkeypatch):
     ):
         r = Rec(weights=[180.0])
         call(_sense(monkeypatch, r))
-        # 🔄 9/23: weigh 가 먼저 HOME 을 거친다 — HOME 은 종류로 갈리지 않는 자리라 kind 가 없어도 된다
+        # weigh 가 먼저 HOME 을 거친다 — HOME 은 종류로 갈리지 않는 자리라 kind 가 없어도 된다
         moves = [c for c in r.of('move_to') if c[1][0] != 'HOME']
         assert moves, 'move_to 를 한 번은 불러야 한다'
         for c in moves:
@@ -874,7 +874,7 @@ def test_rounds_counts_only_finished_rounds(monkeypatch):
     assert out.rounds == 0, '한 번도 못 털었으면 0 이어야 한다'
 
 
-# ── 🚨 이동이 도중에 선 예외는 삼키지 않는다 (9/21 PM 요청 · SDD §7)
+# ── 🚨 이동이 도중에 선 예외는 삼키지 않는다 (SDD §7)
 def test_move_incomplete_is_not_swallowed(monkeypatch):
     """MoveIncomplete = 이동이 도중에 섰다 → **로봇이 어디 있는지 모른다.**
 
@@ -898,9 +898,9 @@ def test_move_incomplete_is_not_swallowed(monkeypatch):
         assert not r.of('safe_retreat'), '위치를 모르는데 후퇴하면 안 된다'
 
 
-# ── 🚨 잔반통(뒤) ↔ 앞쪽 사이는 HOME 을 거친다 (9/21 결정 E15)
+# ── 🚨 잔반통(뒤) ↔ 앞쪽 사이는 HOME 을 거친다 (결정 E15)
 def test_leftover_goes_via_home_between_scale_and_waste_bin(monkeypatch):
-    """잔반통 그릇 자세가 로봇 **뒤쪽**으로 옮겨졌다(앞쪽은 팔이 펴진 특이점이라 9/21 케이블이 꼬였다).
+    """잔반통 그릇 자세가 로봇 **뒤쪽**으로 옮겨졌다(앞쪽은 팔이 펴진 특이점이라 실기에서 케이블이 꼬였다).
 
     저울·스펀지 홈·반납 구역은 **앞**이라, 앞뒤를 곧장 오가면 로봇 몸통을 가로지른다.
     E7 로 안전 높이 경유까지 없어져 더 그렇다 → 사이마다 HOME 을 거친다.
@@ -913,10 +913,10 @@ def test_leftover_goes_via_home_between_scale_and_waste_bin(monkeypatch):
 
 
 def test_weigh_goes_via_home_first(monkeypatch):
-    """🔄 9/23 실기: 무게는 **항상 HOME 을 거쳐** WEIGH 로 내려와 잰다.
+    """실기: 무게는 **항상 HOME 을 거쳐** WEIGH 로 내려와 잰다.
 
     같은 그릇을 같은 WEIGH 자세에서 재도, 집어 올린 자리에서 바로 재면 −113 g · HOME 을 거쳐 재면 −23 g
-    (06:54:05 / 06:55:17 · 1분 간격 · 90 g 차). 관절 토크로 힘을 추정하는 로봇이라 마지막 이동 이력이 값에 남는다.
+    (1분 간격 · 90 g 차). 관절 토크로 힘을 추정하는 로봇이라 마지막 이동 이력이 값에 남는다.
     기준값 도구(rig_f2 empty)·털기 뒤 재측정은 원래 HOME 을 거쳤으므로 첫 측정만 이 길을 안 타고 있었다.
     """
     r = Rec(weights=[180.0])
@@ -926,7 +926,7 @@ def test_weigh_goes_via_home_first(monkeypatch):
     assert stations == ['HOME', 'WEIGH'], stations
 
 
-# ────────────────────────────────── 🔑 놓쳤는지는 **폭**이 답한다 (9/22 저녁 · 영점 이동)
+# ────────────────────────────────── 🔑 놓쳤는지는 **폭**이 답한다 (영점 이동)
 _CELL_PRESETS = {'cell': {'presets': {
     'BOWL': {'grip_zero_mm': 10.58, 'grip_width_mm': 2.15, 'width_tol_mm': 0.6},
     'CUP': {'grip_zero_mm': 10.58, 'grip_target_mm': 76.0, 'grip_width_mm': 65.42, 'width_tol_mm': 10.0},
@@ -938,14 +938,14 @@ class RecCell(Rec):
 
     def cfg(self):
         c = dict(CFG)
-        c['cell'] = {**CFG.get('cell', {}), **_CELL_PRESETS['cell']}   # 🔄 stations·motion 은 CFG 것 + presets 덧붙임(깊은 합치기)
+        c['cell'] = {**CFG.get('cell', {}), **_CELL_PRESETS['cell']}   # stations·motion 은 CFG 것 + presets 덧붙임(깊은 합치기)
         return c
 
 
 def test_weigh_low_but_width_says_held_is_not_a_drop(monkeypatch):
     """🚨 무게만 이상하고 **폭으로는 쥐고 있으면** 놓친 게 아니다 — 빈 용기 기준값이 낡은 것이다.
 
-    9/22 18:11 실기: 빈 그릇 기준값 −12 g 를 잰 그 자세에서 −117.5 g 이 읽혔다(그릇 자체는 47 g).
+    실기: 빈 그릇 기준값 −12 g 를 잰 그 자세에서 −117.5 g 이 읽혔다(그릇 자체는 47 g).
     영점이 통째로 밀린 것인데 옛 코드는 GRIP_FAIL 로 막아 통합이 멈췄다.
     """
     r = RecCell(weights=[-100.0], widths=[12.90])        # 12.90 − 10.58 = 2.32 ≈ 2.15 ± 0.6 → 쥐고 있다

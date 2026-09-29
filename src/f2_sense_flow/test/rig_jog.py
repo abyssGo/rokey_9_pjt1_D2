@@ -1,4 +1,4 @@
-"""관절 조그 시험대 — 키 하나에 관절 하나를 조금씩 (민범진 · 9/22 · V-07 기울이기 각도 찾기).
+"""관절 조그 시험대 — 키 하나에 관절 하나를 조금씩 (V-07 기울이기 각도 찾기).
 
     soc && PREWASH_VEL_SCALE=0.3 python3 src/f2_sense_flow/test/rig_jog.py                # 지금 자리에서 시작
     soc && PREWASH_VEL_SCALE=0.3 python3 src/f2_sense_flow/test/rig_jog.py --goto WASTE --kind BOWL   # 자세로 간 뒤 조그

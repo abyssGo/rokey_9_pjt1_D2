@@ -1,16 +1,16 @@
-"""하중 센서 원값 탐침 — 기본은 읽기만(로봇·그리퍼 안 움직임). `--goto` 를 주면 그 자세로 **간 뒤** 읽는다 (민범진 · V-02 · R2).
+"""하중 센서 원값 탐침 — 기본은 읽기만(로봇·그리퍼 안 움직임). `--goto` 를 주면 그 자세로 **간 뒤** 읽는다 (V-02 · R2).
 
     soc && python3 src/cobot_common/test/rig_weigh_probe.py -n 10                           # 지금 자리에서 읽기만
     soc && python3 src/cobot_common/test/rig_weigh_probe.py -n 10 --goto WEIGH --kind BOWL  # 🚨 HOME → WEIGH(티칭 z) 로 가서 읽는다
     soc && python3 src/cobot_common/test/rig_weigh_probe.py -n 10 --goto WEIGH --kind BOWL --dz 77   # 거기서 z +77 (safe_z 235 자리)
     (용기를 쥔 채면 --carrying 을 붙인다 → 들고 가는 속도)
 
-R2(9/22): 툴 무게 등록(ENV-05) 뒤 두 높이(z 158 · z 235) × 빈손·그릇 을 비교한다 — 자세별 차이가 어제(9 g vs 68 g)보다 줄었나.
+R2: 툴 무게 등록(ENV-05) 뒤 두 높이(z 158 · z 235) × 빈손·그릇 을 비교한다 — 자세별 차이가 등록 전(9 g vs 68 g)보다 줄었나.
 
 --tool-force: 같은 자리에서 **툴 힘센서 Fz(BASE · N)** 도 같이 읽는다 — 하중 추정치(get_workpiece_weight)가 ±35 g 널뛰면
-    (9/22 z 235 · 5 s 정지 뒤에도 74 → 4 → 36) 힘센서 쪽이 더 잔잔한지 본다. 1 N ≈ 102 g. 읽기 전용(force.read_force 와 같은 API).
+    (z 235 · 5 s 정지 뒤에도 74 → 4 → 36) 힘센서 쪽이 더 잔잔한지 본다. 1 N ≈ 102 g. 읽기 전용(force.read_force 와 같은 API).
 
-왜: 9/21 첫 실기에서 그릇을 쥔 채 `get_workpiece_weight()` 가 "0.1, 0.0, 0.0" 으로 읽혔다.
+왜: 첫 실기에서 그릇을 쥔 채 `get_workpiece_weight()` 가 "0.1, 0.0, 0.0" 으로 읽혔다.
     weigh.py 는 소수 첫째 자리까지만 찍어서 **단위(kg 인지 g 인지)** 를 알 수 없었다.
     여기서는 소수 4자리 원값과 시각을 그대로 보여 준다. 판정하지 않는다.
 """
@@ -35,7 +35,7 @@ def main():
     a = ap.parse_args()
     cc.init('rig_weigh_probe')
     log = cc.io_node().get_logger()
-    from f2_sense_flow.preflight import require_controller     # 🆕 TS-07 — 움직이기 전 툴·TCP 확인 (f2 패키지의 문지기)
+    from f2_sense_flow.preflight import require_controller     # TS-07 — 움직이기 전 툴·TCP 확인 (f2 패키지의 문지기)
     require_controller(cc.io_node(), cc.cfg(), log)
     vals = []
     fzs = []
@@ -49,7 +49,7 @@ def main():
             try:
                 up = float(cc.move_to(a.goto, a.carrying, a.kind) or 0.0)
             except cc.MoveIncomplete:
-                # 🚨 9/22 11:22 실기: WEIGH.BOWL 로 가다 그릇이 바닥에 닿아 46.6 mm 앞에서 섰다 — 어디서 섰는지
+                # 🚨 실기: WEIGH.BOWL 로 가다 그릇이 바닥에 닿아 46.6 mm 앞에서 섰다 — 어디서 섰는지
                 #    숫자가 없어서 원인을 못 짚었다. 로봇은 움직이지 않고 **지금 자세만** 찍고 그대로 올린다.
                 log.error('🚨 이동이 도중에 섰다 — 로봇을 움직이지 않는다. 멈춘 자세: ' + _pose_txt(d))
                 raise

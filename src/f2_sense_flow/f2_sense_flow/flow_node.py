@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""flow_node — PreWash-Cell 의 메인 프로그램 (민범진). 통신 배선만 맡는다.
+"""flow_node — PreWash-Cell 의 메인 프로그램. 통신 배선만 맡는다.
 
 이 셀에서 노드는 둘뿐이다: flow_node(여기)와 hmi_bridge(F4 · HMI 브리지).
 f1·f2·f3 는 노드가 아니라 그냥 함수이고, 이 파일의 메인 스레드가 차례로 부른다.
@@ -234,7 +234,7 @@ def main():
     except Exception:                                # noqa: BLE001
         # 여기까지 온 예외는 flow 의 보호를 모두 지나온 것이다(설정·초기화·구조 문제).
         # 트레이스백을 그대로 남겨 원인을 알 수 있게 하고, 정리는 finally 가 한다.
-        # 노드를 못 쓸 수도 있는 자리라 rclpy 의 이름 있는 로거를 쓴다(AGENTS §4: print 금지).
+        # 노드를 못 쓸 수도 있는 자리라 rclpy 의 이름 있는 로거를 쓴다(print 금지).
         rclpy.logging.get_logger('flow_node').error(
             'flow_node 를 계속할 수 없다\n' + traceback.format_exc())
         raise

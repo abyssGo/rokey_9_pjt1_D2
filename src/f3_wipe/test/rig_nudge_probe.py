@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""넛지 감지 사전 확인 — start_nudge_watch()/check_nudge() 가 실기에서 맞는지만 본다 (박진용 9/23).
+"""넛지 감지 사전 확인 — start_nudge_watch()/check_nudge() 가 실기에서 맞는지만 본다.
 
 로봇 팔은 움직이지 않는다(`init(robot=False)`) — 힘 센서만 본다. 확인 없이 바로 돈다.
 

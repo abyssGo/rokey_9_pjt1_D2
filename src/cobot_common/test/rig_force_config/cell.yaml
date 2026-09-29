@@ -1,5 +1,5 @@
-# rig_force.py 전용 시험 설정 — 🚨 Virtual 시험 값. 팀 cell.yaml(한석형) 이 아니다.
-# 키 이름은 팀 cell.yaml 과 같다(force.py 머리말). cell.force 실기 값은 V-03 결과로 박진용이 그 절만 PR 한다.
+# rig_force.py 전용 시험 설정 — 🚨 Virtual 시험 값. 팀 cell.yaml 이 아니다.
+# 키 이름은 팀 cell.yaml 과 같다(force.py 머리말). cell.force 실기 값은 V-03 결과로 정한다.
 cell:
   limits:
     safe_z_mm: 0.0              # rig 가 작업 높이(시작 자세 − approach_down_mm)로 덮어쓴다(시험 전용)
@@ -10,7 +10,7 @@ cell:
     acc_tcp_max_mm_s2: 800
     vel_joint_max_deg_s: 100
     acc_joint_max_deg_s2: 200
-    move_timeout_s: 30.0        # PR #34(이동 함수 비동기화)로 새로 필요해진 값
+    move_timeout_s: 30.0        # 이동 함수 비동기화(V-24)로 새로 필요해진 값
   force:
     compliance_stx: [3000, 3000, 500, 200, 200, 200]   # 순응 강성 N/m · Nm/rad (X·Y·Z 0~20000, 회전 0~400) — Z 를 부드럽게
     contact_step_mm: 2.0        # contact_down 한 단계

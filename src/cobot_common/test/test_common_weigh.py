@@ -86,9 +86,9 @@ def fake(monkeypatch):
     return install
 
 
-# ────────────────────────────────── 🚨 부호 있는 Fz — 무게 = −Fz × 101.97 (9/22 실기 · ⑥)
+# ────────────────────────────────── 🚨 부호 있는 Fz — 무게 = −Fz × 101.97 (실기 · ⑥)
 def test_fz_sign_and_unit(fake):
-    """9/22: 그릇+107 g 이 Fz −0.79 N → +80.6 g. 빈손 +0.87 N(편향) → −88.7 g. 부호를 버리면(|Fz|) 둘을 구분 못 한다."""
+    """실기: 그릇+107 g 이 Fz −0.79 N → +80.6 g. 빈손 +0.87 N(편향) → −88.7 g. 부호를 버리면(|Fz|) 둘을 구분 못 한다."""
     class Raw(FakeDsr):
         def get_tool_force(self, ref=None):
             return [0.1, -0.2, self.values.pop(0), 0.0, 0.0, 0.0]
@@ -104,7 +104,7 @@ def test_negative_weight_is_kept(fake):
     assert W.weigh(3) == pytest.approx(-41.0)
 
 
-# ────────────────────────────────── 🚨 읽기 간격 — 갱신 전에 다시 읽으면 같은 값 (9/22 12:12)
+# ────────────────────────────────── 🚨 읽기 간격 — 갱신 전에 다시 읽으면 같은 값 (실기)
 def test_sleeps_between_samples_not_before_first(fake, monkeypatch):
     slept = []
     monkeypatch.setattr(W.time, 'sleep', lambda s: slept.append(s))
@@ -203,7 +203,7 @@ def test_individual_values_are_logged(fake):
     assert any('220.0' in m and '221.0' in m and '222.0' in m for m in info)
 
 
-# ────────────────────────────────── 🔗 케이블 장력 경고 — 표본 퍼짐 (9/22)
+# ────────────────────────────────── 🔗 케이블 장력 경고 — 표본 퍼짐
 def test_jitter_warns_about_cable(fake):
     """**떨림**(추세를 뺀 폭)이 크면 케이블 장력 경고 — 값은 그대로 중앙값."""
     jumpy = [0, 70, 5, 75, 10, 65, 0, 70, 5, 75]                  # 위아래로 튄다 · 흐름은 거의 0
@@ -214,7 +214,7 @@ def test_jitter_warns_about_cable(fake):
 
 
 def test_steady_slide_is_drift_not_cable(fake):
-    """🚨 한 방향으로 미끄러지는 것은 **영점 흐름**이지 케이블이 아니다 (9/22 18:11 거짓 경보).
+    """🚨 한 방향으로 미끄러지는 것은 **영점 흐름**이지 케이블이 아니다 (실기 거짓 경보).
 
     옛 코드는 퍼짐 하나만 봐서 이 경우에도 '케이블 장력' 이라고 했다.
     """

@@ -3,8 +3,8 @@
 
     python3 -m pytest -q src/f3_wipe/test/test_f3_wipe_bowl.py
 
-9/21: wipe_bowl 은 9/20 실기 확정본 rig_v03(src/cobot_common/test/rig_v03.py)의 실행 순서·명령을 그대로 옮겼다(두산 명령은 같은 일을 하는 cc 함수로 — AGENTS 규칙 4).
-바꾼 것은 박진용 지시 세 가지: 빠른 하강 140 mm · 바닥 판정 3 N · 곧게 올라오기 = 빠른 하강 속도.
+wipe_bowl 은 실기 확정본 rig_v03(src/cobot_common/test/rig_v03.py)의 실행 순서·명령을 그대로 옮겼다(두산 명령은 같은 일을 하는 cc 함수로).
+바꾼 것은 세 가지: 빠른 하강 140 mm · 바닥 판정 3 N · 곧게 올라오기 = 빠른 하강 속도.
 """
 import copy
 import math
@@ -89,7 +89,7 @@ class FakeRobot:
         self.pose = [self.pose[0] + dx, self.pose[1] + dy, self.pose[2] + dz] + self.pose[3:]
 
     def move_rel(self, dx, dy, dz, frame, *, vel_mm_s=None, acc_mm_s2=None):
-        """빠른 하강·올라오기 — wipe.py 가 이미 vel_scale 을 곱해서 넘긴다(컵과 같은 방식, 박진용 9/22)."""
+        """빠른 하강·올라오기 — wipe.py 가 이미 vel_scale 을 곱해서 넘긴다(컵과 같은 방식)."""
         self.calls.append(('movel', [dx, dy, dz, 0.0, 0.0, 0.0], vel_mm_s, acc_mm_s2, self.REL))
         self._chk('movel')
         self.pose = [self.pose[0] + dx, self.pose[1] + dy, self.pose[2] + dz] + self.pose[3:]
@@ -196,7 +196,7 @@ def _names(r):
 
 
 def _ended_home(r):
-    """끝: … → 곧게 호출된 높이로(movel REL +) — movej 없음(박진용 9/22 3차, soap이 이미 데려다 놨다는 전제)."""
+    """끝: … → 곧게 호출된 높이로(movel REL +) — movej 없음(soap이 이미 데려다 놨다는 전제)."""
     moves = [c for c in r.calls if c[0] in ('movel', 'movej')]
     return bool(moves) and moves[-1][0] == 'movel' and moves[-1][4] == r.REL and moves[-1][1][2] > 0
 
@@ -205,15 +205,15 @@ def test_order_is_rig_v03(rb):
     r = wipe.wipe_bowl()
     assert r.ok and r.code == OK
     n = _names(rb)
-    assert n[0] == 'movel'                                                # movej 없음 — 호출되자마자 바로 하강(박진용 9/22 3차)
-    # 🔸 순응은 contact_down(keep_compliance=True) 안에서 켜진 채로 넘어온다(박진용 9/22) — 여기서 따로 껐다 켜지 않는다
+    assert n[0] == 'movel'                                                # movej 없음 — 호출되자마자 바로 하강
+    # 🔸 순응은 contact_down(keep_compliance=True) 안에서 켜진 채로 넘어온다 — 여기서 따로 껐다 켜지 않는다
     assert (n.index('contact_down') < n.index('spiral') < n.index('force_on')
             < n.index('movec') < n.index('release_force'))
     assert 'force_off' in n and _ended_home(rb)
 
 
 def test_values_same_as_rig_v03_except_four(rb):
-    """하강 140 mm 66 mm/s·132(컵과 같은 방식으로 vel_scale 적용, 박진용 9/22) · 바닥 30 mm·3 N·40 s · 나선 2.8바퀴·14 mm·3 s(속도 0)."""
+    """하강 140 mm 66 mm/s·132(컵과 같은 방식으로 vel_scale 적용) · 바닥 30 mm·3 N·40 s · 나선 2.8바퀴·14 mm·3 s(속도 0)."""
     wipe.wipe_bowl()
     down = [c for c in rb.calls if c[0] == 'movel'][0]
     assert down[1][2] == -140.0 and down[2] == pytest.approx(66.0) and down[3] == pytest.approx(132.0)
@@ -266,7 +266,7 @@ def test_bottom_not_found(rb):
 
 
 def test_tool_lost_detected_before_spiral(rb, monkeypatch):
-    """9/23: soap 이 넘긴 기준 폭보다 크게 벗어나면(바닥 찾은 뒤 나선 전) TOOL_LOST — FORCE_LIMIT 과는 별개 코드."""
+    """soap 이 넘긴 기준 폭보다 크게 벗어나면(바닥 찾은 뒤 나선 전) TOOL_LOST — FORCE_LIMIT 과는 별개 코드."""
     monkeypatch.setattr(wipe, '_tool_baseline_mm', 20.0, raising=False)
     orig_contact_down = rb.contact_down
 
@@ -278,14 +278,14 @@ def test_tool_lost_detected_before_spiral(rb, monkeypatch):
     monkeypatch.setattr(wipe.cc, 'contact_down', dropped, raising=False)
     r = wipe.wipe_bowl()
     assert not r.ok and r.code == TOOL_LOST
-    # 🚨 9/23 실기 사고: 놓친 뒤 "실패했으니 원래 높이로 올라오기"까지 하면 빈 그리퍼로 더 움직인다 —
+    # 🚨 실기 사고: 놓친 뒤 "실패했으니 원래 높이로 올라오기"까지 하면 빈 그리퍼로 더 움직인다 —
     #    TOOL_LOST 는 감지된 그 자리에 그대로 둔다(올라오지 않는다).
     assert 'spiral' not in _names(rb) and not _ended_home(rb)
     assert 'movec' not in _names(rb)                          # 나선 이후(벽면)로도 안 갔다
 
 
 def test_tool_lost_during_fast_descend_halts_immediately(rb, monkeypatch):
-    """9/23: 체크 지점이 없는 단일 move_rel(빠른 하강) 도중 놓쳐도 감시 스레드가 halt() 로 그 자리에서 세운다."""
+    """체크 지점이 없는 단일 move_rel(빠른 하강) 도중 놓쳐도 감시 스레드가 halt() 로 그 자리에서 세운다."""
     import time as _t
 
     monkeypatch.setattr(wipe, '_tool_baseline_mm', 20.0, raising=False)
@@ -313,7 +313,7 @@ def test_tool_lost_during_fast_descend_halts_immediately(rb, monkeypatch):
 
 
 def test_wipe_bowl_sets_its_own_baseline_without_soap(rb, monkeypatch):
-    """9/23: TOOL_LOST 뒤 flow 는 soap() 없이 wipe_bowl() 만 재시도한다(재PICK 후) —
+    """닦기 재시도(E61 · 힘 상한·시간 초과)는 soap() 없이 wipe_bowl() 만 다시 부른다 —
     이 함수 혼자서도 자기가 쥔 폭을 기준으로 놓침을 잡아야 한다(soap() 가 준 기준에 기대면 안 된다)."""
     assert wipe._tool_baseline_mm is None            # soap() 를 거치지 않았다 — fixture 가 리셋해 둔 상태
     rb.width = 30.0                                  # 이번에 실제로 쥔 폭(soap 을 안 거쳤으니 임의값)
@@ -372,13 +372,13 @@ def test_force_log_saved(rb):
 
 
 def test_over_total_time_is_timeout_and_goes_home(rb):
-    """전체 duration_s(120 s) 상한은 남긴다(황인재 9/22) — 넘으면 TIMEOUT, 끄고 올라와 HOME."""
+    """전체 duration_s(120 s) 상한은 남긴다 — 넘으면 TIMEOUT, 끄고 올라와 HOME."""
     rb.cfg_['f3']['wipe_bowl']['duration_s'] = -1
     r = wipe.wipe_bowl()
     assert r.code == TIMEOUT and _ended_home(rb)
 
 
-# ------------------------------------------------------------------ 🔧 9/23 17:43 실기 — f2.slip_tol_mm 이 종류별 dict 여도 툴 놓침 감시가 살아야 한다
+# ------------------------------------------------------------------ 실기 — f2.slip_tol_mm 이 종류별 dict 여도 툴 놓침 감시가 살아야 한다
 def test_tool_lost_tolerance_accepts_per_kind_dict(monkeypatch):
     class _CC:
         def cfg(self): return {'f2': {'slip_tol_mm': {'BOWL': 1.0, 'CUP': 1.5}}}

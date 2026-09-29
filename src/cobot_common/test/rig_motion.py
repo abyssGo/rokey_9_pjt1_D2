@@ -3,7 +3,7 @@
 """INF-02 단독 시험 — 이동 함수(move_to · move_rel · move_joint_rel)를 Virtual 에서 연속으로 돌린다. 🚨 Virtual 전용.
 
 실행 (저장소 루트에서)
-    rosinfo                                                  # 🚨 RANGE=LOCALHOST(격리) 확인 — AGENTS 규칙 13
+    rosinfo                                                  # 🚨 RANGE=LOCALHOST(격리) 확인
     터미널 1:  sod && sodvir                                  (이미 떠 있으면 그대로 쓴다 — 두 개를 띄우지 않는다)
     터미널 2:  soc && python3 src/cobot_common/test/rig_motion.py
 
@@ -54,7 +54,7 @@ def main() -> int:
         tol, jtol = p['pos_tol_mm'], p['joint_tol_deg']
         for rnd in range(1, p['rounds'] + 1):
             log.info(f'──── {rnd}/{p["rounds"]} 바퀴 ────')
-            # move_to: 관절 자세 · 직교 자세 · 낮은 자세(9/20 E7: 위로 올리지 않고 곧장) · 낮은 곳에서 출발
+            # move_to: 관절 자세 · 직교 자세 · 낮은 자세(E7: 위로 올리지 않고 곧장) · 낮은 곳에서 출발
             up = cc.move_to('HOME', False)
             check('move_to HOME', up == 0.0 and near(posj(), cell['stations']['HOME']['posj'], jtol))
             weigh = cell['stations']['WEIGH']['posx']

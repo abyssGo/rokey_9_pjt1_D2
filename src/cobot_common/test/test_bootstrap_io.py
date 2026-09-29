@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """통신 노드 스레드 시험 — 드라이버 없이(robot=False) 돈다.  실행: soc && python3 -m pytest src/cobot_common/test/test_bootstrap_io.py
 
-9/19 PR #9 검토에서 발견: 콜백 하나의 예외로 통신 스레드가 끝나면 /flow/state 가 멈추고 정지 버튼이 먹지 않는다.
+검토에서 발견: 콜백 하나의 예외로 통신 스레드가 끝나면 /flow/state 가 멈추고 정지 버튼이 먹지 않는다.
 """
 import time
 
@@ -69,7 +69,7 @@ def test_shutdown_ends_io_thread_and_allows_reinit():
         cc.shutdown()
 
 
-# ------------------------------------------------------------------ setup_io 훅 실패 (PR #17 뒤 발견)
+# ------------------------------------------------------------------ setup_io 훅 실패
 def _broken_hook(node):
     raise ModuleNotFoundError("No module named 'onrobot_rg_msgs'")     # ws_dsr 이 없는 PC 에서 gripper 훅이 내는 오류
 

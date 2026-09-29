@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""HMI 그림 만들기 — 코드로 그린 등각 일러스트(황인재 9/21 · Claude 디자인 시안 승인).
+"""HMI 그림 만들기 — 코드로 그린 등각 일러스트.
 
     cd src/f4_hmi/web && npm run illust        (= python3 illust/build.py)
 
   만드는 것(손으로 고치지 않는다 — 그림을 바꾸려면 illust/*.py 를 고치고 다시 돌린다)
     public/illust/steps/<단계>-<BOWL|CUP>.svg   단계 그림 18장 (320 × 240)
-    public/illust/icons/<이름>.svg               숫자 패널 아이콘 8개 (96 × 96)
+    public/illust/icons/<이름>.svg               숫자 패널 아이콘 9개 (96 × 96) — brush · cable · robot 3개는 손으로 넣은 SVG(여기서 만들지 않는다)
     app/lib/palletArt.js                          팔레트 조각 — 칸마다 적재됨/넣는 중/비어 있음
 """
 import json

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""hmi_bridge — 실행 입구. ROS 쪽 귀(RosLink) + 웹 쪽 입(FastAPI/uvicorn)을 한 프로그램에서 띄운다. 담당 황인재
+"""hmi_bridge — 실행 입구. ROS 쪽 귀(RosLink) + 웹 쪽 입(FastAPI/uvicorn)을 한 프로그램에서 띄운다.
 
     ros2 run f4_hmi hmi_bridge      →  http://localhost:8000  (포트는 params.yaml 의 hmi.port)
 

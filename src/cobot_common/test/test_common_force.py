@@ -86,7 +86,7 @@ class FakeDsr:
             self.pos = list(pos)
         return self._r('movel')
 
-    def amovel(self, *a, **kw):                     # V-24(9/20): motion.py 는 비동기 이동을 보내고 check_motion 으로 끝을 기다린다
+    def amovel(self, *a, **kw):                     # V-24: motion.py 는 비동기 이동을 보내고 check_motion 으로 끝을 기다린다
         return self.movel(*a, **kw)                 #   가짜는 보내는 즉시 도착한 것으로 친다 → 아래 check_motion 이 바로 0
 
     def check_motion(self):
@@ -97,7 +97,7 @@ class FakeDsr:
 
     motion = 0
     starting = 0
-    never_starts = False                            # True 면 명령을 받고도 안 움직인다 (9/21 실기 증상 재현용)
+    never_starts = False                            # True 면 명령을 받고도 안 움직인다 (실기 증상 재현용)
 
     def amove_spiral(self, rev=None, rmax=None, lmax=None, vel=None, acc=None, time=None, axis=None, ref=None):
         self.spiral = dict(rev=rev, rmax=rmax, lmax=lmax, vel=vel, acc=acc, time=time, axis=axis, ref=ref)
@@ -188,7 +188,7 @@ def test_contact_down_stops_at_contact(robot):
 
 
 def test_contact_down_ignores_tool_weight_offset(robot):
-    """공중에서도 Fz 가 나오는 툴(솔·수세미 무게)이라도 내려가기 전에 접촉으로 보지 않는다 (9/20 실기)."""
+    """공중에서도 Fz 가 나오는 툴(솔·수세미 무게)이라도 내려가기 전에 접촉으로 보지 않는다 (실기)."""
     d = robot(z=400.0, surface_z=395.0, k_n_per_mm=1.0)
     d.offset_fz = -5.0                                                          # 공중에서도 |Fz| 5 N
     depth, f = force.contact_down(max_depth=20.0, limit=3.0)
@@ -292,7 +292,7 @@ def test_periodic_search_axes_and_repeat(robot):
 
 
 def test_force_off_tries_both_even_if_first_fails(robot):
-    """release_force 가 실패해도 순응 해제까지 시도한다 (#20 검토 1) — 안 그러면 safe_retreat 의 후퇴가 막힌다."""
+    """release_force 가 실패해도 순응 해제까지 시도한다 — 안 그러면 safe_retreat 의 후퇴가 막힌다."""
     d = robot(fail={'release_force'})
     force.force_on('z', 4.0, 10.0)
     d.calls.clear()
@@ -310,7 +310,7 @@ def test_read_force_failure(robot):
 
 # ------------------------------------------------------------------ 닦기 접촉 모션 (나선 · 원호) — F3-02 가 cc.* 로만 부른다
 def test_move_spiral_uses_time_not_velocity(robot):
-    """🚨 속도로 부르면 드라이버가 멈춘다 → vel·acc 는 0, 시간으로만 (중급1 p.69 · 9/20 실기)."""
+    """🚨 속도로 부르면 드라이버가 멈춘다 → vel·acc 는 0, 시간으로만 (중급1 p.69 · 실기)."""
     d = robot()
     force.move_spiral(2.8, 14.0, 3.0)
     assert d.spiral['vel'] == [0.0, 0.0] and d.spiral['acc'] == [0.0, 0.0]
@@ -321,7 +321,7 @@ def test_move_spiral_uses_time_not_velocity(robot):
 
 
 def test_move_spiral_waits_until_it_starts(robot, monkeypatch):
-    """🚨 9/21 실기: 명령 직후엔 check_motion 이 아직 0 이라 도는 동안 보는 루프가 바로 끝났다 → 시작을 기다린다."""
+    """🚨 실기: 명령 직후엔 check_motion 이 아직 0 이라 도는 동안 보는 루프가 바로 끝났다 → 시작을 기다린다."""
     monkeypatch.setattr(force, '_START_WAIT_S', 0.1)
     d = robot()
     d.never_starts = True
@@ -332,7 +332,7 @@ def test_move_spiral_waits_until_it_starts(robot, monkeypatch):
 
 
 def test_move_spiral_time_ignores_vel_scale(robot):
-    """9/21 실기: ÷ vel_scale(10 s)은 움직이지 않았다 · 9/20 V-03 에서 돈 3 s 그대로 준다."""
+    """실기: ÷ vel_scale(10 s)은 움직이지 않았다 · V-03 에서 돈 3 s 그대로 준다."""
     cfg = copy.deepcopy(CFG)
     cfg['run'] = {'vel_scale': 0.3}
     d = robot(cfg)
@@ -377,7 +377,7 @@ def test_where_and_motion_done(robot):
 
 
 def test_safe_retreat_retreats_even_if_release_fails(robot):
-    """🚨 힘 해제가 실패해도 후퇴는 한다 — 툴을 용기 안에 두고 오면 더 위험하다(PM 검토 9/20)."""
+    """🚨 힘 해제가 실패해도 후퇴는 한다 — 툴을 용기 안에 두고 오면 더 위험하다."""
     d = robot(fail={'release_force'}, z=100.0)
     force.force_on('z', 4.0, 10.0)
     with pytest.raises(RuntimeError):
@@ -386,7 +386,7 @@ def test_safe_retreat_retreats_even_if_release_fails(robot):
 
 
 def test_contact_down_does_not_count_paused_time(robot, monkeypatch):
-    """사람이 멈춰 둔 동안은 시간 상한을 세지 않는다(PM 요청 9/20)."""
+    """사람이 멈춰 둔 동안은 시간 상한을 세지 않는다."""
     cfg = copy.deepcopy(CFG)
     cfg['cell']['limits']['timeout_s'] = 0.0                            # 안 멈췄으면 첫 바퀴에 시간 초과
     robot(cfg, surface_z=None)                                          # 바닥이 없어 계속 내려간다
@@ -494,7 +494,7 @@ def test_wait_robot_ready_false_on_timeout(robot):
     assert force.wait_robot_ready(0.05) is False
 
 
-# ------------------------------------------------------------------ 🆕 9/23 step_mm — 마지막 감시 구간을 한 걸음에(황인재 튜닝 #2·#5)
+# ------------------------------------------------------------------ step_mm — 마지막 감시 구간을 한 걸음에
 def test_contact_down_step_mm_takes_the_watch_in_one_step(robot):
     d = robot(z=400.0, surface_z=None)
     depth, _ = force.contact_down(max_depth=5.0, limit=3.0, step_mm=5.0)
@@ -529,7 +529,7 @@ def test_recover_robot_if_needed_handles_mock_gracefully(robot):
     assert force.recover_robot_if_needed(timeout_s=0.05) is False
 
 
-# ------------------------------------------------------------------ 🆕 9/24 E48 — 2번 치기(taps · window_s)
+# ------------------------------------------------------------------ E48 — 여러 번 치기(taps · window_s)
 def _push_sequence(monkeypatch, samples):
     """(시각, Fz) 목록을 차례로 돌려준다 — 한 check_nudge 호출이 read_force 1번 · monotonic 1번."""
     times = iter([t for t, _ in samples]); forces = iter([f for _, f in samples])

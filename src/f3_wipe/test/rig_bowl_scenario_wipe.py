@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""그릇 한 바퀴 실기 — F1 실제 제품 함수(f1_handling.pick·place·tool·rack_place) + F3 자리에 soap·wipe_bowl (박진용 9/22 5차).
+"""그릇 한 바퀴 실기 — F1 실제 제품 함수(f1_handling.pick·place·tool·rack_place) + F3 자리에 soap·wipe_bowl.
 
-    cd ~/cobot1/rokey_9_pjt1_D2 && soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_bowl_scenario_wipe.py
-    cd ~/cobot1/rokey_9_pjt1_D2 && soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_bowl_scenario_wipe.py --step
+    # 저장소 루트에서
+    soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_bowl_scenario_wipe.py
+    soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_bowl_scenario_wipe.py --step
 
-🔧 9/22 5차: 예전엔 F1 파지·이송 로직을 이 파일에 손으로 베껴 뒀는데, F1 쪽(한석형·황인재·민범진) 좌표·방식이
-   바뀔 때마다(9/22 하루에만 세 번) 여기도 매번 다시 맞춰야 했다. `f1_handling.pick()`·`place()`·`tool()`·
-   `rack_place()`가 이미 **cell.yaml 만 보고 동작하는 진짜 제품 함수**(PR #74)라, 이제 그걸 그대로 부른다 —
+예전엔 F1 파지·이송 로직을 이 파일에 손으로 베껴 뒀는데, F1 쪽 좌표·방식이
+   바뀔 때마다 여기도 매번 다시 맞춰야 했다. `f1_handling.pick()`·`place()`·`tool()`·
+   `rack_place()`가 이미 **cell.yaml 만 보고 동작하는 진짜 제품 함수**라, 이제 그걸 그대로 부른다 —
    F1 쪽 설정이 바뀌어도 이 파일은 안 바꿔도 된다. 좌표·자리 이름은 전부 cell.yaml 에 있다(patch 없음).
 """
 import argparse
@@ -71,8 +72,8 @@ def _with_nudge_retry(step_name, fn, *args):
 
     정지 → nudge_settle_s(팔 완전히 멈추기) → 넛지 감시(nudge_poll_s 간격 — 너무 빠르면 하트비트 못 보내 SAFE_STOP) →
     감지되면 STANDBY 인지 보고 아니면 set_robot_control 로 직접 풀어준다(RS1 뒤에도 저절로 STANDBY 로
-    안 돌아왔다 — 9/23 실기 확인. 그냥 기다리기만 하면 다음 이동이 SAFE_STOP 으로 또 막혔다) →
-    f1.tool(SPONGE, PICK) 재호출 → 끊긴 함수(fn) 다시. 진짜 flow_node 통합은 황인재 몫이다.
+    안 돌아왔다 — 실기 확인. 그냥 기다리기만 하면 다음 이동이 SAFE_STOP 으로 또 막혔다) →
+    f1.tool(SPONGE, PICK) 재호출 → 끊긴 함수(fn) 다시. 실제 공정의 같은 절차는 flow_node(flow.py)가 한다.
     """
     d = dsr()
     r = fn(*args)
