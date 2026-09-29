@@ -221,146 +221,6 @@ def _regrip(bed: str, kind: str) -> PickResult:
     return PickResult(width_mm=width, attempts=1)
 
 
-def _place_isolate_bowl() -> PlaceResult:
-    """BOWL 격리 전용 실기 검증 경로.
-
-    시작 전제:
-        J2~J6 = HOME 형상
-        J1은 현재 위치여도 됨
-
-    경로:
-        J1 only -> ISOLATE.BOWL J1(-210)
-        BASE Z -isolate_drop_mm
-        release
-        BASE Z +isolate_drop_mm
-        J1 only -> 0
-
-    ISOLATE.BOWL의 나머지 관절은 HOME 형상이어야 한다.
-    CUP 격리 경로에는 영향을 주지 않는다.
-    """
-    cfg = cc.cfg()
-    cell = _cell()
-
-    stations = _need(
-        cell,
-        'stations',
-        'cell',
-    )
-
-    isolate = _need(
-        stations,
-        'ISOLATE',
-        'cell.stations',
-    )
-
-    bowl = _need(
-        isolate,
-        'BOWL',
-        'cell.stations.ISOLATE',
-    )
-
-    target_j = [
-        float(v)
-        for v in _need(
-            bowl,
-            'posj',
-            'cell.stations.ISOLATE.BOWL',
-        )
-    ]
-
-    drop = float(
-        _need(
-            cfg.get('f1'),
-            'isolate_drop_mm',
-            'f1',
-        )
-    )
-
-    now = [
-        float(v)
-        for v in cc.joints()
-    ]
-
-    # J1만 회전하는 실기 검증 경로이므로
-    # J2~J6가 HOME 형상이 아니면 진입하지 않는다.
-    expected = [
-        0.0,
-        90.0,
-        0.0,
-        90.0,
-        0.0,
-    ]
-
-    for joint_no, actual, wanted in zip(
-        range(2, 7),
-        now[1:],
-        expected,
-    ):
-        if abs(actual - wanted) > 3.0:
-            raise RuntimeError(
-                f'ISOLATE 진입 거부 — '
-                f'J{joint_no}={actual:.1f}°, '
-                f'예상 {wanted:.1f}°. '
-                'J1만 움직이는 경로가 아니다.'
-            )
-
-    target_j1 = float(target_j[0])
-    delta = target_j1 - now[0]
-
-    _log().info(
-        f'BOWL ISOLATE — '
-        f'J1 {now[0]:.1f}° '
-        f'→ {target_j1:.1f}° '
-        f'({delta:+.1f}°)'
-    )
-
-    # ① J1만 -210°
-    cc.move_joint_rel(
-        1,
-        delta,
-        carrying=True,
-    )
-
-    # ② 격리통 쪽으로 수직 하강
-    cc.move_rel(
-        0.0,
-        0.0,
-        -drop,
-        'BASE',
-    )
-
-    # ③ BOWL 놓기
-    cc.release()
-
-    # ④ 빈손으로 같은 거리 복귀
-    cc.move_rel(
-        0.0,
-        0.0,
-        drop,
-        'BASE',
-    )
-
-    # ⑤ J1만 0° 복귀
-    here_j1 = float(
-        cc.joints()[0]
-    )
-
-    cc.move_joint_rel(
-        1,
-        -here_j1,
-        carrying=False,
-    )
-
-    _log().info(
-        'BOWL ISOLATE 완료 — '
-        'RELEASE → Z 복귀 → J1=0'
-    )
-
-    return PlaceResult(
-        offset_mm=0.0
-    )
-
-
 def place(station: str, kind: str = None) -> PlaceResult:
     """놓기 — 성공하면 항상 release 까지 한다. 코드 OK(실패는 예외로 올라간다 · 안착 놓기를 넣으면 SEAT_FAIL · FORCE_LIMIT · TIMEOUT). — F1-01(일반) · F1-05(안착)
 
@@ -369,16 +229,11 @@ def place(station: str, kind: str = None) -> PlaceResult:
       kind(BOWL/CUP) = 종류별 자리(ISOLATE …)에 놓을 때. 스펀지 홈(SPONGE_BED_*)은 point='place' 자세를 쓴다.
       끝점은 티칭한 '놓는 높이'다 — 힘으로 바닥을 찾는 접촉 하강이 아니다(그건 아래 안착 놓기).
       주의: ①·② 가 실패하면(예외) release 하지 않고 그대로 위로 올린다 — 머리말의 '실패를 돌려주는 방식'.
-    BOWL 을 ISOLATE 에 놓을 때만 실기 검증된 J1 단독 회전 경로(_place_isolate_bowl)를 쓴다.
+    ISOLATE 는 그릇·컵 모두 같은 격리 자세(cell.stations.ISOLATE · 관절값)로 곧장 가서 놓는다.
     안착 놓기(F1-05 · 힘 탐색)는 넣지 않았다 — 설계는 SPONGE_BED_B/C 에서 ② 를 force_on(z) 순응 하강 + contact_down 으로 바꾸고,
       깊이 미달이면 periodic_search(cell.beds.*.seat) → 들어가면 release(offset_mm = 보정 거리) / 한도 초과면 들고 후퇴 + SEAT_FAIL.
       지금은 스펀지 홈에서도 위 일반 놓기로 돈다(범위 방어: "단순 놓기부터") — SEAT_FAIL 은 나지 않는다.
     """
-    # BOWL ISOLATE는 실기 검증된 J1-only 경로를 사용한다.
-    # CUP 및 다른 station은 기존 place() 로직 그대로.
-    if station == 'ISOLATE' and kind == 'BOWL':
-        return _place_isolate_bowl()
-
     point = _PLACE_POINT if station in (cc.cfg().get('cell') or {}).get('beds', {}) else None
     clear = float(_need(cc.cfg().get('f1'), 'place_clear_mm', 'params.yaml 의 f1'))   # 값이 없으면 움직이기 전에 KeyError
     up = float(cc.move_to(station, True, kind, point) or 0.0)       # ① 접근점(없으면 끝점)

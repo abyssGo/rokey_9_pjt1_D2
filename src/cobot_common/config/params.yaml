@@ -32,7 +32,6 @@ f1:                                   # ── f1 절 (한석형) ── 값은 
                                       #   접촉 타임아웃 10 s(cell.limits.timeout_s)를 넘겼고(E33), 5 로 줄여 놓기까지 15 s 절약 → 마지막엔 0. 감시를 되살리려면 5
   tool_return_contact_n: 8            # 툴 반납 때 홀더 바닥 접촉 판정 힘, V-08·F1-03 에서 확정
   place_clear_mm: 100                 # 접근점이 없는 자리에 놓은 뒤 위로 빠지는 높이 — 티칭 스크립트의 'z +100'(F1-01). 접근점이 있는 자리는 내려간 만큼 되올라온다
-  isolate_drop_mm: 50                 # 실기: BOWL ISOLATE J1 −210 자세에서 BASE Z −50 후 release
   tool_clear_mm: 100                  # 툴을 집은 뒤·반납한 뒤 홀더에서 수직으로 빠지는 높이(접근점이 없을 때) — F1-03·V-08 에서 확정
   contact_timeout_min_s: 30           # 접촉 감시 하강의 최소 시간 상한(s) — 리허설 0.5 배속에서 솔 반납 contact_down 이 20 mm 를 다 내려갔는데도
                                       #   20 s(10 ÷ 0.5)를 넘겨 TIMEOUT(정책 retry 로 넘어감). 순응 걸음(3 mm)이 ≈3 s 라 20 mm ≈ 21 s — 배속과 무관.
