@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk, weightText,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -661,7 +661,7 @@ function History({ d }) {
                 <td>{clock(e.stamp)}</td>
                 <td>{KIND_KO[e.kind] || e.kind || '-'}</td>
                 <td>{e.zone_id || '-'} → {e.rack_slot ? e.rack_slot.replace('RACK_', '') : e.result === 'ISOLATED' ? '격리' : '-'}</td>
-                <td className="num">{e.weight_before_g || e.weight_after_g ? `${Math.round(e.weight_before_g)} → ${Math.round(e.weight_after_g)} g` : '-'}</td>
+                <td className="num">{weightText(e)}</td>
                 <td>{RESULT_KO[e.result] || e.result}</td>
                 <td>{e.result === 'DONE' ? ((e.attempts || 0) > 1 ? <span className="warn">집기 다시 시도</span> : '-') : why(e)}</td>
                 <td className="num">{e.duration_s ? `${e.duration_s.toFixed(1)} s` : '-'}</td>

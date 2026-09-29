@@ -162,3 +162,10 @@ test('넛지 안내는 넛지로 풀리는 멈춤에만 — 로봇 오류 신호
   assert.ok(!D.nudgeOk(A('OK', '일시 정지 — 운영자 요청')));
 });
 
+
+test('이력 무게 — 0 g 아래(센서 오차)는 0 g 로 · 둘 다 없으면 -', () => {
+  assert.equal(D.weightText({ weight_before_g: -18.1, weight_after_g: -18.1 }), '0 → 0 g');
+  assert.equal(D.weightText({ weight_before_g: 85.5, weight_after_g: 15.8 }), '86 → 16 g');
+  assert.equal(D.weightText({ weight_before_g: 70.6, weight_after_g: -3.2 }), '71 → 0 g');
+  assert.equal(D.weightText({ weight_before_g: 0, weight_after_g: 0 }), '-');
+});

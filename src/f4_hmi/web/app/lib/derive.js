@@ -283,6 +283,15 @@ export function why(e) {
   return CODE_KO[e.code] || e.code || '-';
 }
 
+// 이력의 '무게 전 → 후' — 잔반 무게(= 읽은 값 − 빈 용기 기준값)는 힘 센서 오차(±20~40 g) 때문에 빈 용기면 0 아래로 나올 수 있다.
+//    화면에서는 0 g 아래를 0 g 로 보인다(판정·DB 는 읽은 값 그대로 — 50 g 임계 판정과 버린 잔반 합계에 영향 없음).
+export function weightText(e) {
+  const b = e && e.weight_before_g, a = e && e.weight_after_g;
+  if (!b && !a) return '-';
+  const g = (v) => Math.max(0, Math.round(v || 0));
+  return `${g(b)} → ${g(a)} g`;
+}
+
 // stamp(epoch 초) → 'HH:MM:SS' 현지 시각. 없으면 '-'
 export function clock(stamp) {
   if (!stamp) return '-';
