@@ -1,10 +1,10 @@
-# rig_f2_virtual.py 전용 좌표 — 🚨 팀 cell.yaml(한석형) 이 아니다. Virtual 로봇이 닿는 아무 점이다.
+# rig_f2_virtual.py 전용 좌표 — 🚨 팀 cell.yaml 이 아니다. Virtual 로봇이 닿는 아무 점이다.
 #
 # 왜 따로 두나: 팀 cell.yaml 의 좌표는 아직 비어 있고(티칭 대기), WASTE·RINSE 는
 #   src/cobot_common/test/config_virtual/ 에도 없다. 실기 값이 아니므로 **절대 실기에 쓰지 않는다**
 #   (rig 가 Virtual 이 아니면 실행을 거부한다).
 #
-# 🔄 9/20 결정 E7 — **안전 높이 경유가 없어졌다.** cc.move_to 는 티칭 자세로 곧장 가고,
+# 결정 E7 — **안전 높이 경유가 없어졌다.** cc.move_to 는 티칭 자세로 곧장 가고,
 #   접근점(approach_posx)이 있을 때만 "남은 높이" 를 돌려준다. 이 가상 좌표에는 접근점이 없어 늘 0 이다.
 #   (E7 이전에는 safe_z 350 을 기준으로 WEIGH up=0 / WASTE·RINSE up=50 이 갈리는 것을 봤다.
 #    높이를 갈라 둔 것은 그 흔적이고, 지금은 **티칭 자세 z 에 도착하는가**만 본다)
@@ -23,8 +23,8 @@ cell:
     acc_tcp_max_mm_s2: 800
     vel_joint_max_deg_s: 100      # 🔑 털기 평균 속도(15° / 0.15 s = 100 °/s)가 딱 여기 걸린다
     acc_joint_max_deg_s2: 200     #    → move_joint_rel 이 시간을 늘리고 경고하는지 볼 수 있다
-    move_timeout_s: 30            # 🆕 V-24 에서 생긴 키 — 이동 1번의 상한(일시정지한 시간은 뺀다).
-                                  #    값은 황인재의 Virtual 시험 설정과 같게 맞췄다
+    move_timeout_s: 30            # V-24 에서 생긴 키 — 이동 1번의 상한(일시정지한 시간은 뺀다).
+                                  #    값은 공용 Virtual 시험 설정과 같게 맞췄다
                                   #    (src/cobot_common/test/config_virtual/cell.yaml)
 
   presets:                        # 🟡 시험용 — 확정은 V-01·V-16 (그리퍼는 Virtual 에 없어 가짜로 대체된다)

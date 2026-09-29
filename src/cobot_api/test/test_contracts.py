@@ -12,7 +12,7 @@ def test_result_defaults_and_fail():
 
 def test_check_api_detects_missing_and_wrong_args():
     m = types.SimpleNamespace(
-        pick=lambda zone_id, kind: PickResult(), place=lambda station, kind=None: Result(),   # 9/20: place·move_to 에 kind 선택 인자
+        pick=lambda zone_id, kind: PickResult(), place=lambda station, kind=None: Result(),   # place·move_to 에 kind 선택 인자
         regrip_top=lambda bed, kind: PickResult(),
         move_to=lambda station: Result(),                      # carrying 빠짐
         tool=lambda tool, action: Result())                    # rack_place 없음

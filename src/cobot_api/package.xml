@@ -3,7 +3,7 @@
 <package format="3">
   <name>cobot_api</name>
   <version>3.0.0</version>
-  <description>PreWash-Cell 기능 함수의 약속(정본): 공통 ID·실패 코드·반환 타입·함수 서명. IRD v3.0 §2~5. 담당 황인재(PM). 로봇 코드 없음.</description>
+  <description>PreWash-Cell 기능 함수의 약속(정본): 공통 ID·실패 코드·반환 타입·함수 서명. IRD v3.0 §2~5. 로봇 코드 없음.</description>
   <maintainer email="il1282113@gmail.com">hwang-injae</maintainer>
   <license>Apache-2.0</license>
   <test_depend>python3-pytest</test_depend>

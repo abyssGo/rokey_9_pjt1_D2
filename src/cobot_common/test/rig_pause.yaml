@@ -8,7 +8,7 @@ still_deg: 0.05                 # 이보다 덜 움직이면 "서 있다"
 reach_tol_deg: 0.5
 reach_tol_mm: 1.0
 
-real:                           # --real 일 때 위 값을 덮어쓴다 — 🚨 실기에서 처음 도는 값이라 **작게**(V-24 실기, 9/21)
+real:                           # --real 일 때 위 값을 덮어쓴다 — 🚨 실기에서 처음 도는 값이라 **작게**(V-24 실기)
   long_joint: {joint: 1, delta_deg: 30, time_s: 4.0}     # J1 30° 를 4 s (평균 7.5 deg/s)
   long_line:  {dy_mm: 80, vel_mm_s: 20, acc_mm_s2: 40}   # 옆으로 80 mm (약 4 s) — HOME 주변에서 안전한 거리인지 첫 회에 눈으로 확인
   press_at_s: 1.5               # 이동 시작 뒤 이 시각에 누른다(이동이 짧아 앞당긴다)

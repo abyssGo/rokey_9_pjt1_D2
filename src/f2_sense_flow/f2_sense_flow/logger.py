@@ -7,7 +7,7 @@
    계속돼야 한다. 그래서 이 안에서 예외를 밖으로 내보내지 않고, 부르는 쪽(flow.py)도
    _guard 를 거쳐 부른다. 대신 처음 한 번은 경고를 남긴다(조용히 사라지면 안 된다).
 
-주의: 경로는 상대경로다(AGENTS.md 규칙 7) — `flow.records_path` 의 기본값 `records.csv` 는
+주의: 경로는 상대경로다 — `flow.records_path` 의 기본값 `records.csv` 는
    프로그램을 띄운 자리 기준이다. 런치로 띄우면 런치를 부른 자리에 생긴다.
 """
 import csv
@@ -21,7 +21,7 @@ COLUMNS = [
     'ts',                # 용기 1개가 끝난 시각 (ISO 8601, 초까지)
     'kind',              # BOWL / CUP
     'zone_id',           # 집어 온 반납 구역
-    'attempts',          # 탐색 파지 시도 슬롯 수 (f1.pick)
+    'attempts',          # 시도한 슬롯 수 (고정 슬롯 파지 · f1.pick)
     'rack_slot',         # 넣은 팔레트 칸 (실패면 빈 칸)
     'weight_before_g',   # 털기 전 잔반 무게 (f2.leftover_loop)
     'weight_after_g',    # 털기 뒤 잔반 무게

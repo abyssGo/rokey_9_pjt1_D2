@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 
 STEPS = ('PICK', 'WEIGH', 'SHAKE', 'SEAT', 'SOAP', 'WIPE', 'RINSE', 'RACK')
-ACTIONS = ('isolate', 'next_zone', 'pause', 'pause_retry')   # pause_retry = 멈춘 뒤 그 단계부터 다시 이어 완료(TOOL_LOST·LEFTOVER_REMAIN·케이블 이상 · 실제 flow 의 RETRY_STEP)
+ACTIONS = ('isolate', 'next_zone', 'pause', 'pause_retry')   # pause_retry = 멈춘 뒤 그 단계부터 다시 이어 완료(TOOL_LOST·TOOL_FAIL·LEFTOVER_REMAIN·케이블 이상 · 실제 flow 의 RETRY_STEP — TOOL_LOST 는 실제로 툴 집기부터 · LEFTOVER_REMAIN 은 정책이 pause 일 때)
 DEFAULTS_FILE = '_defaults.yaml'
 OK = 'OK'
 
@@ -150,7 +150,7 @@ def build(scn: dict) -> list:
                     st.update(step='PAUSED')
                     add(fail.get('hold_s', scn['pause_hold_s']), gripping=was_gripping)
                     spent += float(fail.get('hold_s', scn['pause_hold_s']))
-                    if fail.get('resume_message'):                  # 재개 직후 flow 가 잠깐 보내는 문구(케이블: '재개 요청 감지 …' → HMI 비프)
+                    if fail.get('resume_message'):                  # 재개 직후 flow 가 잠깐 보내는 문구(케이블: '재개 — 무게를 다시 재며 케이블을 확인합니다')
                         st.update(step=step, last_code=OK, message=fail['resume_message'])
                         add(float(fail.get('resume_s', 1.5)), wiping=wiping)
                         spent += float(fail.get('resume_s', 1.5))

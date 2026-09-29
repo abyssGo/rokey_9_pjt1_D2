@@ -5,8 +5,7 @@
   <version>3.0.0</version>
   <description>
     PreWash-Cell 메시지 계약(IRD v3.0) 정본 패키지.
-    docs/interfaces/ 의 msg 2 (FlowState · FlowEvent)를 그대로 담는다. 기능 함수의 약속은 cobot_api.
-    필드 추가·삭제·타입 변경은 인터페이스 변경 이슈 → 4명 확인 → PR 로만 한다.
+    msg 2개(FlowState · FlowEvent). 기능 함수의 약속은 cobot_api.
   </description>
   <maintainer email="zldzmfoq100@gmail.com">민범진</maintainer>
   <license>Apache-2.0</license>

@@ -3,7 +3,7 @@
 <package format="3">
   <name>prewash_bringup</name>
   <version>0.1.0</version>
-  <description>PreWash-Cell 런치: prewash.launch.py(PC-A, flow_node 프로세스 1개) · prewash_mock.launch.py(로봇 없이 flow 전부 mock + hmi). SDD §10. 담당 황인재(PM).</description>
+  <description>PreWash-Cell 런치: prewash.launch.py(PC-A, flow_node 프로세스 1개) · prewash_mock.launch.py(로봇 없이 flow 전부 mock + hmi). SDD §10.</description>
   <maintainer email="il1282113@gmail.com">hwang-injae</maintainer>
   <license>Apache-2.0</license>
 

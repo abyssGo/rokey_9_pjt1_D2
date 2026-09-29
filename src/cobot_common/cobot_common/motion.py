@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""이동 함수(저수준) — 담당 황인재 (INF-02). 함수 표는 docs/03_설계_SDD.md §3.1.
+"""이동 함수(저수준) (INF-02). 함수 표는 docs/03_설계_SDD.md §3.1.
 
     import cobot_common as cc
     cc.move_to('WASTE', True, 'BOWL')                  # 잔반통 앞(그릇용 자세)으로 곧장 간다 — 티칭한 자세 그대로 (E7: 안전 높이 경유 없음)
@@ -13,7 +13,7 @@
     cc.pause() · cc.resume()                           # 이동 도중에 즉시 멈췄다가 하던 동작을 이어서 (HMI 일시정지·재개)
     cc.halt()  · cc.clear_halt()                       # 강제정지: 그 자세 그대로 멈추고, 풀기 전까지 새 이동을 내보내지 않는다
 
-이동을 보내는 방식 (V-24a 결과 · 기록 docs/test_logs/20260921_V-24_실기_일시정지_황인재.md)
+이동을 보내는 방식 (V-24a 결과 · 기록은 docs/test_logs/ 색인의 V-24)
     두산의 동기 이동(movej·movel)은 끝날 때까지 드라이버의 통로를 붙잡아 일시정지 요청이 이동이 끝난 뒤에야 처리된다.
     그래서 세 함수 모두 비동기 이동(amovej·amovel)을 보내고 check_motion() 을 짧게 반복해서 물어본다(폴링).
     부르는 쪽에서는 달라진 것이 없다 — 이동이 끝나야 함수가 돌아온다. 일시정지 중에는 돌아오지 않고 재개를 기다린다.
@@ -440,7 +440,7 @@ def _cell_key(section, key):
     except (KeyError, TypeError):
         value = None
     if value is None:                   # 키가 없거나 골격처럼 비어 있음(null)
-        raise KeyError(f'cell.yaml 의 cell.{section}.{key} 가 없거나 비어 있다 — 한석형(cell.yaml) 에 요청. '
+        raise KeyError(f'cell.yaml 의 cell.{section}.{key} 가 없거나 비어 있다 — cell.yaml 에 값을 채운다. '
                        '값이 없으면 로봇을 움직이지 않는다')
     return value
 
@@ -479,7 +479,7 @@ def _select(where, node, kind, point):
         return where, node
     names = [k for k, v in (node or {}).items() if _is_pose(v)] if isinstance(node, dict) else []
     if not names:
-        raise KeyError(f'cell.yaml 의 {where} 에 자세(posj·posx)가 없다 — 한석형(cell.yaml) 에 요청. 값이 없으면 로봇을 움직이지 않는다')
+        raise KeyError(f'cell.yaml 의 {where} 에 자세(posj·posx)가 없다 — cell.yaml 에 값을 채운다. 값이 없으면 로봇을 움직이지 않는다')
     if point not in names:
         raise ValueError(f'{where} 에는 자세가 여러 개다 — point 로 고른다: {names} (받은 값 {point!r})')
     return f'{where}.{point}', node[point]
@@ -499,5 +499,5 @@ def _checked(where, spec):
             raise KeyError(f'cell.yaml 의 {where}.{key} 는 값 6개여야 한다: {pose!r}')
         out[key] = [float(v) for v in pose]
     if not out:
-        raise KeyError(f'cell.yaml 의 {where} 가 비어 있다(아직 안 찍은 자세) — 한석형(cell.yaml) 에 요청. 값이 없으면 로봇을 움직이지 않는다')
+        raise KeyError(f'cell.yaml 의 {where} 가 비어 있다(아직 안 찍은 자세) — cell.yaml 에 값을 채운다. 값이 없으면 로봇을 움직이지 않는다')
     return out

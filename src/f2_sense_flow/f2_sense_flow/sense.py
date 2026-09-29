@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""F2 무게·털기·헹굼 — 민범진 · 모듈 f2_sense_flow.sense
+"""F2 무게·털기·헹굼 — 모듈 f2_sense_flow.sense
 
 약속(정본) : src/cobot_api/cobot_api/contracts.py 의 F2Api
 설계       : docs/02_인터페이스_IRD.md §4 · docs/03_설계_SDD.md §5.3
@@ -9,14 +9,14 @@
   leftover_loop  잰다 → 임계 넘으면 털고 다시 잰다 → 반복 (F2 의 핵심)
   shake          잔반통/수조 위에서 관절을 왕복시켜 턴다
   dip            수조 위에서 내려갔다 올라온다 (주의: 물은 안 쓴다 — 모션만)
-  그 밖에 케이블 장력 이상(CableTightError) 뒤의 넛지 대기·재검증(wait_for_nudge · recheck_cable)을 flow 에 내어 준다.
+  그 밖에 케이블 장력 이상(CableTightError) 뒤의 넛지 대기(wait_for_nudge)를 flow 에 내어 준다.
 
-지킨 것 (SDD §3.2 · AGENTS.md §3·§4)
+지킨 것 (SDD §3.2)
   · 로봇은 `import cobot_common as cc` 로만 부른다. DSR_ROBOT2 직접 import 금지
   · 주의: 숫자(임계·횟수·진폭·깊이)를 코드에 쓰지 않는다 — 값은 params.yaml
     → 실기에서 값이 바뀌어도 YAML 만 고치면 되고 이 파일은 안 바뀐다
   · 실패는 예외가 아니라 Result.fail(코드) 로 돌려준다 (@_as_result 가 보장)
-  · 주의: 어떤 실패에서도 안전 높이로 물러난다 (AGENTS §4). @_as_result 와 _fail() 이 같이 한다 —
+  · 주의: 어떤 실패에서도 안전 높이로 물러난다 (SDD §7). @_as_result 와 _fail() 이 같이 한다 —
     flow.call() 은 예외가 올라올 때만 후퇴하는데 우리는 예외를 삼키기 때문이다
   · 이 함수들은 flow_node 의 메인 스레드에서만 불린다. 여기서 노드를 만들지 않는다
 
@@ -161,7 +161,7 @@ def _quietly(what, fn, *args):
 
 
 def _retreat():
-    """주의: 실패로 끝나기 전에 안전 높이로 물러난다 (AGENTS §4 · SDD §7).
+    """주의: 실패로 끝나기 전에 안전 높이로 물러난다 (SDD §7).
 
     flow.call() 은 예외가 올라올 때만 safe_retreat 를 부른다. 우리는 예외를 Result 로
     바꿔서 돌려주므로(@_as_result) flow 쪽 후퇴가 안 걸린다 → 여기서 직접 해야 한다.
@@ -178,7 +178,7 @@ def _fail(result_cls, code, **kw):
 def _as_result(result_cls):
     """기능 함수의 껍데기 — 예외를 Result.fail(ROBOT_ERROR) 로 바꾸고 안전 높이로 물러난다.
 
-    주의: 기능 함수는 예외를 밖으로 내보내지 않는다(AGENTS §4 · SDD §5.1).
+    주의: 기능 함수는 예외를 밖으로 내보내지 않는다(SDD §5.1).
        KeyboardInterrupt 는 BaseException 이라 여기 안 걸린다 — Ctrl+C 는 그대로 올라가는 게 맞다.
     """
     def deco(fn):
@@ -426,7 +426,7 @@ def leftover_loop(kind: str, max_rounds: int) -> LeftoverResult:
 
     제한: 이 함수 한 덩어리가 flow 기준 한 단계라, 도는 동안 정지 버튼을 못 본다
        (flow 는 단계 사이마다 본다 — SDD §5.1). 중단 훅을 받으려면 서명이 바뀌므로
-       인터페이스 논의가 필요하다(AGENTS §3 규칙 5).
+       인터페이스 논의가 필요하다.
     """
     conf = _f2()
     threshold = _need(conf, 'leftover_threshold_g')
@@ -649,7 +649,7 @@ def dip(station: str, count: int, kind: str) -> Result:
 
     제한: 이 하강은 힘 감시가 없는 자유 공간 이동이다(물 없음 전제). 티칭이 어긋나거나
        수조가 밀리면 용기 바닥이 수조 바닥을 찍는다. cc.contact_down 으로 바꾸면 힘 상한·최대 깊이·
-       타임아웃이 한꺼번에 붙지만 설계 변경이라 팀 확인이 필요하다. 지금은 max_depth_mm 상한으로만 막는다.
+       타임아웃이 한꺼번에 붙지만 설계 변경이라 하지 않았다. 지금은 max_depth_mm 상한으로만 막는다.
     """
     conf = _f2()
     lim = _limits(conf)
@@ -693,13 +693,13 @@ def dip(station: str, count: int, kind: str) -> Result:
     return Result()
 
 
-# ────────────────────────────────── 케이블 넛지(로봇팔 가볍게 밀기) 및 재검증
+# ────────────────────────────────── 케이블 넛지(로봇팔 가볍게 밀기) 대기
 _nudge_armed = False                     # E48: wait_for_nudge 가 cc.start_nudge_watch 를 부른 뒤인가 — 0.2 s 씩 여러 번 불려도 밀기 횟수가 이어지게
 
 
 def wait_for_nudge(conf=None, sig=None, timeout_s=None):
-    """정지 상태에서 사용자의 넛지(로봇팔 가볍게 밀기)을 감지한다 — 툴 놓침 넛지와 같은 감지기(cc.check_nudge)로
-    15 N(f2.nudge.force_threshold_n) · 2번 치기(cell.limits.nudge_taps · window nudge_tap_window_s)(E48). 힘 읽기 주기는 cell.limits.nudge_poll_s(0.2 s)
+    """정지 상태에서 사용자의 넛지(로봇팔 가볍게 밀기)를 감지한다 — 툴 놓침 넛지와 같은 감지기(cc.check_nudge)로
+    15 N(f2.nudge.force_threshold_n) · 밀기 횟수 cell.limits.nudge_taps(지금 1번 · 창 nudge_tap_window_s)(E48). 힘 읽기 주기는 cell.limits.nudge_poll_s(0.2 s)
     — 0.05 s 로 읽으면 로봇 실시간 채널이 막혀 SAFE_STOP(1.3014)이 났다(실기).
     handle_cable_tight 가 timeout_s=0.2 로 반복해서 부르므로 기준(start_nudge_watch)은 처음 한 번만 잡고, 'nudge'/'resume'/'abort' 로 끝날 때 다시 잡게 푼다.
     sig 가 주어지면 resume/abort 깃발도 함께 검사한다. timeout_s 에 도달하면 None 반환.
@@ -740,31 +740,3 @@ def wait_for_nudge(conf=None, sig=None, timeout_s=None):
                     return 'nudge'
             except Exception as e:
                 _log().warn(f'넛지 감지 읽기 실패({e!r})')
-
-
-def recheck_cable(conf=None):
-    """정지 상태에서 케이블 장력(jitter_g)을 재측정하여 정상 여부를 판정한다.
-
-    반환: (is_ok: bool, jitter_g: float, limit_g: float)
-    """
-    conf = conf if conf is not None else _f2()
-    nudge_cfg = conf.get('nudge') or {}
-    settle_s = float(nudge_cfg.get('settle_s') or 1.5)                                   # 민 뒤 가라앉을 시간(없으면 1.5 s)
-    samples = int(nudge_cfg.get('recheck_samples') or 10)                                # 재측정 표본 수(없으면 10)
-    max_spread = float(((conf.get('limits') or {}).get('max_weigh_spread_g')) or 50.0)   # 떨림 상한(없으면 50 g)
-
-    # 손으로 민 직후 센서 탄성/진동이 가라앉도록 잠시 대기
-    if settle_s > 0:
-        time.sleep(settle_s)
-
-    try:
-        cc.weigh(samples)
-    except Exception as e:
-        _log().warn(f'케이블 재측정 중 weigh 실패({e!r})')
-
-    weigh_last_fn = getattr(cc, 'weigh_last', None)
-    last = weigh_last_fn() if callable(weigh_last_fn) else {}
-    jitter = float(last.get('jitter_g') or 0.0)
-    is_ok = jitter <= max_spread
-    return is_ok, jitter, max_spread
-

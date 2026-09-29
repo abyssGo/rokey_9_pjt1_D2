@@ -1,32 +1,12 @@
-# params.yaml — 기능별 절. 주의: 자기 절만 고친다. (SDD §4.3, IRD §9)
+# params.yaml — 기능별 절(f1 · f2 · f3 · flow · hmi). (SDD §4.3, IRD §9)
 #
-# 절마다 키 골격은 INF-04 에서 만들었다. 값은 절 주인이 검증 결과로 바꾸고, 값 옆 주석에 단위·범위·바꾼 이유를 적는다.
+# 절마다 키 골격은 INF-04 에서 만들었다. 값은 검증 결과로 바꾸고, 값 옆 주석에 단위·범위·바꾼 이유를 적는다.
 #   - 여러 기능이 같이 쓰는 값(좌표·속도·힘 상한·프리셋)은 여기 두지 않는다 → cell.yaml.
-#   - 키 이름을 추가·변경하면 팀 채널에 알린다. 값은 주인 재량(커밋 본문에 이유).
 #   - 코드에서는  cc.cfg()['f3']['wipe_bowl']['limit_n']  처럼 읽는다. 숫자를 코드에 쓰지 않는다.
 #
 # 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 
-f1:                                   # ── f1 절 (한석형) ── 값은 SDD §4.3 예시에서 시작해 절 주인이 확정
-  soap_pump:
-    enabled: false
-    head_lift_mm: 30.0
-    head_open_mm: 35.0
-    head_grip_mm: 22.0
-    press_grip_mm: 0.0
-    head_grip_force_n: 10.0
-    sponge_turn_deg: -90.0
-    brush_turn_deg: 90.0
-    force_start_z_mm: 130.0
-    full_press_n: 10.0
-    force_step_mm: 0.5
-    max_force_travel_mm: 30.0
-    force_vel_mm_s: 8.0
-    force_acc_mm_s2: 20.0
-    fast_tcp_vel_mm_s: 400.0
-    fast_tcp_acc_mm_s2: 800.0
-    fast_rot_vel_deg_s: 100.0
-    tool_pick_z_mm: 150.0
+f1:                                   # ── f1 절 ── 값은 SDD §4.3 예시에서 시작해 검증으로 확정
   insert_approach_mm: 0               # 팔레트 삽입 전 힘 감시 하강 거리(mm). 0 = 칸 자세가 정확해 감시 없이 곧게 내려 놓는다(마지막 land_slow_mm 완충) —
                                       #   이때 걸림 판정(RACK_JAM)은 없고 걸리면 로봇 충돌 감지(SAFE_STOP). 20 이었을 때 0.3 배속에서 contact_down(3 mm 씩 20 mm/s × vel_scale)이
                                       #   접촉 타임아웃 10 s(cell.limits.timeout_s)를 넘겼고(E33), 5 로 줄여 놓기까지 15 s 절약 → 마지막엔 0. 감시를 되살리려면 5
@@ -39,7 +19,7 @@ f1:                                   # ── f1 절 (한석형) ── 값은 
   contact_timeout_ref_mm: 20          # 접촉 타임아웃(cell.limits.timeout_s)이 맞춰진 기준 감시 거리(mm). contact_down 은 3 mm 걸음(걸음당 ≈0.8 s ·
                                       #   가속 제한이라 배속과 거의 무관)이라 이보다 긴 감시는 timeout 을 거리 비례로 늘린다(handling._contact_timeout · 값은 YAML 에)
   regrip_watch_mm: 0                 # 홈 C 옆면 재파지에서 접근점(+100)부터 내려올 때 마지막 이만큼을 힘 감시(cell.limits.insert_limit_n). 0 = 감시 없이 곧게
-                                      #   내려가 바로 잡기(handling._regrip · 마지막 land_slow_mm 완충) — 컵 RINSE 84 → ≈45 s 예상 · 제한: 9/29 컵 실기로 확인 · 되돌리기 = 45
+                                      #   내려가 바로 잡기(handling._regrip · 마지막 land_slow_mm 완충) — 실기 확인(E50) · 되돌리기 = 45
                                       #   45 의 근거: 관절 이동으로 곧장 가다 열린 그리퍼가 컵에 걸려 SAFE_STOP 이 났고(실기), 손가락이 컵 테두리에 얹히면 힘 상한에서
                                       #   멈춰 되올라와 GRIP_FAIL. 컵 윗단은 잡는 높이보다 약 45 mm 위라 그 구간부터 감시해야 XY 어긋남을 잡는다(20 이면 감시 밖).
   tool_return_depth_mm: 0             # 툴 반납 때 홀더 바닥을 찾아 내려가는 최대 깊이. 0 = 집은 자리로 곧게 내려가 바로 놓는다(handling._tool_return 0 갈래 · 마지막 land_slow_mm 완충)
@@ -53,7 +33,7 @@ f1:                                   # ── f1 절 (한석형) ── 값은 
   land_slow_mm: 15                    # 곧게 내려 놓을 때(놓기·적재·툴 반납 · 감시 0) 마지막 이만큼을 아래 속도로 살짝 느리게 — 1.0 배속에서 바닥 충격 완충(솔 반납 SAFE_STOP 의심). 0 = 한 구간
   land_vel_mm_s: 30                   #   그 구간 속도(mm/s · 배속 무관 · 15 mm ≈ 0.5 s). handling._descend
 
-f2:                                   # ── f2 절 (민범진) ── 값은 SDD §4.3 예시에서 시작해 절 주인이 확정
+f2:                                   # ── f2 절 ── 값은 SDD §4.3 예시에서 시작해 검증으로 확정
   empty_weight_g:                     # 빈 용기 기준값 — 판정은 (측정값 − 기준값)
                                       # 주의: 저울로 잰 '진짜 무게' 가 아니라 로봇이 읽은 값이다.
                                       #    로봇 하중에는 정체불명 옵셋이 있다(V-02: +42~45 g, 원인 미확정).
@@ -90,8 +70,10 @@ f2:                                   # ── f2 절 (민범진) ── 값은 
     max_weigh_drift_g: 20             # 영점 흐름 경고 — 재는 21 s 안에서 값이 한 방향으로 이 이상 움직이면 경고(멈추지 않음).
                                       #   실기: 30 표본이 −96 → −123 으로 −26 g 미끄러졌다. 영점이 움직이는 중이면 5 시간 전 기준값은 못 쓴다
                                       #   → 잔반 판정을 믿지 말고 rig_f2.py empty 로 다시 재라는 신호. 제한: 임시값 — 정상 창의 흐름을 보고 조정
-    max_weigh_spread_g: 80            # 케이블 장력 경고 — weigh() 표본의 떨림(추세를 뺀 10~90 % 폭)이 이보다 크면 경고(멈추지 않음).
-                                      #   80 (E47): 정상 흐름의 떨림이 8~45 g(컵 1 45)라 50 은 오탐 여지 · 제한: 9/29 오전 실기(INT-4b ④)에서 정상 떨림과 케이블을 실제로 당긴 값 사이인지 확인
+    max_weigh_spread_g: 80            # 케이블 장력 상한 — 무게 잴 때 표본의 떨림(추세를 뺀 10~90 % 폭)이 이보다 크면 그 자리에서 멈춘다
+                                      #   (sense.weigh → CableTightError → 넛지 또는 재개 → 멈춘 단계부터 다시 — 무게를 HOME 경유로 다시 잰다 · 아직 떨리면 같은 멈춤 · E64).
+                                      #   cc.weigh(공용 함수) 자체는 경고 로그만 남긴다. 시작 전 점검은 flow.preflight.cable.max_spread_g 를 따로 쓴다.
+                                      #   80 (E47): 정상 흐름의 떨림이 8~45 g(컵 1 45)라 50 은 오탐 여지 — 실기: 정상 흐름 오탐 없음 · 케이블 멈춤 → 밀기 1번 → 무게 다시 통과(리허설 1회)
                                       #   '퍼짐' 이 아니라 '떨림' 인 이유: 흐름이 섞이면 거짓 경보가 난다(퍼짐 52 인데 떨림은 12). V-02: 케이블 정리 뒤 21 s 창 ±12~17 · 정리 전 ±25
     min_net_g: -60.0                  # 주의: 잔반 무게가 이보다 작으면 파지를 의심한다 — 바로 GRIP_FAIL 이 아니라
                                       #    그리퍼 폭으로 한 번 더 확인한다(sense._held_by_width). 폭이 빈손이면 GRIP_FAIL,
@@ -139,12 +121,11 @@ f2:                                   # ── f2 절 (민범진) ── 값은 
   dip:                                # depth_mm = 티칭 자세에서 내려가는 거리 (SDD §5.3)
     RINSE: {depth_mm: 60, hold_s: 1.0}                # 헹굼 담금, 60 확인은 V-07
   nudge:                                # 케이블 이상 넛지(로봇팔 가볍게 밀기) 및 재개 설정
-    force_threshold_n: 15.0             # 넛지 감지 외력 변화량 임계값(N · 정지 외력 대비). E48: 툴 놓침 넛지(cell.limits.nudge_force_n 15)와 같은 힘으로 통일(처음 5.0)
+    force_threshold_n: 15.0             # 넛지 감지 외력 변화량 임계값(N · 정지 외력 대비). E48: 툴 놓침 넛지(cell.limits.nudge_force_n 15)와 같은 힘으로 통일
     poll_gap_s: 0.05                    # 외력 모니터링 폴링 간격(s)
-    settle_s: 1.5                       # 넛지 감지 후 손을 떼고 여진이 가라앉을 시간(s) — 케이블 멈춤은 이만큼 기다린 뒤 이동을 다시 보낸다(flow)
-    recheck_samples: 10                 # 넛지 후 케이블 상태 재검증 표본 수 (약 7 s)
+    settle_s: 1.5                       # 넛지 감지 뒤 손을 떼는 시간(s) — 케이블 멈춤은 밀기를 알아채면 이만큼 기다린 뒤 로봇 복구 → 멈춘 단계부터 다시(flow · E64)
 
-f3:                                   # ── f3 절 (박진용) ── 초안 출처: CELL-02a 용기 치수 측정 §4 (SDD §4.3 예시와 다름)
+f3:                                   # ── f3 절 ── 초안 출처: CELL-02a 용기 치수 측정 §4 (SDD §4.3 예시와 다름)
                                       # 툴 파지 기준: 그리퍼 끝을 세척부 윗면에 닿게 잡는다
                                       #    → 그리퍼 끝 ~ 툴 끝 거리 = 세척부 높이(tool.clean_h_mm).
                                       #    하강 거리·삽입 깊이·닦는 반경을 이 값으로 계산한다(길이를 코드에 적지 않는다).
@@ -203,7 +184,7 @@ f3:                                   # ── f3 절 (박진용) ── 초안 
     target_force_n: 1.5               # 벽면을 닦는 동안 유지할 누르는 힘 (V-03 실기 확정).
                                       #   공중 기준값(센서 치우침·툴 무게)은 코드가 더해서 명령한다
                                       #   제한: FR-08 은 3~5 N 이지만 수세미는 면이 넓어 1.5 N 로도 눌린다
-    limit_n: 10.0                     # 누르는 힘 상한 (공중 기준값 대비) — 넘으면 즉시 후퇴 FORCE_LIMIT
+    limit_n: 10.0                     # 누르는 힘 상한 (공중 기준값 대비) — 넘으면 남은 동작 즉시 정지(stop_now) → 힘 끄기 → 곧게 호출 높이로 → FORCE_LIMIT(E60)
     lateral_max_n: 25.0               # 옆 힘 상한 — 그릇이 밀리거나 툴이 걸린 것
     # ── 바닥 나선 (좌우 비틀기 없음) ──
     bowl_inner_d_mm: 110.0            # 그릇 안지름 → 벽 반지름 = (이 값 − tool.d_mm)/2 + wall_press_mm = 14 mm
@@ -245,7 +226,7 @@ f3:                                   # ── f3 절 (박진용) ── 초안 
     over_cup_dy_mm: 140.0             # 그다음 BASE y 로 이만큼 → 컵 위(= 세척 시작점, HOME + over_cup_up_mm)
     fast_down_mm: 120.0               # = 원래 80 + over_cup_up_mm 40 — 시작점이 40 mm 높아진 만큼 그대로 더한다.
                                       #   컵 위(= HOME + over_cup_up_mm)에서 이 길이만큼 빠르게 내려가고, 그 아래는 힘으로 찾는다
-                                      #   실측(HOME 높이 기준): 컵 위에서 솔 ~ 컵 바닥 90 mm → 10 mm 남기고 80 + 40 = 120. 실기 확인 필요.
+                                      #   실측(HOME 높이 기준): 컵 위에서 솔 ~ 컵 바닥 90 mm → 10 mm 남기고 80 + 40 = 120. 실기 확인.
                                       #   바닥 위치는 미리 정하지 않는다 — 바닥은 contact_down 이 찾는다
     fast_vel_mm_s: 220.0              # 빠른 하강 · 곧게 올라오기 속도 (× vel_scale → 0.3 에서 66 mm/s) — 그릇·컵 같은 값
     fast_acc_mm_s2: 440.0             #   가속도 (× vel_scale) — 그릇과 같은 배율(2배)
@@ -262,7 +243,7 @@ f3:                                   # ── f3 절 (박진용) ── 초안 
     stroke_mm: 15.0                   # 위아래 편진폭 — 한 번 오르내리면 30 mm = 3 cm
                                       #   실기: 3 mm 는 움직임이 안 보였고 · 4 cm 는 길다 → 3 cm
     spin_deg: 180.0                   # 6번 조인트가 도는 폭 → Periodic 회전 진폭 = 좌우 ±90° (±180 → ±120 → ±90 으로 줄임)
-    period_s: 2.6                     # 3.0 → 2.6(하한, 2π×90/2.6 = 217°/s — 로봇 한계 225°/s 턱밑) — 실기 확인, 안 되면 3.0 으로 원복
+    period_s: 2.6                     # 3.0 → 2.6(하한, 2π×90/2.6 = 217°/s — 로봇 한계 225°/s 턱밑) — 실기 확인(1.0 배속 무정지)
                                       #   한 번 오르내리는 시간 — 실제 값, vel_scale 을 곱하지 않는다(결정 E17)
     rot_vel_limit_deg_s: 225.0        # 주의: 이 로봇의 툴 회전 속도 한계(AngularVelLimit) — 넘으면 컨트롤러가 Periodic 을 거절한다
                                       #   실기 알람 1212: "Rotation Vel(251.327) exceeds AngularVelLimit(225.000)" (주기 3 s)
@@ -275,13 +256,13 @@ f3:                                   # ── f3 절 (박진용) ── 초안 
     keep_in_mm: 10.0                  # 왕복 꼭대기(바닥 + lift + 2×stroke)에서도 솔이 이만큼은 컵 안에 남게
                                       #   — 바닥에서는 솔 세척부(95 = 컵 깊이)가 통째로 들어가 있으므로 2 + 40 = 42 mm 올라가도 53 mm 가 남는다
     # ── 감시·기록 ──
-    limit_n: 10.0                     # NFR-01 닦기 10 N — 넘으면 즉시 후퇴 FORCE_LIMIT
+    limit_n: 10.0                     # NFR-01 닦기 10 N — 넘으면 남은 동작 즉시 정지(stop_now) → 힘 끄기 → 곧게 호출 높이로 → FORCE_LIMIT(E60)
     lateral_max_n: 25.0               # 옆 힘 상한 — 솔이 컵 벽에 걸리거나 컵이 딸려 올라오는 것
     sample_s: 0.05                    # 왕복 도는 동안 힘 기록 주기
     duration_s: 120                   # 닦기 전체 타임아웃 → TIMEOUT
     log_dir: logs/f3                  # 힘 로그 CSV (실행 위치 기준 상대경로)
 
-flow:                                 # ── flow 절 (민범진) ── 계획·정책은 DSN-03 에서 확정
+flow:                                 # ── flow 절 ── 계획·정책은 DSN-03 에서 확정
   plan:                               # 구역 계획: 위에서부터 차례로, 구역마다 count 개 또는 EMPTY_ZONE 까지
     - {zone: RET_B, kind: BOWL, count: 2}
     - {zone: RET_C, kind: CUP, count: 2}
@@ -290,11 +271,10 @@ flow:                                 # ── flow 절 (민범진) ── 계�
     CUP: [RACK_C1, RACK_C2]           # 컵 2칸
   policy:                             # 실패 정책 (IRD §8): next_zone · isolate · retry:N->isolate · pause
     EMPTY_ZONE: next_zone
-    LEFTOVER_REMAIN: isolate          # 🔄 9/26 E52(황인재 9/25): pause → **isolate** 로 되돌림. 두 번 털어도 잔반이 남으면 사람을 부르지 않고
-                                      #    용기를 든 채 곧게 위로 → HOME → 격리 구역 → HOME(flow._cleanup_and_isolate · #90/#103 경로).
-                                      #    9/23 E42 가 pause 로 바꾼 이유(isolate 갈래가 기록만 하고 다음 PICK 이 든 용기를 떨어뜨림)는 E52 로 갈래에 실제 정리를 넣어 닫았다.
+    LEFTOVER_REMAIN: isolate          # E52 — 두 번 털어도 잔반이 남으면 사람을 부르지 않는다. 용기를 든 채 곧게 위로 → HOME
+                                      #    → 격리 구역에 놓기 → HOME(flow._cleanup_and_isolate) → 다음 용기.
     GRIP_FAIL: pause                  # 털기·담금 중 미끄러짐(f2) · 빈손 감지(f2 weigh)
-                                      # ✅ 9/20 결정 E12(황인재 17:25) — 격리가 아니라 **멈추고 사람이 확인**한다.
+                                      # 결정 E12 — 격리가 아니라 멈추고 사람이 확인한다.
                                       #    놓쳤다면 용기가 손에 없을 수 있어 격리 동작(옮기기)이 의미가 없고,
                                       #    바닥에 떨어진 용기를 다음 동작이 칠 수 있다.
                                       #    확인 뒤 resume = 그 단계부터 다시 / abort = 그 용기를 접고 다음 용기
@@ -303,10 +283,10 @@ flow:                                 # ── flow 절 (민범진) ── 계�
     FORCE_LIMIT: "retry:1->isolate"
     TIMEOUT: "retry:1->isolate"
     RACK_JAM: "retry:1->isolate"
-    TOOL_FAIL: pause                  # 🔄 9/26 E52(황인재 9/25): retry:1->isolate → **pause**. 홀더에서 못 집으면 용기 잘못이 아니다 —
-                                      #    툴은 홀더에 둔 채 멈추고 사람이 홀더를 확인 → 로봇팔 가볍게 밀기(또는 재개) → 툴 집기부터 다시(격리 X). 툴 놓침 뒤 재PICK 실패도 같다.
-    TOOL_LOST: pause                  # 🆕 E37(9/23) — 닦는 도중 놓침. 정지 → 사람이 홀더에 다시 놓고 넛지(또는 HMI 재개)
-                                      #    → f1.tool 재PICK(handle_failure) → 그 단계부터 다시. GRIP_FAIL 과 같은 결
+    TOOL_FAIL: pause                  # E52 — 홀더에서 못 집으면 용기 잘못이 아니다. 툴은 홀더에 둔 채 그 자리 멈춤
+                                      #    → 사람이 홀더 확인 → 넛지(로봇팔 가볍게 밀기 · 또는 재개) → 툴 집기부터 다시(격리 X). 툴 놓침 뒤 다시 집기 실패도 같다.
+    TOOL_LOST: pause                  # E37·E62 — 닦는 도중 놓침. 그 자리 정지 → 사람이 홀더에 다시 꽂고 넛지(또는 재개)
+                                      #    → 곧게 위로 → "툴 집기" 단계부터(툴 집기 → 세제 → 닦기)
     RACK_FULL: pause
     ROBOT_ERROR: pause
   consumables: {sponge_max_uses: 100, soap_max_dips: 60}   # 수세미·솔 교체 주기 100회(같은 값 · 근거 없이 임의 지정) · 세제 60 = 용기 60개(용기당 1회 · flow.soap_dips 도 +1) · 헹굼 물은 세지 않는다
@@ -327,7 +307,7 @@ flow:                                 # ── flow 절 (민범진) ── 계�
                                       #   hmi.state_rate_hz(화면 갱신)와 다른 값이라 이름을 구분했다.
                                       #   hmi.disconnect_after_s 보다 촘촘해야 HMI 가 끊김으로 오판하지 않는다 (DSN-03)
   step_delay_s: 0.0                   # 기능 함수 사이 대기. 실제 운전은 0.0 (뼈대·정책 시험용)
-  records_path: records.csv           # 기록 파일 (실행 위치 기준 상대경로, AGENTS.md 규칙 7)
+  records_path: records.csv           # 기록 파일 (실행 위치 기준 상대경로)
   use_mock: []                        # 가짜 모듈로 바꿀 기능. 예: [f1, f3] · [f1, f2, f3] 이면 드라이버 없이 돈다.
                                       #   런치 인자 use_mock(= 환경변수 PREWASH_USE_MOCK)이 있으면 그 값이 이 줄을 덮어쓴다
   mock:
@@ -343,7 +323,7 @@ flow:                                 # ── flow 절 (민범진) ── 계�
       gap_s: 0.7
       max_spread_g: 60                # 제한: 임시값 — HOME 은 저울 자세보다 흔들림이 크다(V-02: HOME 39 g · z158 25 g). 실기 값으로 조정
 
-hmi:                                  # ── hmi 절 (황인재) ──
+hmi:                                  # ── hmi 절 ──
   host: 127.0.0.1                     # 접속을 받는 주소. 127.0.0.1 = 이 PC 에서만(기본) / 0.0.0.0 = 같은 망의 태블릿·노트북에서도
                                       #   주의: 0.0.0.0 으로 열면 같은 와이파이의 누구나 시작·중단 버튼을 누를 수 있다 → 태블릿을 쓸 때만, 끝나면 되돌린다
   port: 8000                          # HMI 웹 포트

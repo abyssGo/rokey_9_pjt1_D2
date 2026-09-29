@@ -7,7 +7,7 @@
     멀티탭의 과부하 차단 버튼과 같아서, 걸리면 명령을 줘도 꿈쩍 안 하고 **툴 전원을 껐다 켜야만** 풀린다.
     지금까지는 사람이 전원을 뽑았다 꽂았다. 이 시험대는 그것을 **명령 한 줄**로 바꾼다.
 
-실행 (저장소 루트에서, 격리 상태 solo — AGENTS 규칙 13)
+실행 (저장소 루트에서, 격리 상태 solo — docs/setup/M0609_환경설정.md)
     soc && python3 src/cobot_common/test/rig_grip_reset.py check     # 읽기만 — 🟢 아무것도 안 움직인다
     soc && python3 src/cobot_common/test/rig_grip_reset.py watch     # 계속 지켜본다 (Ctrl+C 로 끝)
     soc && python3 src/cobot_common/test/rig_grip_reset.py reset     # 🚨 툴 전원을 껐다 켠다
@@ -125,7 +125,7 @@ def cmd_reset(a, p, log):
 
 
 def _ask(log):
-    """🚨 사람 확인 — 전원이 끊기면 쥐고 있던 용기가 떨어진다 (AGENTS 규칙 1)."""
+    """🚨 사람 확인 — 전원이 끊기면 쥐고 있던 용기가 떨어진다."""
     width = None
     try:
         width = cc.grip_width()

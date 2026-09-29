@@ -49,11 +49,11 @@ class FakeCC:
         if self.fail_on == name or self.fail_on == (name, len([c for c in self.calls if c[0] == name])):
             raise MoveIncomplete(f'{name} 이 도중에 멈췄다')
 
-    def move_to(self, station, carrying, kind=None, point=None, **kw):     # 🆕 9/23 kw = j6_period(툴 홀더 J6 동치각)
+    def move_to(self, station, carrying, kind=None, point=None, **kw):     # kw = j6_period(툴 홀더 J6 동치각)
         self._note('move_to', station, carrying, kind, point, *([kw] if kw else []))
         return self.up.get((station, point), 0.0)
 
-    def move_rel(self, dx, dy, dz, frame, **kw):                 # 🆕 9/23 kw = vel_mm_s(마지막 완충 구간)
+    def move_rel(self, dx, dy, dz, frame, **kw):                 # kw = vel_mm_s(마지막 완충 구간)
         self._note('move_rel', dx, dy, dz, frame, *([kw] if kw else []))
 
     def where(self):                                                 # 집은 자리(RETURN 역순용)
@@ -81,7 +81,7 @@ class FakeCC:
     def force_off(self):
         self._note('force_off')
 
-    def contact_down(self, max_depth, limit, timeout_s=None, step_mm=None):   # 🆕 9/23 step_mm = 마지막 감시 구간 걸음
+    def contact_down(self, max_depth, limit, timeout_s=None, step_mm=None):   # step_mm = 마지막 감시 구간 걸음
         self._note('contact_down', max_depth, limit, *([step_mm] if step_mm is not None else []))
         if self.contact_raises is not None:
             raise self.contact_raises('시험')
@@ -153,7 +153,7 @@ def test_place_works_three_times_in_a_row(cc):
 
 # ------------------------------------------------------------------ F1-03 tool
 def test_tool_pick_grips_at_the_holder_and_stays_there(cc):
-    """🔄 9/22 밤(박진용 요청 #83 ①): 잡은 자리에서 끝난다 — 빼내지 않는다(F3 soap 이 그 자리에서 비틀고 올라간다)."""
+    """E35: 잡은 자리에서 끝난다 — 빼내지 않는다(F3 soap 이 그 자리에서 비틀고 올라간다)."""
     r = handling.tool('SPONGE', 'PICK')
     assert isinstance(r, ToolResult) and r.ok and r.width_mm == 40.5      # 돌려주는 폭은 드라이버 값 그대로(E16 — 판정만 영점을 뺀다)
     assert cc.calls == [('move_to', 'TOOL_SPONGE', False, None, 'pick'),   # 빈손으로 집는 자세까지 (관절 자세 → 남은 높이 0)
@@ -162,14 +162,14 @@ def test_tool_pick_grips_at_the_holder_and_stays_there(cc):
 
 
 def test_tool_pick_reverses_to_the_last_pick_spot_when_repicked(cc):
-    """🆕 9/23 E37 — 이미 한 번 집은 적 있으면(TOOL_LOST 뒤 재PICK) 홀더 자세로 곧장 가지 않고
+    """E37 — 이미 한 번 집은 적 있으면(TOOL_LOST 뒤 재PICK) 홀더 자세로 곧장 가지 않고
     처음 집었던 **정확한 자리**로 곧장 내려가 다시 잡는다(힘 감시 없이 — 실기: contact_down 은
     상대할 저항이 없어 TIMEOUT). _tool_return 과 같은 역순 패턴이지만 마지막은 더듬지 않는다."""
     assert handling.tool('SPONGE', 'PICK').ok            # 첫 PICK — _LAST_PICK 을 남긴다
     cc.calls.clear()
     r = handling.tool('SPONGE', 'PICK')                   # 재PICK — 역순 패턴을 타야 한다
     assert r.ok
-    assert cc.calls == [('release',),                                              # 놓친 폭에서 바로 grip 하면 헛잡음(9/23 실기)
+    assert cc.calls == [('release',),                                              # 놓친 폭에서 바로 grip 하면 헛잡음(실기)
                         ('move_pose', [273.6, -222.9, 165.2, 128.2, 180.0, -52.0]),  # 집은 자리 + clear(100) 위로
                         ('move_pose', [273.6, -222.9, 65.2, 128.2, 180.0, -52.0]),   # 그 정확한 자리로 곧장 하강
                         ('grip', 34.5, 30.0),
@@ -192,21 +192,21 @@ def test_tool_pick_that_missed_leaves_the_tool_in_the_holder(cc):
 
 
 def test_tool_return_reverses_the_pick_when_this_program_picked(cc):
-    """🔄 9/22 밤(박진용 요청 #83 ②): 같은 프로그램이 집었으면 집은 자리 위(clear) → 곧게 내려 놓음 → 올라옴. 바닥 찾기 없음."""
+    """E35: 같은 프로그램이 집었으면 집은 자리 위(clear) → 곧게 내려 놓음 → 올라옴. 바닥 찾기 없음."""
     assert handling.tool('BRUSH', 'PICK').ok
     cc.calls.clear()
     r = handling.tool('BRUSH', 'RETURN')
     assert r.ok
     assert cc.calls == [('move_pose', [273.6, -222.9, 165.2, 128.2, 180.0, -52.0]),   # 집은 자리 + clear 100
                         ('move_rel', 0.0, 0.0, -80.0, 'BASE'),                        # 자유 하강 (clear − tool_return_depth_mm 20)
-                        ('contact_down', 20.0, 8.0),                                  # 마지막 20 mm 는 힘 감시(PM 9/22 밤 · AGENTS §3-2)
+                        ('contact_down', 20.0, 8.0),                                  # 마지막 20 mm 는 힘 감시
                         ('release',),
                         ('move_rel', 0.0, 0.0, 83.0, 'BASE')]                         # 80 + 닿은 깊이 3
     assert 'BRUSH' not in handling._LAST_PICK                               # 한 번 쓰면 잊는다
 
 
 def test_tool_return_depth_zero_goes_straight_to_pick_pose_and_releases(cc):
-    """🔄 9/23 15:5x 튜닝(#4·#7): tool_return_depth_mm 0 이면 힘 감시 없이 집은 자리로 곧게 내려가 놓고 올라온다(contact_down 없음)."""
+    """E44: tool_return_depth_mm 0 이면 힘 감시 없이 집은 자리로 곧게 내려가 놓고 올라온다(contact_down 없음)."""
     cc.conf['f1']['tool_return_depth_mm'] = 0
     handling.tool('SPONGE', 'PICK')
     cc.calls.clear()
@@ -325,7 +325,7 @@ def test_tool_pick_with_a_fixed_width_closes_only_that_far_and_skips_the_check(c
     assert cc.calls[1] == ('grip', 36.0, 5.0)
 
 
-# ------------------------------------------------------------------ 🆕 9/23 튜닝 #1·#2 — 툴 홀더 J6 동치각 · 반납 마지막 구간 한 걸음
+# ------------------------------------------------------------------ 툴 홀더 J6 동치각 · 반납 마지막 구간 한 걸음
 def test_tool_pick_uses_the_nearest_j6_for_a_symmetric_tool(cc):
     cc.conf['cell']['presets']['SPONGE']['j6_symmetric'] = True
     handling.tool('SPONGE', 'PICK')
@@ -363,7 +363,7 @@ def test_tool_return_without_watch_step_setting_uses_the_default_step(cc):
     assert ('contact_down', 5.0, 8.0) in cc.calls                                # step_mm 없이 → force 기본 걸음
 
 
-# ------------------------------------------------------------------ 🆕 9/23 18:1x 튜닝 3차 — 곧게 내려 놓기 · 마지막 land_slow_mm 완충
+# ------------------------------------------------------------------ E44 — 곧게 내려 놓기 · 마지막 land_slow_mm 완충
 def test_place_descends_in_one_go_when_no_soft_landing_is_set(cc):
     handling.place('SPONGE_BED_B')
     assert ('move_rel', 0.0, 0.0, -147.7, 'BASE') in cc.calls                    # 한 구간

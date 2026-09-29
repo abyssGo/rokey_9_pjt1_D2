@@ -1,4 +1,4 @@
-"""INT-12 통합 시험대 (F1 + F2) — flow_node 없이 INT-12a·12b 구간만 골라 반복한다 (민범진 · 9/22 저녁 L2).
+"""INT-12 통합 시험대 (F1 + F2) — flow_node 없이 INT-12a·12b 구간만 골라 반복한다 (L2).
 
     python3 src/f2_sense_flow/test/rig_int12.py check                    # 🟢 로봇 없이 — F1 이 빈 껍데기인지 · 좌표가 있는지 먼저
     soc && python3 src/f2_sense_flow/test/rig_int12.py a --kind BOWL     # INT-12a  집기 → 저울 → 잔반 처리        × 5
@@ -9,7 +9,7 @@
 이어 붙여 5회 반복하는 시험이라(SDD §9 INT-12a·12b) 그 구간만 같은 순서·같은 인자로 부르는 시험대가 따로 필요하다.
 호출 순서·인자는 flow.py 의 steps 와 같다 — 어긋나면 test_f2_int12_rig.py 가 잡는다.
 
-🚨 F1 의 pick·rack_place 가 아직 빈 껍데기면(9/21 저녁 기준 main 이 그렇다) **"성공"을 돌려준다** — Result 의
+🚨 F1 의 pick·rack_place 가 아직 빈 껍데기면 **"성공"을 돌려준다** — Result 의
    기본값이 ok=True 라서. 그러면 로봇이 한 번도 안 움직였는데 저울로 가서 빈손 무게를 잰다.
    → `check` 가 로봇 없이 먼저 가려낸다(진짜 구현은 로봇 없이 부르면 예외가 나고, 빈 껍데기는 조용히 성공한다).
    → 실기 중에도 pick 이 폭 0.0·시도 0 을 돌려주면 그 자리에서 멈춘다.
@@ -27,8 +27,8 @@
 회차 사이 되돌리기는 사람이 한다: a = HOME 에서 용기를 받아 반납 구역에 다시 놓는다 / b = 팔레트 칸에서 꺼내 스펀지 홈에 다시 놓는다.
 "무개입 5회" 는 회차 **안**의 이야기다 — 용기가 2개뿐이라 회차 사이 되돌리기는 어차피 사람이 한다.
 
-🚨 실패했을 때 로봇을 스스로 움직이지 않는다(현재상황 §6) — 힘·순응만 끄고 멈춘다. 사람이 복구한다.
-🚨 로봇을 움직이기 전에 `rosinfo` 로 RANGE=LOCALHOST 인지 확인한다 (AGENTS §3 규칙 13).
+🚨 실패했을 때 로봇을 스스로 움직이지 않는다 — 힘·순응만 끄고 멈춘다. 사람이 복구한다.
+🚨 로봇을 움직이기 전에 `rosinfo` 로 RANGE=LOCALHOST 인지 확인한다.
 
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
 """
@@ -42,7 +42,7 @@ import cobot_common as cc
 from cobot_api import F1Api, F2Api, check_api
 
 STUB_MSG = ('🚨 f1.pick 이 빈 껍데기다 — ok 인데 폭 0.0 · 시도 0 (로봇이 움직이지 않았다).\n'
-            '   한석형 pick() PR 이 main 에 merge 된 뒤에 다시 돌린다. 가짜로 대본만 볼 때는 --mock f1')
+            '   f1.pick 이 구현된 뒤에 다시 돌린다. 가짜로 대본만 볼 때는 --mock f1')
 
 
 # ────────────────────────────────── 로봇 없이 되는 부분 (pytest 가 본다)
@@ -178,7 +178,7 @@ def main():
         log.warn('--no-robot — 두산 드라이버 없이 함수 반환만 본다')
     else:
         from f2_sense_flow.preflight import go_home_safely, require_controller, warn_if_cable_tight
-        require_controller(cc.io_node(), cfg, log)             # 🆕 TS-07 — 툴·TCP 가 다르면 여기서 끝
+        require_controller(cc.io_node(), cfg, log)             # TS-07 — 툴·TCP 가 다르면 여기서 끝
         warn_if_cable_tight(cfg, log)                          # 🔗 케이블 장력(경고만)
 
     rows = []
@@ -238,7 +238,7 @@ def _round(i, a, steps, feats, log):
         row['code'] = f'EXC:{type(e).__name__}'
         log.error(f'예외 — {type(e).__name__}: {e}')
         if not a.no_robot:
-            cc.force_off()                      # 힘·순응만 끈다 (현재상황 §6)
+            cc.force_off()                      # 힘·순응만 끈다
         go_on = False
     row['s'] = round(time.monotonic() - t0, 2)
     return row, go_on
@@ -285,10 +285,10 @@ def _stub_what_virtual_lacks(a, cfg, log):
     b = presets.get('BOWL') or {}
     bowl_held = float(b.get('grip_zero_mm') or 0.0) + float(b.get('grip_width_mm') or 0.0)   # 그릇을 쥐었을 때 드라이버 폭(12.73)
 
-    def fake_grip(width, force):                    # 🆕 9/22 진짜 f1.pick 이 판정하므로 "쥐었다" 로 보이는 폭을 돌려준다
+    def fake_grip(width, force):                    # 진짜 f1.pick 이 판정하므로 "쥐었다" 로 보이는 폭을 돌려준다
         return max(float(width), bowl_held)         #   그릇: 목표 11.53 → 12.73(판정 OK) · 컵: 목표 76 → 76(판정 없음)
 
-    def fake_contact_down(max_depth, limit):        # 🆕 Virtual 엔 힘·순응이 없다 → 그냥 곧게 내려가고 "끝까지 닿았다"
+    def fake_contact_down(max_depth, limit):        # Virtual 엔 힘·순응이 없다 → 그냥 곧게 내려가고 "끝까지 닿았다"
         cc.move_rel(0.0, 0.0, -float(max_depth), 'BASE')
         return float(max_depth), 0.0
 

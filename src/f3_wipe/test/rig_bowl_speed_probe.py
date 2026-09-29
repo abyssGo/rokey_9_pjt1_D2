@@ -4,11 +4,12 @@
 wipe.py·params.yaml 은 손대지 않는다. 툴 픽업(SPONGE, PICK) → soap → wipe_bowl → 툴 반납(SPONGE, RETURN)
 만 돌리는 최소 왕복 — 반납 구역 pick·rack_place 등 나머지 시나리오는 뺐다(속도 값 확인이 목적).
 
-🆕 cc.cfg() 를 이 스크립트 안에서만 monkeypatch(런타임 교체)해서 f3.wipe_bowl.rot_vel_deg_s(벽면 회전 —
+cc.cfg() 를 이 스크립트 안에서만 monkeypatch(런타임 교체)해서 f3.wipe_bowl.rot_vel_deg_s(벽면 회전 —
    좌우 비틀기도 같은 값) · spiral_time_s(나선 시간)를 아래 상수로 덮어쓴다. wipe.py·cell.yaml/params.yaml
    원본은 그대로. 되는 값 찾으면 그때 params.yaml 에 반영한다.
 
-    cd ~/cobot1/rokey_9_pjt1_D2 && soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_bowl_speed_probe.py
+    # 저장소 루트에서
+    soc && PREWASH_VEL_SCALE=0.3 python3 src/f3_wipe/test/rig_bowl_speed_probe.py
 
 준비(손으로): 그릇을 SPONGE_BED_B 자리에 놓고, 그리퍼는 빈손으로 시작.
 """

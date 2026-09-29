@@ -1,11 +1,11 @@
 # rig_bootstrap.py 시험 값. 실행 뼈대(init·io_node·shutdown)만 확인하는 값이라 cell.yaml 에 넣지 않는다.
 rounds: 2                         # posj_list 를 몇 바퀴 도는가 (movej 횟수 = rounds × 자세 수, 3회 이상이어야 한다)
-posj_list:                        # 관절 자세 (deg). s4_script.py(9/18 Virtual 확인)와 같은 값
+posj_list:                        # 관절 자세 (deg). s4_script.py(Virtual 확인)와 같은 값
   - [10.0, 0.0, 90.0, 0.0, 90.0, 0.0]
   - [20.0, 0.0, 90.0, 0.0, 90.0, 0.0]
   - [30.0, 0.0, 90.0, 0.0, 90.0, 0.0]
 virtual: {vel_deg_s: 60, acc_deg_s2: 60}      # Virtual 에서 쓰는 속도
-real:    {vel_deg_s: 30, acc_deg_s2: 30}      # 🚨 실기(--real)는 이 값만 쓴다 — 첫 실기 20~30% (AGENTS §3 규칙 1, J1 최대 150 deg/s 의 20%)
+real:    {vel_deg_s: 30, acc_deg_s2: 30}      # 🚨 실기(--real)는 이 값만 쓴다 — 첫 실기 20~30% (J1 최대 150 deg/s 의 20%)
                                               #    여기에 PREWASH_VEL_SCALE(cfg run.vel_scale)도 곱한다
 timer_hz: 2                       # 통신 노드 타이머 주기 (/flow/state 와 같은 2 Hz)
 timer_tol_hz: 0.2                 # 모션 중 측정 주기 허용 오차

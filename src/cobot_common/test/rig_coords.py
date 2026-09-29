@@ -6,15 +6,15 @@
     ① 찍은 자세마다: 이름(+ kind · point)으로 불러서 **그 자세에 도착하는가**(닿는가 · 도중에 멈추지 않는가) — V-19 도달 범위
     ② 접근점이 있는 자세: move_to 가 돌려준 높이만큼 곧게 내려가면 **끝점**에 닿는가 → 다시 올라온다 — V-22 재현 오차
     ③ 아직 안 찍은 자세(🔴): 로봇을 **움직이지 않고** KeyError 를 내는가
-도는 순서는 공정 흐름 그대로 — 그릇 한 바퀴 → 컵 한 바퀴(9/20 E7 로 안전 높이 경유가 없어져 **구간마다** 보는 것이 중요하다).
+도는 순서는 공정 흐름 그대로 — 그릇 한 바퀴 → 컵 한 바퀴(E7 로 안전 높이 경유가 없어져 **구간마다** 보는 것이 중요하다).
 
-실행 — 두 가지 모드 (rosinfo 로 RANGE=LOCALHOST 확인 · AGENTS 규칙 13)
+실행 — 두 가지 모드 (rosinfo 로 RANGE=LOCALHOST 확인)
   ① Virtual 시험 (기본)                sod && sodvir  →  soc && python3 src/cobot_common/test/rig_coords.py
        cell.yaml 의 limits·motion 이 비어 있어도 돌게 **rig_coords.yaml 의 시험 값으로 채운 사본**을 임시 폴더에 만들어 쓴다
        (진짜 파일은 건드리지 않는다. 좌표는 진짜 값 그대로). 🚨 Virtual 이 아니면 거부한다.
-  ② 실기 확인 (V-22·V-19 · 9/21 저녁)  sod && sodreal →  PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_coords.py --real
-       진짜 cell.yaml 을 **그대로** 쓴다(한석형이 limits·motion·presets 를 채운 뒤). **구간마다 Enter** 로 확인하며 넘어간다.
-       막히는 구간이 나오면 q 로 멈추고 그 자리에서 한석형이 접근점을 추가로 찍는다 → `--from N` 으로 그 구간부터 다시.
+  ② 실기 확인 (V-22·V-19)              sod && sodreal →  PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_coords.py --real
+       진짜 cell.yaml 을 **그대로** 쓴다(limits·motion·presets 를 채운 뒤). **구간마다 Enter** 로 확인하며 넘어간다.
+       막히는 구간이 나오면 q 로 멈추고 그 자리에서 접근점을 추가로 찍는다 → `--from N` 으로 그 구간부터 다시.
        🚨 E-Stop 을 손에 잡고, 로봇 반경 안에 사람이 없는지 확인한 뒤에 시작한다.
   · 실기 절차를 미리 익히려면 Virtual 에서 `--step`(채운 값 + 구간마다 Enter)으로 예행연습한다.
 
@@ -34,11 +34,11 @@ import yaml
 HERE = Path(__file__).resolve().parent
 REAL_CONFIG = HERE.parent / 'config'
 
-# (이름, 들고 있나, kind, point) — 한석형 스크립트의 작업 순서
+# (이름, 들고 있나, kind, point) — 티칭 스크립트(CELL-04)의 작업 순서
 ROUTE = [
     ('HOME', False, None, None),
     ('RET_B', False, None, 1), ('WEIGH', True, 'BOWL', None), ('WASTE', True, 'BOWL', None),
-    ('HOME', True, None, None),        # 9/21: 잔반통이 로봇 뒤라 스펀지 홈(앞)까지 직선으로 가면 몸통을 가로지른다 → HOME 을 거친다
+    ('HOME', True, None, None),        # 잔반통이 로봇 뒤라 스펀지 홈(앞)까지 직선으로 가면 몸통을 가로지른다 → HOME 을 거친다
     ('SPONGE_BED_B', True, None, 'place'),
     ('TOOL_SPONGE', False, None, 'pick'), ('HOME', True, None, None), ('SPONGE_BED_B', True, None, 'wash'),
     ('HOME', True, None, None), ('TOOL_SPONGE', True, None, 'return'), ('SPONGE_BED_B', False, None, 'place'),
@@ -59,7 +59,7 @@ ROUTE = [
 def _untaught(cfg):
     """지금 **비어 있는** 자세 → [(station, kind, None)]. ③ 은 이 자세로 move_to 를 불러 'KeyError · 안 움직임'을 본다.
 
-    🚨 9/21 PR #51 검토(PM): 전에는 고정 목록(SOAP·ISOLATE)이었는데 그 자세들이 채워지자
+    🚨 검토에서 발견: 전에는 고정 목록(SOAP·ISOLATE)이었는데 그 자세들이 채워지자
        ③ 이 **Enter 확인 없이** 실제로 로봇을 움직이게 됐다. 그래서 목록을 설정에서 그때그때 뽑는다 —
        채워진 자세는 절대 여기 들어오지 않는다.
     """
@@ -154,7 +154,7 @@ def main() -> int:
         def state_ok(why):
             """로봇이 명령을 받을 수 있는 상태(STANDBY)인가. 읽기만 한다.
 
-            🚨 9/21 실기: 브링업은 떠 있는데 **컨트롤러와의 연결이 끊겨** 있었다.
+            🚨 실기: 브링업은 떠 있는데 **컨트롤러와의 연결이 끊겨** 있었다.
                그때 get_robot_state 는 3(SAFE_OFF)을, get_current_posj 는 [0,0,0,0,0,0] 을 돌려준다.
                그 0 을 좌표로 받아 적으면 큰일 나므로, 움직이기 전에도 읽기 전에도 여기서 막는다.
             """
@@ -184,7 +184,7 @@ def main() -> int:
         last_j6 = [None]
 
         def jinfo():
-            """도착한 뒤 J3(팔꿈치)·J6(손목) — 9/21 케이블 꼬임 뒤 추가. 팔이 쭉 펴진 특이점과 손목이 크게 도는 구간을 본다."""
+            """도착한 뒤 J3(팔꿈치)·J6(손목) — 케이블 꼬임 뒤 추가. 팔이 쭉 펴진 특이점과 손목이 크게 도는 구간을 본다."""
             j = posj()
             d = '' if last_j6[0] is None else f' (앞에서 {j[5] - last_j6[0]:+.0f}°)'
             warn = []
@@ -223,7 +223,7 @@ def main() -> int:
         if opt.real and not state_ok('첫 이동'):
             return 2
 
-        if opt.probe:                                           # 새 자세 찾기 — 9/21 격리 자리(황인재: J1 −260° 뒤 y +240)
+        if opt.probe:                                           # 새 자세 찾기 — 격리 자리(J1 −260° 뒤 y +240)
             j1, dy = opt.probe
             now = posj()
             if max(abs(a - b) for a, b in zip(now, (0.0, 0.0, 90.0, 0.0, 90.0, 0.0))) > 1.0:
@@ -244,15 +244,15 @@ def main() -> int:
             log.info('  좌표 posx: [' + ', '.join(f'{v:.2f}' for v in posx()) + ']')
             return 0
 
-        if opt.home:                                            # HOME 으로만 — 9/21 실기에서 자주 필요했다(q 를 누를 틈 없이 다음 구간으로 넘어가던 문제)
+        if opt.home:                                            # HOME 으로만 — 실기에서 자주 필요했다(q 를 누를 틈 없이 다음 구간으로 넘어가던 문제)
             log.info(f'HOME 으로 간다 (관절 이동) · 지금 관절 [{", ".join(f"{v:.1f}" for v in posj())}]')
             if opt.step and input('    🚨 관절 이동이라 팔 전체가 휜다 — 갈 길에 걸릴 것이 없으면 Enter / q = 그만 > ').strip().lower() == 'q':
                 return 2
-            # 🔄 9/23(황인재): 낮은 자세(수조 안 z −14 등)에서 곧장 관절 이동하면 테이블을 가로지른다(9/22 17:27 충돌)
+            # 낮은 자세(수조 안 z −14 등)에서 곧장 관절 이동하면 테이블을 가로지른다(실기 충돌)
             #    → 먼저 힘을 끄고 **Z 만 안전 높이(cell.limits.safe_z_mm)까지** 올린 뒤 HOME. 이미 위면 안 움직인다.
             log.info('  먼저 곧게 위로 (safe_retreat · 이미 높으면 안 움직임)')
             cc.safe_retreat()
-            # 🔄 9/23 09:39 실기(황인재): 팔레트 컵 칸(z 249)에서 --home 을 부르니 safe_z(235)보다 이미 높아 안 올라가고
+            # 실기: 팔레트 컵 칸(z 249)에서 --home 을 부르니 safe_z(235)보다 이미 높아 안 올라가고
             #    관절 이동으로 곧장 가다 **팔레트에 걸렸다**. 팔레트는 HOME 보다 +200 높은 구조물 → 칸 근처(xy 200 mm 안)면 칸 위 높이(350)까지 먼저 올린다.
             #    (공정 자체는 rack_place 가 놓은 뒤 위 100 → 옆으로 빠져나온 뒤 HOME 을 부르므로 해당 없음 — 이 도구만의 지름길 문제)
             now = posx()
@@ -269,7 +269,7 @@ def main() -> int:
             return 0
 
         stopped = False
-        log.info(f'──── ① ② 찍은 자세 {len(ROUTE)}번 이동 — 자세에서 자세로 곧장(9/20 E7) ────')
+        log.info(f'──── ① ② 찍은 자세 {len(ROUTE)}번 이동 — 자세에서 자세로 곧장(E7) ────')
         for n, (station, carrying, kind, point) in enumerate(ROUTE, start=1):
             label = station + (f' {kind}' if kind else '') + (f' point={point}' if point is not None else '')
             if n < opt.start:
@@ -296,7 +296,7 @@ def main() -> int:
                 up = cc.move_to(station, carrying, kind, point)
             except Exception as e:                                      # noqa: BLE001
                 if opt.real:
-                    # 🚨 9/21 실기 사고: 이동이 도중에 멈춘 뒤 이 도구가 **자동으로 HOME 으로 가려 했다**.
+                    # 🚨 실기 사고: 이동이 도중에 멈춘 뒤 이 도구가 **자동으로 HOME 으로 가려 했다**.
                     #    그때 로봇은 6번 관절이 돌아 케이블이 꼬인 채 멈춰 있었다 — 자동으로 움직이면 더 꼬이거나 부딪힌다.
                     #    MoveIncomplete 의 약속대로(motion.py) 로봇 위치를 모르면 **사람이 복구**한다. 실기에서는 여기서 끝낸다.
                     record(label, False, f'move_to 오류: {type(e).__name__}: {e}')

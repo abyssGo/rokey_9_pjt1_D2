@@ -16,7 +16,7 @@ class Clock:
 
 
 def test_store_remembers_step_before_pause():
-    # 🆕 9/28 멈춘 뒤에 연 화면도 "어느 단계에서 멈췄나"를 알도록 브리지가 직전 단계를 든다. 운전으로 돌아가면 지운다
+    # 멈춘 뒤에 연 화면도 "어느 단계에서 멈췄나"를 알도록 브리지가 직전 단계를 든다. 운전으로 돌아가면 지운다
     store = StateStore(2.0, Clock())
     assert store.snapshot()['paused_from'] is None
     store.put_state({'step': 'WIPE'})
@@ -226,7 +226,7 @@ def test_hub_drops_oldest_when_a_browser_is_slow():
 
 
 def test_store_counts_runs_and_full_pallets_when_flow_reaches_done():
-    """flow 가 계획을 마치고 DONE 으로 넘어가는 순간 = 한 회차. 칸을 다 채우고 끝났으면 팔레트 1장 완료(9/21 황인재)."""
+    """flow 가 계획을 마치고 DONE 으로 넘어가는 순간 = 한 회차. 칸을 다 채우고 끝났으면 팔레트 1장 완료."""
     store = StateStore(2.0, Clock(), rack_slots=4)
     run = lambda b, c, iso=0: [{'step': 'RACK', 'done_bowl': b, 'done_cup': c, 'isolated': iso},
                                {'step': 'DONE', 'done_bowl': b, 'done_cup': c, 'isolated': iso},

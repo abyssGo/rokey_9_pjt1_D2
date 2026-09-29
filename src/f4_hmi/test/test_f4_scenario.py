@@ -4,7 +4,7 @@ import pytest
 
 from f4_hmi import scenario as sc
 
-ALL = ['normal', 'isolate', 'error', 'paused', 'empty_zone', 'tool_lost', 'leftover_remain', 'cable', 'tool_fail']   # 🆕 9/25 예외 3종(E37·E42·#93) · 9/26 tool_fail(E52)
+ALL = ['normal', 'isolate', 'error', 'paused', 'empty_zone', 'tool_lost', 'leftover_remain', 'cable', 'tool_fail']   # 예외 대본 — tool_lost(E37) · leftover_remain(E42) · cable(E64) · tool_fail(E52)
 
 
 def _contract_steps():
@@ -120,14 +120,14 @@ def test_scenes_know_their_item_so_abort_can_skip_to_the_next_one():
 
 def test_rack_scene_has_not_counted_its_own_container_yet():
     """진짜 flow 는 적재까지 **다 끝난 뒤** done 을 올린다 → 적재(RACK) 중에는 이번 용기가 아직 안 세어져 있다.
-    그래야 화면이 지금 넣는 칸(rack_order[done])을 가리킨다. 9/21 황인재: 가짜가 먼저 세어 다음 칸이 '적재 중' 으로 보였다."""
+    그래야 화면이 지금 넣는 칸(rack_order[done])을 가리킨다. (가짜가 먼저 세면 다음 칸이 '적재 중' 으로 보인다.)"""
     scenes = sc.build(sc.load('normal'))
     racks = [s.state for s in scenes if s.state['step'] == 'RACK']
     assert [(r['kind'], r['done_bowl'], r['done_cup']) for r in racks] == [
         ('BOWL', 0, 0), ('BOWL', 1, 0), ('CUP', 2, 0), ('CUP', 2, 1)]
 
 
-# ------------------------------------------------------------------ 🆕 9/25 pause_retry — 멈춘 뒤 그 단계부터 다시 이어 완료(TOOL_LOST · LEFTOVER_REMAIN · 케이블)
+# ------------------------------------------------------------------ pause_retry — 멈춘 뒤 그 단계부터 다시 이어 완료(TOOL_LOST · TOOL_FAIL · LEFTOVER_REMAIN · 케이블)
 def test_pause_retry_pauses_with_the_code_then_finishes_the_item():
     scenes = sc.build(sc.load('tool_lost'))
     paused = [s for s in scenes if s.state['step'] == 'PAUSED']
@@ -145,7 +145,7 @@ def test_cable_scenario_sends_the_resume_notice_before_continuing():
     paused = [s for s in scenes if s.state['step'] == 'PAUSED']
     assert paused[0].state['last_code'] == 'ROBOT_ERROR' and '케이블' in paused[0].state['message']
     i = scenes.index(paused[0])
-    assert scenes[i + 1].state['step'] == 'WEIGH' and '재개 요청 감지' in scenes[i + 1].state['message']         # → HMI 비프
+    assert scenes[i + 1].state['step'] == 'WEIGH' and '무게를 다시 재며' in scenes[i + 1].state['message']       # 재개 직후 문구
     assert scenes[i + 2].state['step'] == 'WEIGH' and scenes[i + 2].state['message'] == ''
 
 

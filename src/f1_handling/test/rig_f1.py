@@ -1,6 +1,6 @@
 """F1 단독 시험 스크립트 (SDD §3.2 · §10) — 내 함수만 직접 부른다.
 
-    rosinfo                                                        # 🚨 먼저 RANGE=LOCALHOST(격리) 확인 — AGENTS 규칙 13
+    rosinfo                                                        # 🚨 먼저 RANGE=LOCALHOST(격리) 확인
     soc && python3 src/f1_handling/test/rig_f1.py pick --zone RET_B --kind BOWL      # pick 연속 3회
     soc && python3 src/f1_handling/test/rig_f1.py place --station SPONGE_BED_B
     soc && python3 src/f1_handling/test/rig_f1.py move_to --station WEIGH --carrying
@@ -16,7 +16,7 @@
 
 준비(손으로): 시험할 함수의 시작 조건을 만들어 준다 — pick 은 반납 구역에 용기, place·rack_place 는 용기를 그리퍼에 쥐여 줌,
 tool PICK 은 홀더에 툴. 같은 함수를 연속 3회 이상 부른다(SDD §3.2 ⑧ — "첫 번째만 되는" 결함은 한 번으로는 안 보인다).
-실기에서는 속도를 낮춘다:  PREWASH_VEL_SCALE=0.3 python3 …/rig_f1.py …   (첫 실기 20~30 %, AGENTS 규칙 1)
+실기에서는 속도를 낮춘다:  PREWASH_VEL_SCALE=0.3 python3 …/rig_f1.py …   (첫 실기 20~30 %)
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
 """
 import argparse
@@ -105,7 +105,7 @@ def main():
     ap.add_argument('--action', default=PICK, choices=(PICK, RETURN, CYCLE), help='tool: CYCLE = 집기 → 반납 한 쌍 × n (V-08)')
     ap.add_argument('--slot', default=RACK_SLOTS[0], choices=RACK_SLOTS, help='rack_place')
     ap.add_argument('--to-slot', action='store_true',
-                    help='rack_place: 놓는 자세 **위에서 멈춘다**(놓지 않음 · 되돌아오지 않음) — 펜던트로 칸 자세를 새로 찍을 때(9/23 황인재)')
+                    help='rack_place: 놓는 자세 **위에서 멈춘다**(놓지 않음 · 되돌아오지 않음) — 펜던트로 칸 자세를 새로 찍을 때')
     ap.add_argument('--hold-mm', type=float, default=20.0, help='--to-slot 에서 놓는 자세 몇 mm 위에 멈출지 (기본 20)')
     ap.add_argument('--no-robot', action='store_true', help='두산 드라이버 없이 시작(init(robot=False)) — 골격·반환값 확인용')
     ap.add_argument('--fill-virtual', action='store_true', help='비어 있는 limits·motion 을 Virtual 시험 값으로 채운 임시 설정으로 돈다(Virtual 전용)')
@@ -127,7 +127,7 @@ def main():
     cc.init('rig_f1', robot=not a.no_robot)                 # ① 맨 앞에서 한 번
     log = cc.io_node().get_logger()
     try:
-        if not a.no_robot:                                  # 🚨 E26 문지기 — 움직이기 전에 컨트롤러의 툴·TCP 이름 확인(9/22 두 번 풀림: 11:1x · 16:5x)
+        if not a.no_robot:                                  # 🚨 E26 문지기 — 움직이기 전에 컨트롤러의 툴·TCP 이름 확인(실기에서 두 번 풀렸다)
             from cobot_common.bootstrap import dsr          # rig 의 안전 확인용 — 기능 코드에서는 쓰지 않는다
             want = ((cc.cfg().get('flow') or {}).get('preflight') or {})          # 기대 이름은 params flow.preflight (정본은 cell.yaml 머리말)
             got_tool, got_tcp = str(dsr().get_tool()), str(dsr().get_tcp())
@@ -154,7 +154,7 @@ def main():
             cc.move_to('HOME', False)
         if cycle:                                           # V-08 — 같은 함수 n 번이 아니라 집기 → 반납 한 쌍 n 번
             # 🚨 그리퍼 힘은 **움직이거나 닫혀 있을 때만** 읽힌다(gripper.py) → 새 프로그램에서 첫 grip 전에 release 로 한 번 움직여야 한다.
-            #    9/22 18:14 실기: 이게 없어서 tool(PICK) 이 홀더 위까지 간 뒤 grip 첫 줄에서 RuntimeError 로 죽었다.
+            #    실기: 이게 없어서 tool(PICK) 이 홀더 위까지 간 뒤 grip 첫 줄에서 RuntimeError 로 죽었다.
             #    실제 공정(flow_node)에서는 앞 단계(pick·place)가 이미 그리퍼를 움직였으므로 tool() 안에는 넣지 않는다 — 빈손 HOME 에서 한 번.
             log.info('빈손 HOME 에서 release 한 번 — 그리퍼 힘 읽기 준비(새 프로그램)')
             cc.release()
@@ -176,7 +176,7 @@ def main():
 def _to_slot(slot_name, kind, hold_mm, log):
     """rack_place 와 **같은 길**로 칸까지 가서 놓는 자세 hold_mm 위에서 멈춘다 — 놓지 않고, 빠져나오지도 않는다.
 
-    🔄 9/23 09:1x(황인재): 컵 칸(RACK_C1/C2) 놓는 자세를 펜던트로 다시 찍기 위해. 컵을 옆으로 쥔 채(pick SPONGE_BED_C 뒤)
+    컵 칸(RACK_C1/C2) 놓는 자세를 펜던트로 다시 찍기 위해. 컵을 옆으로 쥔 채(pick SPONGE_BED_C 뒤)
     이 명령으로 칸 위까지 오면, 펜던트 수동으로 전환해 컵을 기둥에 앉히고 X·Y·Z·A·B·C 를 읽는다.
     길: 수조 위(RINSE 접근 235) → 컵은 rack.cup_entry_z_mm 까지 상승(그릇은 HOME 경유) → 경유점(via) → 칸 위 → (up − hold) 하강.
     """

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """INF-02b 단독 시험 — 힘 함수(force.py)의 호출 순서 확인. 🚨 Virtual 전용 (실기 값은 V-03).
 
-실행 (저장소 루트에서, 격리 상태 solo — AGENTS 규칙 13)
+실행 (저장소 루트에서, 격리 상태 solo — docs/setup/M0609_환경설정.md)
     터미널 1:  sod && sodvir
     터미널 2:  soc && python3 src/cobot_common/test/rig_force.py
 

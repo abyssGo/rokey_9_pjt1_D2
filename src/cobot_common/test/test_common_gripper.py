@@ -65,7 +65,7 @@ class FakeClient:
             step = G._FORCE_STEP_N if req.command == 'i' else -G._FORCE_STEP_N
             G._force_n = max(0.0, min(G._MAX_FORCE_N, cur + step))
         elif cur is None and req.command == 'i':
-            # 🆕 9/23: 힘을 한 번도 못 읽은 채 'i' 를 보내면 — 실기 드라이버는 재파지하며 effort 를 보낸다.
+            # 힘을 한 번도 못 읽은 채 'i' 를 보내면 — 실기 드라이버는 재파지하며 effort 를 보낸다.
             #    가짜는 "실제 힘이 20 이었다" 고 치고 한 계단 위 값을 읽힌 것으로 한다.
             G._force_n = 20.0 + G._FORCE_STEP_N
         return FakeRes(True, '')
@@ -125,7 +125,7 @@ def test_width_before_first_message_raises():
 def test_grip_sets_force_from_the_value_it_read(fake, monkeypatch):
     """🚨 grip 은 **읽은 힘에서 차이만큼만** 움직인다 — 0 N 까지 내려 기준을 잡지 않는다.
 
-    9/21 실기: 드라이버가 목표 힘을 프로세스 종료 뒤에도 기억해(40 → 35 → 30 → 25 N)
+    실기: 드라이버가 목표 힘을 프로세스 종료 뒤에도 기억해(40 → 35 → 30 → 25 N)
     "브링업 직후 40 N" 같은 가정이 두 번째 실행부터 어긋났다. 그래서 읽은 값에서 출발한다.
     """
     monkeypatch.setattr(G, '_force_n', 30.0)           # 앞선 실행이 남긴 힘을 읽은 상태
@@ -192,7 +192,7 @@ def test_release_sends_open(fake, monkeypatch):
 
 
 def test_release_makes_a_move_to_read_the_force(fake, monkeypatch):
-    """🚨 힘은 **움직이거나 닫혀 있을 때만** 읽힌다 (9/21 실기).
+    """🚨 힘은 **움직이거나 닫혀 있을 때만** 읽힌다 (실기).
 
     이미 활짝 열려 있으면 'o' 가 아무 움직임도 안 만들어 못 읽는다 → 아직 한 번도 못 읽었으면
     **빈손으로 한 번 닫았다 연다**. 여기가 손이 빈 게 확실한 유일한 자리다.
@@ -214,7 +214,7 @@ def test_width_out_of_range_is_clamped(fake, monkeypatch):
 
 # ────────────────────────────────── grip_level (털기·담금이 쓴다)
 def test_grip_level_learns_force_by_one_step_regrip_when_unknown(fake, monkeypatch):
-    """🆕 9/23(PM · E36 실기): 쥔 용기로 새 프로세스를 시작하면 effort 가 안 와 힘을 모른다 → 놓지 않고 'i' 한 계단(+2.5 N)
+    """E36 실기: 쥔 용기로 새 프로세스를 시작하면 effort 가 안 와 힘을 모른다 → 놓지 않고 'i' 한 계단(+2.5 N)
     다시 잡아 읽은 뒤(20 → 22.5) 목표(HOLD 35)까지 맞춘다. 실패로 멈추지 않는다."""
     monkeypatch.setattr(G, '_force_n', None)
     monkeypatch.setattr(G, '_joint_angle', 0.83)
@@ -243,8 +243,8 @@ def test_grip_level_back_to_normal(fake, monkeypatch):
 
 
 def test_grip_level_without_anchor_refuses(fake, monkeypatch):
-    """🚨 쥔 채 힘을 바꾸려는데 힘을 모르면 — 놓지 않고 'i' 한 계단으로 다시 잡아 읽어 본다(9/23).
-    그래도 드라이버가 effort 를 안 주면 거부한다(모르는 채 계단을 보내면 놓친다 · PM 9/20 · #17 검토 2번).
+    """🚨 쥔 채 힘을 바꾸려는데 힘을 모르면 — 놓지 않고 'i' 한 계단으로 다시 잡아 읽어 본다.
+    그래도 드라이버가 effort 를 안 주면 거부한다(모르는 채 계단을 보내면 놓친다).
     조용히 떨어뜨리는 대신 예외 → flow 가 ROBOT_ERROR 로 멈춘다.
     """
     monkeypatch.setattr(G, '_joint_angle', 0.83)
@@ -261,7 +261,7 @@ def test_grip_level_without_anchor_refuses(fake, monkeypatch):
 
 
 def test_grip_level_refuses_when_gripper_is_open(fake, monkeypatch):
-    """🆕 9/23: 폭이 100 mm 넘게 열려 있으면(빈손) 힘 전환도 탐색 'i' 도 보내지 않는다(08:4x 실기: 탐색이 빈손을 닫아 버림)."""
+    """폭이 100 mm 넘게 열려 있으면(빈손) 힘 전환도 탐색 'i' 도 보내지 않는다(실기: 탐색이 빈손을 닫아 버림)."""
     monkeypatch.setattr(G, '_force_n', None)
     monkeypatch.setattr(G, '_joint_angle', float(G._width_to_angle(110.6)) if hasattr(G, '_width_to_angle') else G._joint_angle)
     monkeypatch.setattr(G, 'grip_width', lambda: 110.6)
@@ -318,7 +318,7 @@ def test_set_force_updates_memory_after_each_command(fake, monkeypatch):
 def test_set_force_failure_midway_does_not_keep_stale_memory(fake, monkeypatch):
     """🚨 도중에 실패하면 기억은 **실제와 맞거나 없어야(None)** 한다.
 
-    재현(9/20 감사): 3번째 'i' 에서 실패 → 실제는 5.0~7.5 N 인데 0.0 N 으로 기억하고 있었다.
+    재현(감사): 3번째 'i' 에서 실패 → 실제는 5.0~7.5 N 인데 0.0 N 으로 기억하고 있었다.
     그러면 다음부터 힘이 계속 어긋나, NORMAL 인 줄 알고 약하게 쥐어 이송 중 낙하가 된다(SDD §8).
     """
     monkeypatch.setattr(G, '_force_n', 0.0)
@@ -375,7 +375,7 @@ def test_force_memory_comes_only_from_reading(monkeypatch):
     assert G._force_n == pytest.approx(35.0), '읽힌 값으로 갱신해야 한다'
 
 
-# ────────────────────────────────── 🆕 안전 스위치 읽기·풀기 (상자와 직접 통신)
+# ────────────────────────────────── 안전 스위치 읽기·풀기 (상자와 직접 통신)
 #   🚨 진짜 상자에 붙지 않는다 — pymodbus 를 가짜 모듈로 바꿔 끼워서 "무엇을 어디에 썼나" 만 본다.
 #      실기 확인은 rig_grip_reset.py (check → watch → reset).
 
@@ -471,7 +471,7 @@ def test_safety_tripped_when_switch_triggered(box):
 
 
 def test_safety_needs_config(fake):
-    """🚨 주소를 모르면 아무 데도 쏘지 않는다 (AGENTS 규칙 6·12)."""
+    """🚨 주소를 모르면 아무 데도 쏘지 않는다."""
     with pytest.raises(G.GripperBoxError, match='gripper_box'):
         G.grip_safety()
 
@@ -494,7 +494,7 @@ def test_reset_writes_restart_to_the_box(box):
     """전원 재시작은 **상자 번호(63)** 의 0번 칸에 2 — 툴 번호(65)가 아니다.
 
     🚨 강사 배포본의 /onrobot/restartPower 는 여기서 인자 이름이 틀려(values=) 예외가 나고
-       드라이버 노드가 죽는다. 그래서 우리가 직접 보낸다(9/21 소스 확인).
+       드라이버 노드가 죽는다. 그래서 우리가 직접 보낸다(드라이버 소스 확인).
     """
     box.regs[10] = (1 << 3)                           # 걸린 상태에서 시작
     box.on_write = lambda b: b.regs.__setitem__(10, 0)   # 전원이 들어오면서 풀렸다
@@ -532,7 +532,7 @@ def test_reset_still_stuck_is_not_called_success(box):
 
 
 def test_stuck_command_now_names_the_safety_switch(box, fake, monkeypatch):
-    """🔄 폭이 안 변하면 예전처럼 짐작하지 않고 **읽어서** 걸렸다고 말한다."""
+    """폭이 안 변하면 짐작하지 않고 **읽어서** 걸렸다고 말한다."""
     box.regs[10] = (1 << 3)
     monkeypatch.setattr(G, '_force_n', 20.0)
     monkeypatch.setattr(G, '_joint_angle', 0.83)      # 명령해도 폭이 그대로

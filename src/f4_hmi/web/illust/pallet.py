@@ -1,4 +1,4 @@
-# 팔레트 입체 그림 — 황인재 배치 그림 그대로(위에서 본 배치: 왼쪽 컵 칸[컵 1 오른쪽 위 · 컵 2 왼쪽 아래] · 가운데 그릇 2 · 오른쪽 그릇 1)
+# 팔레트 입체 그림 — 배치 그림 그대로(위에서 본 배치: 왼쪽 컵 칸[컵 1 오른쪽 위 · 컵 2 왼쪽 아래] · 가운데 그릇 2 · 오른쪽 그릇 1)
 #   위에서 본 (u 오른쪽, v 아래) → 3D (x = u − 180, y = v − 105). 칸 상태: 'done'(적재됨) | 'now'(넣는 중) | 'empty'(비어 있음)
 #   화면(Pallet)은 칸마다 상태에 맞는 조각을 골라 아래 ORDER 순서(뒤 → 앞)로 겹친다 — 조각은 build.py 가 palletArt.js 로 만든다.
 from iso import Scene, shade, container, CUP, ACC
@@ -62,7 +62,7 @@ def _item(s, kind, x, y, st, n):
     else:
         if st == 'done':
             s.shadow(x, y, FLOOR, 36, op=.45)
-        container(s, 'CUP', x, y, FLOOR + lift, upside_down=True)      # 🆕 9/27 황인재: 팔레트의 컵은 뒤집어 얹는다
+        container(s, 'CUP', x, y, FLOOR + lift, upside_down=True)      # 팔레트의 컵은 뒤집어 얹는다
         X, Y = s.P(x, y, FLOOR + lift + CUP['h'])
     if st == 'now':
         s.raw('</g>')
@@ -90,7 +90,7 @@ def base_part():
 def divider_part(name):
     s = _scene(f'pal-{name.lower()}')
     x = DIVIDERS[name]
-    s.box(x - 2.5, -105, FLOOR, 5, 210, 46, 'rack')               # 칸막이 — 9/21 실기에서 밀어 넣다 걸린 그 벽
+    s.box(x - 2.5, -105, FLOOR, 5, 210, 46, 'rack')               # 칸막이 — 밀어 넣으면 걸리는 벽
     return _frag(s)
 
 def front_part():

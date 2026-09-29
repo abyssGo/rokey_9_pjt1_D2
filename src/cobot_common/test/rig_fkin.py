@@ -4,8 +4,8 @@
   soc && python3 src/cobot_common/test/rig_fkin.py -29.24 19.3 132.86 68.2 71.8 -63.8
   soc && python3 src/cobot_common/test/rig_fkin.py --bed SPONGE_BED_C          # cell.beds.<bed>.regrip.posj 를 읽어서
 
-왜(9/23 황인재): 컵 옆면 재파지 자세는 관절값(posj)으로만 있어 접근점을 못 둔다(motion.py — posj 의 접근점은 아직 없다).
-  HOME 에서 관절 이동으로 곧장 가니 열린 그리퍼가 홈 C 의 컵에 걸려 SAFE_STOP(07:55). → posx 로 바꿔 **위에서 자세를 맞추고 Z 만 내리는**
+왜: 컵 옆면 재파지 자세는 관절값(posj)으로만 있어 접근점을 못 둔다(motion.py — posj 의 접근점은 아직 없다).
+  HOME 에서 관절 이동으로 곧장 가니 열린 그리퍼가 홈 C 의 컵에 걸려 SAFE_STOP. → posx 로 바꿔 **위에서 자세를 맞추고 Z 만 내리는**
   접근점(approach_posx = posx + Z)을 만든다. 실기 브링업이 떠 있어야 하고(가상도 됨), 로봇은 안 움직인다.
 """
 import argparse

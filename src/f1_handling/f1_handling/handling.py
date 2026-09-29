@@ -1,8 +1,8 @@
-"""F1 파지·이송·적재 — 한석형 (IRD v3.0 §3, SDD §5.2).
+"""F1 파지·이송·적재 (IRD v3.0 §3, SDD §5.2).
 
 flow_node(메인 프로그램)나 test/rig_f1.py 가 cobot_common.init() 뒤 메인 스레드에서 부르는
 평범한 함수다(SDD §3.2). 이름·인자·반환은 cobot_api.F1Api 그대로이고, 실패는 예외가 아니라
-Result.fail(code) 로 돌려준다. 좌표·숫자는 전부 cell.yaml · params.yaml 의 f1 절에서 읽는다(AGENTS 규칙 6).
+Result.fail(code) 로 돌려준다. 좌표·숫자는 전부 cell.yaml · params.yaml 의 f1 절에서 읽는다(SDD §3.2).
 
 물리 인계: F1 이 놓은 자리에서 F3 가 시작한다 → 단독 시험은 용기·툴을 손으로 놓아 주면 된다.
 어떤 실패에서도 로봇은 안전 높이로(cc.safe_retreat), 툴 반납은 flow 가 tool(RETURN) 을 부른다.
@@ -13,7 +13,7 @@ Result.fail(code) 로 돌려준다. 좌표·숫자는 전부 cell.yaml · params
       import cobot_common as cc
       p = cc.cfg()['cell']['zones'][zone_id]          # 숫자는 YAML 에서
       cc.move_to(...) · cc.move_rel(...) · cc.contact_down(...) · cc.grip(...) · cc.release() · cc.safe_retreat()
-  주의: DSR_ROBOT2 를 직접 import 하지 않는다. 접촉 동작에는 힘 상한 + 후퇴 + 타임아웃(AGENTS 규칙 2).
+  주의: DSR_ROBOT2 를 직접 import 하지 않는다. 접촉 동작에는 힘 상한 + 후퇴 + 타임아웃.
 
 실패를 돌려주는 방식 (flow.call() 의 실제 동작에 맞춘 것)
   · 공정에서 있을 수 있는 실패 = 코드로: SEAT_FAIL · TOOL_FAIL · EMPTY_ZONE · RACK_JAM · FORCE_LIMIT · TIMEOUT (Result.fail)
@@ -122,7 +122,7 @@ def pick(zone_id: str, kind: str) -> PickResult:
     slots = zone.get('slots') or []
     if not slots:
         raise KeyError(f'cell.zones.{zone_id}.slots 가 비어 있다')
-    cc.release()                                                    # 주의: 빈손으로 시작 (현재상황 §2 PICK)
+    cc.release()                                                    # 주의: 빈손으로 시작
     for i in range(1, len(slots) + 1):
         up = float(cc.move_to(zone_id, False, kind, i) or 0.0)      # 접근점 (없으면 끝점 · 0)
         if up > 0.0:
@@ -164,7 +164,7 @@ def _regrip(bed: str, kind: str) -> PickResult:
         if up > 0.0 and watch_mm <= 0.0:
             # 순응 걸음 하강(3 mm ≈ 3 s × 15 = 40 s) 없이 곧게 내려가 바로 잡는다(마지막 land_slow_mm 완충).
             #    컵 XY 는 로봇이 스스로 놓은 자리(SPONGE_BED_C.place)라 어긋남이 작고 손가락 여유(110 − 70 = 양쪽 20 mm)가 있다.
-            #    테두리에 얹힘 판정(GRIP_FAIL)은 없어진다 — 걸리면 로봇 충돌 감지가 마지막 보호. 제한: 이 갈래는 실기 검증 전.
+            #    테두리에 얹힘 판정(GRIP_FAIL)은 없어진다 — 걸리면 로봇 충돌 감지가 마지막 보호. 실기 확인(E50).
             _descend(up)
             free = up
         elif up > 0.0:
@@ -286,11 +286,10 @@ def tool(tool: str, action: str) -> ToolResult:
             판정 = |읽은 폭 − 영점 − 기대 폭| ≤ 허용오차.
             프리셋에 `grip_target_mm` 이 있으면 컵(결정 E19)처럼 그 폭까지만 닫고 폭 판정을 하지 않는다 —
             툴이 물러서 끝까지 닫으면 눌리는 경우. 어느 쪽으로 할지는 V-08 결과로 정한다(E23).
-            f1.soap_pump.enabled 면 세제 펌프를 한 번 누른 뒤 집는다(_soap_pump_and_pick).
     RETURN: 이 프로그램이 집은 툴이면 집었던 자리(_LAST_PICK)로 역순으로 돌아가 놓는다(_tool_return). 아니면
             홀더의 반납 자세(cell.stations.TOOL_*.return)로 툴을 들고 → cc.contact_down 으로 홀더 바닥을 찾는다
             (접촉 힘 f1.tool_return_contact_n · 최대 깊이 = 접근점까지의 높이 또는 f1.tool_return_depth_mm ·
-             힘 상한과 타임아웃은 contact_down 이 본다 — AGENTS 규칙 2) → release → 되올라오기.
+             힘 상한과 타임아웃은 contact_down 이 본다) → release → 되올라오기.
             주의: 바닥을 못 찾으면 release 하지 않는다(공중에서 툴을 떨어뜨리지 않는다) → 후퇴 + TOOL_FAIL.
     참고: 툴을 쥐면 툴 무게가 바뀐다 — 툴 무게 설정이 틀리면 힘 값이 틀어진다(CELL-02a §3-5).
        contact_down 은 시작할 때 대비 힘 변화량으로 본다(절대값 아님)라 이 함정은 이미 피해 간다.
@@ -309,169 +308,9 @@ def tool(tool: str, action: str) -> ToolResult:
     if action == PICK:
         preset = ((conf.get('cell') or {}).get('presets') or {}).get(tool)
         if not preset:
-            raise KeyError(f'cell.presets.{tool} 가 없다 — 툴 파지 폭·힘을 cell.yaml 에 채운다(한석형)')
-        soap_pump = f1.get('soap_pump') or {}
-        if bool(soap_pump.get('enabled', False)):
-            return _soap_pump_and_pick(station, tool, preset, clear)
+            raise KeyError(f'cell.presets.{tool} 가 없다 — 툴 파지 폭·힘을 cell.yaml 에 채운다')
         return _tool_pick(station, tool, preset, clear)
     return _tool_return(station, f1, clear, tool)
-
-
-
-def _soap_pump_and_pick(station, tool, preset, clear) -> ToolResult:
-    """세제 펌프 1회 작동 후 기존 툴 PICK으로 이어간다."""
-    conf = cc.cfg()
-    f1 = _need(conf, 'f1', 'config')
-    pump_cfg = _need(f1, 'soap_pump', 'f1')
-
-    pump = _need(
-        _need(_cell(), 'stations', 'cell'),
-        'SOAP_PUMP',
-        'cell.stations',
-    )
-    head = [
-        float(v)
-        for v in _need(pump, 'posx', 'cell.stations.SOAP_PUMP')
-    ]
-
-    head_lift = float(_need(pump_cfg, 'head_lift_mm', 'f1.soap_pump'))
-    head_open = float(_need(pump_cfg, 'head_open_mm', 'f1.soap_pump'))
-    head_grip = float(_need(pump_cfg, 'head_grip_mm', 'f1.soap_pump'))
-    press_grip = float(_need(pump_cfg, 'press_grip_mm', 'f1.soap_pump'))
-    grip_force = float(_need(pump_cfg, 'head_grip_force_n', 'f1.soap_pump'))
-
-    turn_key = 'sponge_turn_deg' if tool == SPONGE else 'brush_turn_deg'
-    turn_deg = float(_need(pump_cfg, turn_key, 'f1.soap_pump'))
-
-    force_start_z = float(_need(pump_cfg, 'force_start_z_mm', 'f1.soap_pump'))
-    full_press_n = float(_need(pump_cfg, 'full_press_n', 'f1.soap_pump'))
-    force_step = float(_need(pump_cfg, 'force_step_mm', 'f1.soap_pump'))
-    max_travel = float(_need(pump_cfg, 'max_force_travel_mm', 'f1.soap_pump'))
-    force_vel = float(_need(pump_cfg, 'force_vel_mm_s', 'f1.soap_pump'))
-    force_acc = float(_need(pump_cfg, 'force_acc_mm_s2', 'f1.soap_pump'))
-
-    fast_vel = float(_need(pump_cfg, 'fast_tcp_vel_mm_s', 'f1.soap_pump'))
-    fast_acc = float(_need(pump_cfg, 'fast_tcp_acc_mm_s2', 'f1.soap_pump'))
-    rot_vel = float(_need(pump_cfg, 'fast_rot_vel_deg_s', 'f1.soap_pump'))
-    tool_pick_z = float(_need(pump_cfg, 'tool_pick_z_mm', 'f1.soap_pump'))
-
-    def pose():
-        return [float(v) for v in cc.where()[:6]]
-
-    def move_z(z):
-        now = pose()
-        cc.move_rel(
-            0.0, 0.0, z - now[2], 'BASE',
-            vel_mm_s=fast_vel,
-            acc_mm_s2=fast_acc,
-        )
-
-    # 그리퍼 힘 센서 초기화 — 시험대(rig)와 같은 순서
-    cc.release()
-
-    # 그리퍼 초기화 — 바로 위와 같은 release() 를 한 번 더 부른다. 의도적 2회인지 실기 확인 전이라 지우지 않는다
-    cc.release()
-
-    # HOME
-    cc.move_to('HOME', False)
-
-    # SOAP_PUMP X/Y, Z 유지
-    now = pose()
-    cc.move_rel(
-        head[0] - now[0],
-        head[1] - now[1],
-        0.0,
-        'BASE',
-        vel_mm_s=fast_vel,
-        acc_mm_s2=fast_acc,
-    )
-
-    # XYZ 유지, 펌프 헤드 orientation
-    now = pose()
-    cc.move_pose(
-        [now[0], now[1], now[2], head[3], head[4], head[5]],
-        vel_mm_s=fast_vel,
-        vel_deg_s=rot_vel,
-        acc_mm_s2=fast_acc,
-        acc_deg_s2=rot_vel * 2.0,
-    )
-
-    # 헤드 접근 및 파지
-    cc.grip(head_open, grip_force)
-    move_z(head[2])
-    cc.grip(head_grip, grip_force)       # 헤드를 쥐는 폭 f1.soap_pump.head_grip_mm(실기에서 20 → 22 mm 로 넓힘)
-
-    # SPONGE -90 / BRUSH +90
-    cc.move_joint_rel(
-        6,
-        turn_deg,
-        time_s=abs(turn_deg) / rot_vel,
-        carrying=False,
-    )
-
-    # 펌프 누르기 준비
-    cc.grip(head_open, grip_force)
-    cc.move_rel(
-        0.0, 0.0, head_lift, 'BASE',
-        vel_mm_s=fast_vel,
-        acc_mm_s2=fast_acc,
-    )
-    cc.grip(press_grip, grip_force)
-    move_z(force_start_z)
-
-    # 힘 기반 펌프
-    baseline = cc.read_force()
-    travelled = 0.0
-    full_press = False
-
-    cc.compliance_on()
-    try:
-        while travelled < max_travel:
-            cc.move_rel(
-                0.0, 0.0, -force_step, 'BASE',
-                vel_mm_s=force_vel,
-                acc_mm_s2=force_acc,
-            )
-            travelled += force_step
-
-            force = cc.read_force()
-            dfz = abs(float(force[2]) - float(baseline[2]))
-
-            if dfz >= full_press_n:
-                full_press = True
-                break
-    finally:
-        cc.compliance_off()
-
-    # 펌프에서 빠져나와 헤드 원위치
-    cc.move_rel(
-        0.0, 0.0, 30.0, 'BASE',                    # 30 mm = 펌프 헤드에서 빠져나오는 높이(고정값)
-        vel_mm_s=fast_vel,
-        acc_mm_s2=fast_acc,
-    )
-    cc.grip(head_open, grip_force)
-
-    move_z(head[2])
-    cc.grip(head_grip, grip_force)
-
-    cc.move_joint_rel(
-        6,
-        -turn_deg,
-        time_s=abs(turn_deg) / rot_vel,
-        carrying=False,
-    )
-
-    cc.grip(head_open, grip_force)
-    move_z(tool_pick_z)
-
-    if not full_press:
-        _log().warning(
-            f'세제 펌프 압력 미도달 — {max_travel:.1f} mm 내 '
-            f'{full_press_n:.1f} N 미도달. 툴 PICK은 계속 진행'
-        )
-
-    # 펌프 압력 미도달이어도 안전 퇴피 후 기존 F1 툴 픽업 계속
-    return _tool_pick(station, tool, preset, clear)
 
 
 def _tool_pick(station, tool, preset, clear) -> ToolResult:
@@ -537,7 +376,7 @@ def _tool_return(station, f1, clear, tool=None) -> ToolResult:
         above = list(pick)
         above[2] = pick[2] + clear
         cc.move_pose(above, vel, 60.0, acc, 60.0)                   # 툴을 들고 집은 자리 위로(직선 · 자세 포함)
-        watch = min(clear, float(_need(f1, 'tool_return_depth_mm', 'params.yaml 의 f1')))   # 마지막 구간은 힘 감시(AGENTS §3-2)
+        watch = min(clear, float(_need(f1, 'tool_return_depth_mm', 'params.yaml 의 f1')))   # 마지막 구간은 힘 감시
         limit = float(_need(f1, 'tool_return_contact_n', 'params.yaml 의 f1'))
         if watch <= 0.0:
             # 반납 자리 = 이 프로그램이 집은 바로 그 자리(posx 기억)라 바닥을 찾을 필요가 없다 →

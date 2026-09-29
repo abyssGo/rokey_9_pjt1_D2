@@ -21,7 +21,7 @@ CFG = {
                      'WEIGH': {'posx': [400, 100, 450, 0, 180, 0]},          # 안전 높이보다 높다
                      'TOOL_SPONGE': {'posx': [300, -200, 120, 0, 180, 0]},   # 안전 높이보다 낮다
                      'SOAP': {'posx': None},                                  # 아직 티칭 전
-                     'WASTE': {'BOWL': {'posx': [600, -170, 240, 0, 180, 0]},          # 종류별 자세 (9/20 CELL-04)
+                     'WASTE': {'BOWL': {'posx': [600, -170, 240, 0, 180, 0]},          # 종류별 자세 (CELL-04)
                                'CUP': {'posx': [110, -400, 240, 90, -160, -160]}},
                      'ISOLATE': {'BOWL': {'posx': None}, 'CUP': {'posx': None}},         # 종류별인데 아직 티칭 전
                      'TOOL_BRUSH': {'pick': {'posj': [-28, 17, 84, 0, 79, -28]},         # 용도별 자세
@@ -74,7 +74,7 @@ class FakeDsr:
     def posj(self, q):                       # 두산 posj 흉내(list 그대로) — 실물은 posj(list) 형이어야 movesj 가 받는다
         return list(q)
 
-    def amovesj(self, pos_list, **kw):        # 🆕 관절 스플라인(E36 물 털기) — 마지막 점에 도착한 것으로
+    def amovesj(self, pos_list, **kw):        # 관절 스플라인(E36 물 털기) — 마지막 점에 도착한 것으로
         self.calls.append(('movesj', [list(p) for p in pos_list], kw))
         self.left = self.busy_polls
         if not self.stops_short:
@@ -120,7 +120,7 @@ def test_move_to_home_is_joint_move_at_free_speed(robot):
 
 
 def test_move_to_goes_straight_without_lifting_first(robot):
-    """9/20 E7: 안전 높이를 거치지 않는다 — 낮은 곳에서 출발해도 위로 올리지 않고 목표로 바로."""
+    """E7: 안전 높이를 거치지 않는다 — 낮은 곳에서 출발해도 위로 올리지 않고 목표로 바로."""
     robot.z = 120.0
     motion.move_to('WEIGH', True)
     (name, pos, kw), = robot.calls                                  # 상승 없이 이동 한 번
@@ -135,7 +135,7 @@ def test_move_to_goes_to_the_taught_pose_even_below_retreat_height(robot):
 
 @pytest.mark.parametrize('args', [('WEIGH',), ('HOME',), ('SPONGE_BED_B', None, 'place')])
 def test_move_to_raises_when_the_controller_stopped_the_move_short(robot, monkeypatch, args):
-    """9/20 Virtual 실측: 속도 한계 초과로 컨트롤러가 이동을 도중에 세웠는데 비동기 이동은 '끝남'으로만 보였다 → 도착을 직접 확인한다."""
+    """Virtual 실측: 속도 한계 초과로 컨트롤러가 이동을 도중에 세웠는데 비동기 이동은 '끝남'으로만 보였다 → 도착을 직접 확인한다."""
     monkeypatch.setattr(motion, '_ARRIVE_WAIT_S', 0.01)
     robot.stops_short = True
     robot.at_j = [10.0, 0, 90, 0, 90, 0]
@@ -258,7 +258,7 @@ def test_move_joint_rel_time_stretches_with_vel_scale(robot):
 
 
 def test_move_joint_rel_time_cannot_beat_the_speed_cap(robot, monkeypatch):
-    """시간 지정 경로에도 속도 상한이 있다(PR #15 검토): 평균 속도가 100 % 기준 × vel_scale 을 넘으면 시간을 늘린다."""
+    """시간 지정 경로에도 속도 상한이 있다: 평균 속도가 100 % 기준 × vel_scale 을 넘으면 시간을 늘린다."""
     warned = []
     monkeypatch.setattr(motion, '_warn', warned.append)
     motion.move_joint_rel(5, 60, time_s=0.1)                        # 600 deg/s 를 요구 — 상한은 100 deg/s
@@ -282,7 +282,7 @@ def test_move_joint_rel_time_within_cap_is_untouched(robot, monkeypatch):
 
 
 def test_move_joint_rel_scale_false_ignores_vel_scale_but_keeps_the_cap(robot, monkeypatch):
-    """🆕 9/23 E36 scale=False — 물 털기(fast): 배속을 낮춰도 시간을 늘리지 않는다. 상한은 100 % 기준(100 deg/s) 그대로."""
+    """E36 scale=False — 물 털기(fast): 배속을 낮춰도 시간을 늘리지 않는다. 상한은 100 % 기준(100 deg/s) 그대로."""
     warned = []
     monkeypatch.setattr(motion, '_warn', warned.append)
     robot.cfg['run']['vel_scale'] = 0.3
@@ -356,7 +356,7 @@ def test_halt_stops_and_blocks_until_cleared(robot):
 
 
 def test_stop_sends_stop_now_without_raising_the_halt_flag(robot):
-    """cc.stop() = 지금 바로 정지 명령(박진용 force.stop_now 용). halt() 와 달리 깃발은 안 세운다 → 다음 이동은 그대로 나간다."""
+    """cc.stop() = 지금 바로 정지 명령(force.stop_now 용). halt() 와 달리 깃발은 안 세운다 → 다음 이동은 그대로 나간다."""
     motion.stop()
     assert robot.services == ['stop'] and not motion.is_halted()
     sent = len(robot.calls)
@@ -370,7 +370,7 @@ def test_stop_is_public_as_cc_stop():
 
 
 def test_move_timeout_scales_with_vel_scale(robot):
-    """🔄 9/23 08:41 실기: 0.3 배속에서 손목 200° 관절 이동이 30 s 를 넘어 정상 이동이 시간 초과로 멈췄다 → 상한 = 기준 ÷ vel_scale."""
+    """실기: 0.3 배속에서 손목 200° 관절 이동이 30 s 를 넘어 정상 이동이 시간 초과로 멈췄다 → 상한 = 기준 ÷ vel_scale."""
     robot.cfg['cell']['motion']['move_timeout_s'] = 30.0
     robot.cfg.setdefault('run', {})['vel_scale'] = 0.3
     assert motion._move_timeout() == pytest.approx(100.0)
@@ -436,10 +436,10 @@ def test_fast_cap_falls_back_to_base_when_missing(robot):
     assert robot.calls[-1][2]['vel'] == pytest.approx(100.0) and robot.calls[-1][2]['acc'] == pytest.approx(200.0)
 
 
-# ------------------------------------------------------------------ 🆕 9/23 j6_period — J6 동치각(툴 홀더 180° · 한 바퀴 360°)
+# ------------------------------------------------------------------ j6_period — J6 동치각(툴 홀더 180° · 한 바퀴 360°)
 @pytest.mark.parametrize('now_j6,period,expect', [
     (182.2, 180.0, 139.63),     # 홈 B 에서 온 손목(+182) → −40.37 + 180 = 139.63 (회전 −42.6°, 티칭값이면 −222.6°)
-    (-177.6, 180.0, -220.37),   # 반대쪽으로 뒤집혀 왔으면 −40.37 − 180 = −220.37 (9/22 값 · 회전 −42.8°)
+    (-177.6, 180.0, -220.37),   # 반대쪽으로 뒤집혀 왔으면 −40.37 − 180 = −220.37 (실기 값 · 회전 −42.8°)
     (-30.0, 180.0, -40.37),     # 이미 가까우면 티칭값 그대로
     (294.6, 360.0, 319.63),     # 한 바퀴 감긴 손목이면 같은 자세(+360)로 — 회전 25° (티칭값이면 −335°)
 ])

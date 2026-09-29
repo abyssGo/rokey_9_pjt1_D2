@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """V-03 — 힘제어를 켠 채 X·Y 로 움직일 수 있는가 (솔로 그릇 안쪽 바닥을 누르며 문지르기). 실기 전용 · Virtual 은 흐름만.
 
-실행 (저장소 루트, 격리 상태 solo — AGENTS 규칙 13)
+실행 (저장소 루트, 격리 상태 solo — docs/setup/M0609_환경설정.md)
     Virtual 흐름 확인 :  sod && sodvir  →  soc && python3 src/cobot_common/test/rig_v03.py
     Virtual + 가짜 벽 :  soc && python3 src/cobot_common/test/rig_v03.py --fake-wall   (나선 → 벽 → 2바퀴 흐름·시간)
                          그릇 크기를 바꿔 보려면  --fake-wall --fake-bowl-d 200   (안지름 mm)
@@ -16,7 +16,7 @@
       → 반지름 방향 힘이 (가운데에서 배운 마찰 + wall_margin_n) 을 넘으면 벽 → 그 자리에서 바로 벽에 붙어 2바퀴 → 후퇴 → HOME
 걸음은 blend_radius_mm 로 이어 붙여 멈추지 않고 움직인다.
 솔은 낮은 원통이라 손목(6축) 비틀림 각도는 닦기에 상관없다 — 따로 되돌리지 않고 HOME(관절 이동)이 0 으로 돌려 놓는다.
-힘은 닿은 채 켠다(force.py 는 절대값 ABS: 목표 = 실제 누르는 힘). 9/19 1차에 3 mm 위(공중)에서 상대 모드로 켰더니
+힘은 닿은 채 켠다(force.py 는 절대값 ABS: 목표 = 실제 누르는 힘). 1차 실기에서 3 mm 위(공중)에서 상대 모드로 켰더니
 3 s 안에 바닥까지 못 내려가 공중에서 8자를 그렸다 → 방식 변경.
 누르는 힘 = 공중에서 잰 기준값 대비 Fz 변화. 어느 순간이든 limit_n 을 넘으면 즉시 힘 해제 → 후퇴.
 🚨 두산 API 의 DR_Error 는 생기는 순간 rclpy.shutdown() 을 부른다 → 이 프로세스로는 힘·순응을 못 끈다.
@@ -37,7 +37,7 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 os.environ['PREWASH_CONFIG_DIR'] = str(HERE / 'rig_v03_config')      # cc.init 이 설정을 읽기 전에
-os.environ.setdefault('PREWASH_VEL_SCALE', '0.3')                     # 첫 실기 저속 (AGENTS 규칙 1)
+os.environ.setdefault('PREWASH_VEL_SCALE', '0.3')                     # 첫 실기 저속
 
 import cobot_common as cc                                               # noqa: E402
 from cobot_common.bootstrap import dsr                                  # noqa: E402  cobot_common 자체 시험이라 내부 함수를 쓴다
@@ -84,10 +84,10 @@ class Run:
         목표 = [중심 X + x, 중심 Y + y, 바닥 Z, A, B, C + 비틀기]. 툴 Z 축 회전은 ZYZ 의 C 에 더하면 된다
         (Rz(A)·Ry(B)·Rz(C)·Rz(q) = Rz(A)·Ry(B)·Rz(C + q)).
         🚨 Z 는 **힘제어가 정한다** — 명령에는 '지금 실제 Z'를 넣는다. 처음 닿은 높이를 계속 명령하면
-        힘제어(더 눌러 내려가려 함)와 위치 명령(그 높이로 끌어올림)이 싸워 작업대를 쿵쿵 친다(9/20 실기).
+        힘제어(더 눌러 내려가려 함)와 위치 명령(그 높이로 끌어올림)이 싸워 작업대를 쿵쿵 친다(실기).
         🔸 blend_radius_mm(> 0) 이면 목표 앞 그 거리에서 다음 걸음으로 **이어서** 간다(멈췄다 가는 뚝뚝 끊김 없앰).
         🔸 손목은 twist_every 걸음마다 한 번만 방향을 바꾼다 — 걸음마다 바꾸면 이어 붙이기가 비틀기를 지워 버리고(Virtual 실측),
-           매 걸음 회전을 세웠다 돌리느라 덜컹거린다(9/20 실기 소음).
+           매 걸음 회전을 세웠다 돌리느라 덜컹거린다(실기 소음).
         순응 중 관절 이동(movej) 금지라 직교 이동만. 한 걸음마다 힘을 읽어 기록하고 (누르는 힘, 옆 힘, 반지름 방향 힘) 을 돌려준다.
         """
         p, d, s = self.p, self.d, cc.cfg()['run']['vel_scale']
@@ -114,7 +114,7 @@ class Run:
         """힘 한 번 읽기 → 기록 · 누르는 힘/옆 힘 상한 검사 → (press, lateral, radial).
 
         radial = 옆 힘을 지금 위치의 반지름 방향(중심 → 솔)으로 투영한 크기. 문지름 마찰은 주로 진행 방향(둘레)이라
-        반지름 성분이 작고, 벽은 솔을 반지름 방향으로 되민다 → 벽 판정은 radial 로 한다(9/19 3회차: 옆 힘 전체로는 못 찾음).
+        반지름 성분이 작고, 벽은 솔을 반지름 방향으로 되민다 → 벽 판정은 radial 로 한다(실기 3회차: 옆 힘 전체로는 못 찾음).
         """
         import math
         p = self.p
@@ -154,7 +154,7 @@ class Run:
         return press, lateral, radial
 
     def wall_r(self):
-        """그릇 벽에 닿는 툴 중심 반지름 = (그릇 안지름 − 툴 지름) / 2 + 눌러 주는 양 (9/20: 수세미가 물러서 힘으로 못 찾음)."""
+        """그릇 벽에 닿는 툴 중심 반지름 = (그릇 안지름 − 툴 지름) / 2 + 눌러 주는 양 (수세미가 물러서 힘으로 못 찾음 · E6)."""
         p = self.p
         return max(0.0, (p['bowl_inner_d_mm'] - p['brush_d_mm']) / 2 + p['wall_press_mm'])
 
@@ -167,8 +167,8 @@ class Run:
         """바닥 닦기 — 두산 **Move Spiral 한 번**. 중심에서 벽 반지름까지, 좌우 비틀기 없음.
 
         · 순응은 켜 두고 **힘제어는 끈 채**로 돈다 — 나선은 툴 Z 축 모션이라 Z 힘제어와 같은 방향이어서
-          함께 쓸 수 없다(중급2 "힘 방향과 동일한 방향의 모션은 불가"). 켜 두면 명령만 받고 돌지 않는다(9/20 실기).
-        · 나선 속도는 **시간으로 지정**한다(중급1 p.69). 속도로 주면 드라이버가 멈춘다(9/20 확인).
+          함께 쓸 수 없다(중급2 "힘 방향과 동일한 방향의 모션은 불가"). 켜 두면 명령만 받고 돌지 않는다(실기).
+        · 나선 속도는 **시간으로 지정**한다(중급1 p.69). 속도로 주면 드라이버가 멈춘다(실기 확인).
         · 순응 중이므로 Task 모션만 쓴다(Move J 계열 금지, 2.1903).
         """
         p, d = self.p, self.d
@@ -216,7 +216,7 @@ class Run:
 
         twist = 1
         d.mwait()
-        # 벽까지는 **천천히 밀어 붙이며** 나간다 — 나선이 어디서 끝났든 한 번에 튀어나가면 벽을 세게 박는다(9/20: 25 N 초과)
+        # 벽까지는 **천천히 밀어 붙이며** 나간다 — 나선이 어디서 끝났든 한 번에 튀어나가면 벽을 세게 박는다(실기: 25 N 초과)
         approach_vel = [p['wall_approach_vel_mm_s'] * s, p['scrub_rot_vel_deg_s'] * s]
         if d.movel(pose(th0, p['scrub_deg']), vel=approach_vel, acc=acc,
                    radius=0.0, ref=d.DR_BASE, mod=d.DR_MV_MOD_ABS) != 0:
@@ -267,7 +267,7 @@ class Run:
                               p['wipe_target_n'], '', '', '', round(x, 2), round(y, 2), '', '', '', ''])
             if press > p['limit_n']:
                 raise cc.ForceLimitError(f'나선: 누르는 힘 {press:.1f} N > {p["limit_n"]} N')
-            if lateral > p['lateral_max_n']:                              # 나선 끝은 벽을 누른다 → 옆 힘도 본다(PM 검토)
+            if lateral > p['lateral_max_n']:                              # 나선 끝은 벽을 누른다 → 옆 힘도 본다
                 raise cc.ForceLimitError(f'나선: 옆 힘 {lateral:.1f} N > {p["lateral_max_n"]} N')
             if self.d.check_motion() == 0:
                 return rmax
@@ -359,7 +359,7 @@ class Run:
 
         🚨 중급2 "Force 명령어 – 모션 특성": **힘 방향과 같은 방향의 모션은 불가**.
            나선(move_spiral)은 툴 Z 축 회전 모션이라 Z 힘제어와 같은 축이다 → 나선 중에는 힘제어를 켜지 않는다
-           (9/20 실기: 켜 두면 나선이 반환 0 인데 시작조차 하지 않았다).
+           (실기: 켜 두면 나선이 반환 0 인데 시작조차 하지 않았다).
            벽면 원호는 이동이 X·Y 라 Z 힘제어와 함께 쓸 수 있다(폴리싱 예시와 같다).
         🚨 힘제어는 순응 ON 이 먼저여야 한다(없으면 2.1903).
         """
@@ -429,7 +429,7 @@ def main() -> int:
             return 2
         tool, tcp = d.get_tool(), d.get_tcp()
         if not virtual and (tool != p['expected_tool'] or tcp != p['expected_tcp']):
-            # 브링업을 새로 켜면 툴·TCP 가 비어 있다(9/19). 자동 모드에서는 설정이 거부돼 수동 모드로 바꿔 설정하고 되돌린다
+            # 브링업을 새로 켜면 툴·TCP 가 비어 있다. 자동 모드에서는 설정이 거부돼 수동 모드로 바꿔 설정하고 되돌린다
             log.warning(f'툴·TCP 가 {tool!r}·{tcp!r} → {p["expected_tool"]!r}·{p["expected_tcp"]!r} 로 설정한다 (로봇 안 움직임)')
             d.set_robot_mode(d.ROBOT_MODE_MANUAL)
             d.set_tool(str(p['expected_tool']))

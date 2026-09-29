@@ -1,5 +1,5 @@
 # 단계 그림 9장 × (그릇 · 컵) — 320 × 240, 받침대 위 등각 장면
-#   그릇은 벽을 세로로 잡고, 컵은 몸통을 통째로 잡는다(AGENTS.md 시나리오 ①). 툴은 그릇 = 수세미 · 컵 = 솔(E18)
+#   그릇은 벽을 세로로 잡고, 컵은 몸통을 감싸 쥔 모양으로 그린다(그림 단순화 — 실제로는 테두리 벽을 위에서 집는다 · E29). 툴은 그릇 = 수세미 · 컵 = 솔(E18)
 import math
 from iso import Scene, pedestal, container, gripper, shade, mix, BOWL, CUP, ACC, C as C_
 
@@ -16,7 +16,7 @@ def dims(kind):
     return BOWL if kind == 'BOWL' else CUP
 
 def hold(s, kind, cx, cy, z0, draw_container=True, alpha=1, between=None, arm=200, upside_down=False):
-    """용기를 잡은 그리퍼 + 용기 — 그릇은 오른쪽 벽을 세로로, 컵은 몸통을 통째로"""
+    """용기를 잡은 그리퍼 + 용기 — 그릇은 오른쪽 벽을 세로로, 컵은 몸통을 감싸 쥔 모양(그림 단순화 · 실제는 테두리 벽을 위에서 · E29)"""
     d = dims(kind)
     top = z0 + d['h']
     if kind == 'BOWL':
@@ -141,7 +141,7 @@ def _rot(p, c, deg):
     x, y = p[0] - c[0], p[1] - c[1]
     return (c[0] + x * math.cos(a) - y * math.sin(a), c[1] + x * math.sin(a) + y * math.cos(a))
 
-SHAKE_TILT = {'BOWL': -140, 'CUP': -125}   # 손목을 꺾어 기울이는 각도(화면 기준, 반시계 −) — 입구가 잔반통을 향한다(황인재 9/22: 많이 기울여 쏟는 모양)
+SHAKE_TILT = {'BOWL': -140, 'CUP': -125}   # 손목을 꺾어 기울이는 각도(화면 기준, 반시계 −) — 입구가 잔반통을 향한다(많이 기울여 쏟는 모양)
 
 def SHAKE(kind, pid, tilt=None):
     """털기 — 잔반통 위에서 손목을 꺾어 용기를 크게 기울이고, 입구에서 잔반이 쏟아진다"""
@@ -326,7 +326,7 @@ def RACK(kind, pid):
         s.raw(f'<ellipse cx="{X:.1f}" cy="{Y:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="none" stroke="{ACC}" stroke-width="2" stroke-dasharray="5 5"/>')
         z0 = 6 + 26
         s.shadow(0, 0, 6, 36, op=.35)
-        hold(s, kind, 0, 0, z0, upside_down=True)                     # 🆕 9/27 황인재: 컵은 뒤집어 핀 위에 얹는다
+        hold(s, kind, 0, 0, z0, upside_down=True)                     # 컵은 뒤집어 핀 위에 얹는다
         for a in (45, 135, 225, 315):
             px, py = 48 * math.cos(math.radians(a)), 48 * math.sin(math.radians(a))
             if px + py >= 0:

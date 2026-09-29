@@ -1,5 +1,5 @@
 // 받은 값 → 화면에 그릴 값. 전부 순수 함수(화면·통신과 무관).
-// 팔레트 칸·반납 구역은 메시지에 없어서 계획(plan)과 수량으로 파생한다 — HMI 설계초안 §4.
+// 팔레트 칸·반납 구역은 메시지에 없어서 계획(plan)과 수량으로 파생한다 — SDD §6 · IRD §6.
 // 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 
 export const FLOW = ['PICK', 'WEIGH', 'SHAKE', 'SEAT', 'SOAP', 'WIPE', 'RINSE', 'RACK'];   // 용기 1개의 순서(IRD §8)
@@ -23,7 +23,8 @@ export const CODE_KO = {                             // cobot_api CODES (IRD §2
 export function pauseKind(s) {
   if (!s || s.step !== 'PAUSED') return null;
   // 케이블 멈춤은 flow 가 last_code=ROBOT_ERROR 에 케이블 문구를 얹어 보낸다(flow.handle_cable_tight). 코드까지 봐야 한다 —
-  //    복구 뒤 남는 '케이블 정상 확인 — 작업을 재개합니다' 문구 때문에 다음 멈춤(일시 정지·툴 놓침)이 케이블로 보이지 않게.
+  //    재개 뒤 남는 '재개 — 무게를 다시 재며 케이블을 확인합니다' 문구 때문에 다음 멈춤(일시 정지·툴 놓침)이 케이블로 보이지 않게.
+  //    밀기를 알아챈 뒤 멈춘 채 바뀌는 '케이블 — 밀기 확인 …' 문구는 코드가 ROBOT_ERROR 그대로라 케이블 카드로 남는다.
   if (s.last_code === 'ROBOT_ERROR' && (s.message || '').includes('케이블')) return 'cable';
   switch (s.last_code) {
     case 'ROBOT_ERROR': return 'robot_error';
@@ -45,7 +46,6 @@ export const NUDGE = { step: '로봇팔 가볍게 밀기 (또는 재개)', done:
 export const GUIDE_KO = {
   operator: { title: '일시 정지', steps: ['재개 — 이어서', '중단 — 이 용기 격리'] },
   cable: { title: '케이블 확인', steps: ['케이블 정리', NUDGE.step] },
-  cable_again: { title: '케이블 이상 지속', steps: ['케이블 다시 정리', NUDGE.step] },   // 재검증에서 또 떨림 — 새 신호를 기다린다
   tool_lost: { title: '툴 놓침', steps: ['홀더에 다시 꽂기', NUDGE.step] },
   tool_fail: { title: '툴 집기 실패', steps: ['홀더에 툴 바로 꽂기', NUDGE.step] },
   leftover: { title: '잔반 남음', steps: ['잔반 덜어내기', '재개 (또는 중단)'] },
@@ -97,7 +97,7 @@ export function currentRun(d) {
   return out;
 }
 
-// 팔레트 칸 — rack_order 앞에서부터 done 개가 찼다(HMI 설계초안 §4). 지금 적재 중인 칸은 표시한다.
+// 팔레트 칸 — rack_order 앞에서부터 done 개가 찼다(SDD §6 · IRD §6). 지금 적재 중인 칸은 표시한다.
 export function pallet(d) {
   const order = (d.plan && d.plan.rack_order) || {};
   const s = d.state || {};
@@ -206,8 +206,7 @@ export function alarm(d) {
   let kind = pauseKind(s);
   if (kind === 'operator' && d.notices && d.notices.waste_full) kind = 'waste_bin';   // 잔반통이 차서 HMI 가 보낸 일시 정지
   if (kind) {
-    const guide = kind === 'robot_error' ? robotErrorGuide(s.message)
-      : kind === 'cable' && (s.message || '').includes('이상 지속') ? GUIDE_KO.cable_again : GUIDE_KO[kind];
+    const guide = kind === 'robot_error' ? robotErrorGuide(s.message) : GUIDE_KO[kind];
     return { level: 'pause', kind, guide, code: s.last_code, message: s.message };
   }   // 로봇 오류도 주황(별도 예외 X)
   if (s.last_code && s.last_code !== 'OK') return { level: 'warn', kind: null, guide: null, code: s.last_code, message: s.message };   // 재개해 진행 중 — 최근 원인만
@@ -246,9 +245,9 @@ export function runningNote(s, plan, resumedCode) {
   return '진행 중입니다 — 다시 멈추면 위 안내가 뜹니다';
 }
 
-// 최근 문제 — 완료가 아닌 이벤트(격리·오류·건너뜀) 최근 5건
+// 최근 문제 — 완료가 아닌 이벤트(격리·오류·건너뜀)와 집기를 다시 시도한 용기, 최근 5건
 export function problems(d) {
-  return (d.events || []).filter((e) => (e.result && e.result !== 'DONE') || (e.attempts || 0) > 1).slice(0, 5);   // 집기를 다시 시도한 용기도 문제로 본다(FR-03 · 황인재 9/28)
+  return (d.events || []).filter((e) => (e.result && e.result !== 'DONE') || (e.attempts || 0) > 1).slice(0, 5);   // 집기를 다시 시도한 용기도 문제로 본다(FR-03)
 }
 
 // 멈춤 기록 — DB pauses 표(/api/db/pauses · 최근 것부터)를 화면 줄로. 언제 · 어느 단계 · 원인 · 코드 · 어떻게 풀렸나 · 걸린 시간
@@ -265,7 +264,7 @@ export function pauseRows(rows) {
     duration: r.duration_s != null ? `${Math.round(r.duration_s)} s` : '-',
   }));
 }
-// 빈 구역 알림(황인재 9/28) — flow 는 멈추지 않고 건너뛰므로(SKIPPED 이벤트) 확인 창 대신 몇 초 뜨는 주황 알림
+// 빈 구역 알림 — flow 는 멈추지 않고 건너뛰므로(SKIPPED 이벤트) 확인 창 대신 몇 초 뜨는 주황 알림
 export function skipToast(e) {
   if (!e || e.result !== 'SKIPPED') return null;
   const kind = KIND_KO[e.kind] ? `${KIND_KO[e.kind]} ` : '';

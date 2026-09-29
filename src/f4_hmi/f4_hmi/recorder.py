@@ -16,7 +16,7 @@ _WORKING_END = ('IDLE', 'DONE', None, '')
 
 def pause_kind(state: dict) -> str:
     """state → 멈춤 원인 갈래 — 코드 ROBOT_ERROR 이고 message 에 '케이블' 이 있으면 cable, 아니면 last_code 로(모르면 operator).
-    화면(derive.pauseKind)과 같은 규칙 — 복구 뒤 남은 '케이블 정상 확인' 문구로 다음 멈춤을 케이블로 적지 않게."""
+    화면(derive.pauseKind)과 같은 규칙 — 재개 뒤 남은 '재개 — 무게를 다시 재며 케이블을 확인합니다' 문구로 다음 멈춤을 케이블로 적지 않게."""
     if str(state.get('last_code') or '') == 'ROBOT_ERROR' and '케이블' in str(state.get('message') or ''):
         return 'cable'
     return _KIND_BY_CODE.get(str(state.get('last_code') or ''), 'operator')

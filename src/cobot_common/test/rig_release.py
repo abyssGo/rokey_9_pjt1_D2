@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """🛟 복구 전용(시험 아님) — **그리퍼만 연다**. 로봇 팔은 움직이지 않는다.
 
-언제: 프로그램이 오류로 죽어 툴·용기를 **쥔 채** 멈췄을 때(9/23 17:43 — flow_node 가 수세미를 쥔 채 ROBOT_ERROR 로 끝남).
+언제: 프로그램이 오류로 죽어 툴·용기를 **쥔 채** 멈췄을 때(예: flow_node 가 수세미를 쥔 채 ROBOT_ERROR 로 끝남).
   놓은 뒤 팔을 치우는 것은 release_force.py --home --up-mm 150 (곧게 올린 뒤 HOME · 0.3배).
 
     soc && python3 src/cobot_common/test/rig_release.py

@@ -3,7 +3,7 @@
 <package format="3">
   <name>f1_handling</name>
   <version>0.1.0</version>
-  <description>F1 파지·이송·적재 함수 모듈(노드 아님): pick · place · move_to · tool · rack_place. 서명·반환은 cobot_api.F1Api(IRD v3.0 §3). 담당 한석형.</description>
+  <description>F1 파지·이송·적재 함수 모듈(노드 아님): pick · place · move_to · tool · rack_place. 서명·반환은 cobot_api.F1Api(IRD v3.0 §3).</description>
   <maintainer email="Hanseokhyung@users.noreply.github.com">한석형</maintainer>
   <license>Apache-2.0</license>
 

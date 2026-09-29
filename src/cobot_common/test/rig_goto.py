@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""rig_goto — cell.yaml 의 자리(스테이션) 한 곳으로 **가서 멈춘다**(놓지 않음 · 되돌아오지 않음). 펜던트 티칭·자세 확인용 (9/23 황인재).
+"""rig_goto — cell.yaml 의 자리(스테이션) 한 곳으로 **가서 멈춘다**(놓지 않음 · 되돌아오지 않음). 펜던트 티칭·자세 확인용.
 
   soc && PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_goto.py RINSE_SHAKE --kind CUP --carrying --via RINSE
       → 수조 위 접근점(RINSE · z 235)까지 곧게 간 뒤 관절 이동으로 털기 자세(RINSE_SHAKE.CUP)로 — 물 털기(f2.shake · at: RINSE_SHAKE)와 같은 길

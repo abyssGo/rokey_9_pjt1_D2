@@ -3,12 +3,12 @@
 """F2-01·F2-02 Virtual 확인 — sense.py 의 **이동 부분**을 가상 로봇으로 실제로 돌린다. 🚨 Virtual 전용.
 
 왜 이걸 따로 만드나
-    Virtual 에는 **힘·무게·접촉이 없고**(AGENTS §5) **그리퍼 드라이버도 없다**(V-20 기록).
+    Virtual 에는 **힘·무게·접촉이 없고** **그리퍼 드라이버도 없다**(V-20 기록).
     그래서 sense.py 를 그대로 돌리면 cc.weigh · cc.grip_level · cc.grip_width 에서 멈춘다.
     → Virtual 에 **있는 것(이동)은 진짜로**, **없는 것(무게·그리퍼)만 가짜로** 바꿔 끼운다.
        바꿔 끼운 것은 실행할 때마다 로그에 찍는다 — 이 시험을 "다 됐다" 로 오해하면 안 된다.
 
-실행 (저장소 루트에서, 격리 상태 solo — AGENTS 규칙 13)
+실행 (저장소 루트에서, 격리 상태 solo — docs/setup/M0609_환경설정.md)
     rosinfo                                                       # 🚨 RANGE=LOCALHOST 확인
     터미널 1:  sod && sodvir                                       (이미 떠 있으면 그대로 쓴다)
     터미널 2:  soc && python3 src/f2_sense_flow/test/rig_f2_virtual.py all
@@ -17,7 +17,7 @@
 무엇을 확인하나 (실기 전에 잡을 수 있는 것)
     ① 세 함수가 **두산 오류 없이** 끝난다 — 연속 n 회 (SDD §3.2 ⑧: "첫 번째만 되는" 결함)
     ② _goto 가 **티칭 자세까지** 데려다 놓는다 (스테이션마다 적어 둔 z 에 도착하는가)
-       🔄 9/20 결정 E7 로 **안전 높이 경유가 없어졌다** — cc.move_to 는 티칭 자세로 곧장 가고,
+       결정 E7 로 **안전 높이 경유가 없어졌다** — cc.move_to 는 티칭 자세로 곧장 가고,
           접근점이 있을 때만 남은 높이를 돌려준다. 이 가상 좌표에는 접근점이 없어 늘 0 이다.
           (E7 이전에는 safe_z 350 을 기준으로 up=0 / up=50 이 갈리는 것을 봤다)
     ③ 🔑 털기 한 주기가 **설정한 period_s 에 맞게** 걸리는가 (time_s 를 period/4·period/2 로 나눈 것)
@@ -136,7 +136,7 @@ def main() -> int:
                 r = sense.weigh(a.kind)
                 check(f'weigh {i}/{a.n}', r.ok,
                       f'잔반 {r.weight_g:.1f} g · Z {_z():.1f} mm · {time.monotonic() - t0:.2f} s')
-            # 🔄 E7 이후: 안전 높이와 무관하게 **티칭 자세 z 에 도착**했는지를 본다
+            # E7 이후: 안전 높이와 무관하게 **티칭 자세 z 에 도착**했는지를 본다
             check('WEIGH 티칭 자세 z 에 도착했다', abs(_z() - _WEIGH_Z) < 1.0,
                   f'Z {_z():.1f} ≈ {_WEIGH_Z}')
 
@@ -150,7 +150,7 @@ def main() -> int:
             #    관절 변화까지 "흔들고 제자리로 안 왔다" 로 잡힌다(시험대 쪽 문제였다).
             #    cc.move_to 만 부르면 **상공까지만** 가서 남은 50 mm 하강이 J5 를 또 바꾼다
             #    → sense._goto 를 그대로 써야 같은 자세가 된다.
-            sense._goto('WASTE', True, a.kind)       # 🚨 kind 필수 (9/20 E8)
+            sense._goto('WASTE', True, a.kind)       # 🚨 kind 필수 (E8)
             for i in range(1, a.n + 1):
                 j0 = _j(joint)
                 t0 = time.monotonic()
@@ -164,7 +164,7 @@ def main() -> int:
                       f'실제 {took:.2f} s vs 설정 {cycles * period:.2f} s '
                       f'(짧으면 time_s 를 안 나눴거나 컨트롤러가 무시한 것)')
                 check(f'shake {i} — 가운데로 돌아왔다', back < 1.0, f'{back:.2f}°')
-            # 🔄 E7 이후: 안전 높이가 아니라 **티칭 자세 z** 가 기준이다
+            # E7 이후: 안전 높이가 아니라 **티칭 자세 z** 가 기준이다
             check('WASTE 티칭 자세 z 에 도착했다', abs(_z() - _WASTE_Z) < 1.0,
                   f'Z {_z():.1f} ≈ {_WASTE_Z}')
 
@@ -173,7 +173,7 @@ def main() -> int:
             log.info(f'── dip(RINSE) × {a.n} ──')
             depth = float(conf['dip']['RINSE']['depth_mm'])
             # 🚨 shake 와 같은 이유로 먼저 RINSE **티칭 자세까지** 보내 놓는다 (cc.move_to 는 상공까지만)
-            sense._goto('RINSE', True, a.kind)       # 🚨 kind 필수 (9/20 E8)
+            sense._goto('RINSE', True, a.kind)       # 🚨 kind 필수 (E8)
             for i in range(1, a.n + 1):
                 z_before = _z()
                 t0 = time.monotonic()
@@ -184,7 +184,7 @@ def main() -> int:
                 check(f'dip {i} — 내려간 만큼 되올라왔다', abs(z_after - z_before) < 1.0,
                       f'Z {z_before:.1f} → {z_after:.1f} (담금 깊이 {depth:.0f} mm)')
 
-        # ── leftover_loop : 🚨 잔반통(뒤) ↔ 저울(앞) 을 HOME 을 거쳐 오간다 (9/21 결정 E15) ──
+        # ── leftover_loop : 🚨 잔반통(뒤) ↔ 저울(앞) 을 HOME 을 거쳐 오간다 (결정 E15) ──
         if a.which in ('loop', 'all'):
             log.info(f'── leftover_loop × {a.n} ── (재고 → 털고 → 다시 잰다)')
             for i in range(1, a.n + 1):

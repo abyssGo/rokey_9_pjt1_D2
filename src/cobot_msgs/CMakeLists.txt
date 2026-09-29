@@ -6,8 +6,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)   # FlowState/FlowEvent 의 stamp
 
-# IRD v3.0 (9/18 구조 변경: 기능 사이 호출은 서비스가 아니라 파이썬 함수 → srv 12개 삭제, 함수 약속은 cobot_api 패키지)
-# 정본은 docs/interfaces/ (파일 내용은 그대로 복사한 것)
+# IRD v3.0 (구조 변경: 기능 사이 호출은 서비스가 아니라 파이썬 함수 → srv 12개 삭제, 함수 약속은 cobot_api 패키지)
+# 정본은 이 패키지의 msg/ (IRD §7)
 rosidl_generate_interfaces(${PROJECT_NAME}
   # --- msg 2 (flow_node → HMI) ---
   "msg/FlowState.msg"

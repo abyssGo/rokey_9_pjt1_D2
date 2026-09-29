@@ -3,7 +3,7 @@
 <package format="3">
   <name>cobot_common</name>
   <version>0.1.0</version>
-  <description>PreWash-Cell 공용 로봇 함수 모음: 두산 API 초기화(init·io_node·cfg·shutdown, SDD §3.2) · 설정 로더(config) · 이동(motion)·그리퍼(gripper)·힘(force)·무게(weigh)·초기화(bootstrap) 공용 로봇 함수. 사람별 파일 — AGENTS.md §2.</description>
+  <description>PreWash-Cell 공용 로봇 함수 모음: 두산 API 초기화(init·io_node·cfg·shutdown, SDD §3.2) · 설정 로더(config) · 이동(motion)·그리퍼(gripper)·힘(force)·무게(weigh)·초기화(bootstrap) 공용 로봇 함수.</description>
   <maintainer email="il1282113@gmail.com">hwang-injae</maintainer>
   <license>Apache-2.0</license>
 

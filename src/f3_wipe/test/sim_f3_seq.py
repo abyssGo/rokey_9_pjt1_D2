@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""F3 가상 연속 시험 — HOME → 그릇 닦기 → HOME → 컵 세척 → HOME (박진용 · Virtual 전용).
+"""F3 가상 연속 시험 — HOME → 그릇 닦기 → HOME → 컵 세척 → HOME (Virtual 전용).
 
     sod && sodvir                                         # 터미널 1: Virtual 브링업 (이미 떠 있으면 그대로)
     soc && python3 src/f3_wipe/test/sim_f3_seq.py         # 터미널 2: 그릇 → 컵 한 번
     soc && python3 src/f3_wipe/test/sim_f3_seq.py --runs 3   # 연속 3 회
 
-🔸 속도를 바꾸려면 **아래 SPEED 칸만** 고친다. None = params.yaml · cell.yaml 값 그대로(9/21 실기 확정값).
+🔸 속도를 바꾸려면 **아래 SPEED 칸만** 고친다. None = params.yaml · cell.yaml 값 그대로(실기 확정값).
    이 파일 안에서만 덮어쓴다 — params.yaml 은 안 바뀐다. 마음에 들면 그 값을 params.yaml 에 옮긴다.
 🔸 제품 코드(wipe.wipe_bowl · wipe.wipe_cup)를 **그대로** 부른다 — 바닥 찾기·감시·복귀 전부 같다.
-🔸 Virtual 에는 힘이 없다 → 9/21 실기 로그를 흉내 낸 **가짜 힘**을 넣는다(아래 SIM_* 값).
+🔸 Virtual 에는 힘이 없다 → 실기 로그를 흉내 낸 **가짜 힘**을 넣는다(아래 SIM_* 값).
 🚨 실기에서는 실행을 거부한다. 가짜 힘 · 나선/세척 그리기(아래)는 Virtual 에서만 쓰는 것이다.
    Virtual 은 나선(amove_spiral)에 대답을 안 하고 Periodic 회전을 실기와 다르게 움직여서, 그 두 동작만 실기와 같은 길로 직접 그린다.
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
@@ -27,7 +27,7 @@ VEL_SCALE = 0.3                 # 전체 속도 배수 (실기와 같게 0.3). �
 SPEED = {
     # ── ① HOME 이동 · 컵으로 옆 이동 (HOME 관절 이동, 컵 z+40 → y+140 → z−40 과 그 반대) ──
     #    cell.yaml limits.vel_carry_pct (지금 30 %) × vel → HOME 관절 30 °/s × 0.3, 옆 이동 120 mm/s × 0.3 = 36 mm/s
-    #    🟡 팀 공용값(cell.yaml)이라 실제로 바꾸려면 PM 에게 요청해야 한다 — 여기서는 시험만
+    #    🟡 공용값(cell.yaml)이라 여기서는 시험만 — 실제로 바꾸려면 cell.yaml 을 고친다
     'move_pct': None,
 
     # ── ② 빠른 하강 · 곧게 올라오기 (그릇 135 mm · 컵 80 mm) — 그릇·컵 **같은 값**으로 들어간다 ──
@@ -40,7 +40,7 @@ SPEED = {
     'contact_acc_mm_s2': None,   # (30) — vel 안 곱함
 
     # ── ④ 그릇 바닥 나선 — **시간**으로 준다(짧을수록 빠름) ──
-    'spiral_time_s': None,       # (3.0) 실제 값 그대로 — vel 안 곱함(9/20 실기에서 돈 방식).  🚨 너무 짧으면 나선이 시작조차 안 한다(1.5 s 는 안 돌았다)
+    'spiral_time_s': None,       # (3.0) 실제 값 그대로 — vel 안 곱함(실기에서 돈 방식).  🚨 너무 짧으면 나선이 시작조차 안 한다(1.5 s 는 안 돌았다)
 
     # ── ⑤ 그릇 벽으로 붙기 (나선이 벽까지 못 갔을 때 남은 만큼) ──
     'wall_approach_vel_mm_s': None,   # (60) × vel → 18 mm/s
@@ -59,10 +59,10 @@ SPEED = {
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
-#  가짜 힘 (9/21 실기 기준) — 속도 시험에는 안 고쳐도 된다
+#  가짜 힘 (실기 기준) — 속도 시험에는 안 고쳐도 된다
 # ════════════════════════════════════════════════════════════════════════════════
 SIM_AIR_FZ = 1.8                # 공중에서도 읽히는 Fz (실기 1.4 ~ 2.4 N)
-SIM_BOWL_DEPTH = 145.0          # HOME 에서 수세미 ~ 그릇 바닥 (9/21 실측 145 mm)
+SIM_BOWL_DEPTH = 145.0          # HOME 에서 수세미 ~ 그릇 바닥 (실측 145 mm)
 SIM_BOWL_K = 0.7                # 수세미가 눌리는 만큼 오르는 힘 N/mm — 물러서 늦게 오른다 → 약 150 mm 에서 3.5 N 으로 찾음
 SIM_CUP_DEPTH = 91.5            # 컵 위(HOME 높이)에서 솔 ~ 컵 바닥 (실측 90, 실기 5 N 에서 92.8 ~ 93.1 mm 에서 멈춤)
 SIM_CUP_K = 1.7                 # 솔 N/mm → 95 mm 에서 약 6 N 으로 찾음
@@ -112,7 +112,7 @@ _sim = {'mode': None, 'z': None}   # 지금 닦는 것('bowl'·'cup') · 마지�
 def _fake_force():
     """가짜 힘 [fx, fy, fz, mx, my, mz] — 바닥 아래로 들어간 만큼 k 배.
 
-    🚨 여기서 로봇 위치를 **새로 읽지 않는다** — 도는 중에 위치를 계속 읽으면 드라이버가 멈춘다(9/20 · 9/21 이 시험 1차에서 나선 시작 뒤 멈춤).
+    🚨 여기서 로봇 위치를 **새로 읽지 않는다** — 도는 중에 위치를 계속 읽으면 드라이버가 멈춘다(이 시험 1차에서 나선 시작 뒤 멈춤).
        제품 코드가 어차피 읽는 z(바닥 찾기 걸음마다 · cc.where)를 받아 둔 값만 쓴다."""
     z, mode = _sim['z'], _sim['mode']
     if not _home or z is None or mode is None:
@@ -136,8 +136,8 @@ _orig = {}
 def _virtual_periodic(amp, period, repeat, ref='TOOL', atime=None, scale=True):
     """🚨 Virtual 전용 — 컵 세척 Move Periodic 을 **실기에서 로봇이 하는 움직임 그대로** 관절 경로로 그린다.
 
-    왜: Virtual 은 Periodic 회전 칸을 실기와 다르게 움직인다(9/21 — rz 는 4번, rx 도 4번이 1° 움직여 감시에 걸림).
-        실기에서 TOOL rz 는 **6번 조인트만** 돈다(9/21 실기 확정). 그래서 Virtual 에서는 Periodic 대신 같은 움직임을 직접 만든다:
+    왜: Virtual 은 Periodic 회전 칸을 실기와 다르게 움직인다(rz 는 4번, rx 도 4번이 1° 움직여 감시에 걸림).
+        실기에서 TOOL rz 는 **6번 조인트만** 돈다(실기 확정). 그래서 Virtual 에서는 Periodic 대신 같은 움직임을 직접 만든다:
         · 위아래 z ±amp[2] mm → 2·3·5번 조인트 (역기구학 ikin 으로 위·아래 끝 관절값을 구해 사이를 사인으로)
         · 6번 조인트 ±amp[5]° → 같은 주기 사인
         · 1·4번 조인트는 **그대로** · 시작·끝 atime 동안 진폭을 천천히 키우고 줄인다(Periodic 의 atime 과 같은 뜻)
@@ -178,7 +178,7 @@ def _virtual_periodic(amp, period, repeat, ref='TOOL', atime=None, scale=True):
 
 
 def _virtual_spiral(p, log):
-    """🚨 Virtual 전용 — Virtual 드라이버는 amove_spiral 에 **대답을 안 해서** 멈춘다(9/21 이 시험에서 두 번 확인 · 순응 끄고도 같음).
+    """🚨 Virtual 전용 — Virtual 드라이버는 amove_spiral 에 **대답을 안 해서** 멈춘다(이 시험에서 두 번 확인 · 순응 끄고도 같음).
     그래서 **실기의 나선과 같은 길**을 직접 그린다: 바닥 중심에서 벽 반지름(14 mm)까지 rev 바퀴, 시간 spiral_time_s ÷ vel_scale.
     길 = 베이스에서 시계 방향(실기: 툴에서 반시계 = 베이스에서 시계, wipe._spiral 주석) → amovesx(직선 스플라인) 한 명령.
     도는 동안은 제품 코드처럼 힘만 보고, 끝나면 반지름을 재서 제품과 같은 로그를 남긴다."""

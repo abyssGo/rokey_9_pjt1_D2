@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V-08 앞 — 툴(수세미·솔)을 **손으로 대 주고** 그리퍼가 읽는 폭을 n 회 잰다 (9/22 황인재 · F1-03 프리셋 채우기).
+"""V-08 앞 — 툴(수세미·솔)을 **손으로 대 주고** 그리퍼가 읽는 폭을 n 회 잰다 (F1-03 프리셋 채우기).
 
     soc && python3 src/cobot_common/test/rig_tool_width.py --tool SPONGE -n 5                # 손으로 대 주기(팔 안 움직임)
     soc && PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_tool_width.py --tool SPONGE -n 5 --at-holder   # 🚨 홀더로 가서
@@ -11,7 +11,7 @@
 끝에 cell.presets.<툴> 에 넣을 줄을 두 가지로 보여 준다:
     · 무른 툴(수세미): grip_target_mm 고정 폭(E19 방식 · 폭 판정 안 함)
     · 단단한 툴(솔 손잡이): grip_width_mm(영점 뺀 값) + width_tol_mm → tool() 이 E16 방식으로 판정
-9/22 참고값: 한석형 스크립트 수세미 30 mm·40 N / 솔 22 mm·30 N(SDD 초안) · 박진용 #72 수세미 목표 22 mm 실기.
+참고값: 티칭 스크립트 수세미 30 mm·40 N / 솔 22 mm·30 N(SDD 초안) · F3 실기 수세미 목표 22 mm.
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
 """
 import argparse
@@ -36,7 +36,7 @@ def main():
     cc.init('rig_tool_width', robot=a.at_holder)
     log = cc.io_node().get_logger()
     conf = cc.cfg()
-    zero = float(conf['cell']['presets']['BOWL']['grip_zero_mm'])          # 빈손 영점은 그리퍼 것이라 툴과 무관(9/21 10.58)
+    zero = float(conf['cell']['presets']['BOWL']['grip_zero_mm'])          # 빈손 영점은 그리퍼 것이라 툴과 무관(V-01 10.58)
     got = []
 
     def ask(msg):

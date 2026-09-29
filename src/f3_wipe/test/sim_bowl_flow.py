@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""F1 그릇 가져오기 + F3 그릇 닦기 — Virtual 통합 시험 (박진용 · 9/21).
+"""F1 그릇 가져오기 + F3 그릇 닦기 — Virtual 통합 시험.
 
     sod && sodvir                                              # 터미널 1 (이미 떠 있으면 그대로)
     soc && python3 src/f3_wipe/test/sim_bowl_flow.py           # 터미널 2 — 처음부터 끝까지 한 번에
 
-한석형 픽앤플레이스(seokhyung/20260919-CELL-04-teaching rig_f1.py v6 의 bowl_cycle) 순서 그대로,
+F1 티칭 스크립트(CELL-04 rig_f1.py v6 의 bowl_cycle)의 픽앤플레이스 순서 그대로,
 그 안의 '세척 자리 갔다 오기(BOWL_WASH_WAIT → CONTACT → WAIT)' 만 **우리 wipe_bowl()** 로 바꿨다.
-좌표는 한석형이 확정해 main cell.yaml 에 들어간 값(CELL-04 · 잔반통은 9/21 로봇 뒤로 옮긴 값):
+좌표는 티칭으로 확정해 main cell.yaml 에 들어간 값(CELL-04 · 잔반통은 로봇 뒤로 옮긴 값):
   ① HOME → ② 반납 구역 RET_B 집기 → ③ 저울 WEIGH → ④ 잔반통 WASTE(로봇 뒤) → ⑤ HOME
   → ⑥ 스펀지 홈에 놓기 = **F1 place('SPONGE_BED_B') 제품 코드** → ⑦ 수세미 잡기 → ⑧ HOME
   → ⑨ **F3 wipe_bowl() 제품 코드** (HOME 에서 시작·끝) → ⑩ 수세미 반납
@@ -16,9 +16,9 @@
 Virtual 이라 실기와 다르게 하는 것 (전부 이 파일·sim_f3_seq.py 안에서만):
   · TCP — Virtual 에는 그리퍼 TCP 가 없어 툴 끝이 210 mm 어긋난다 → 시작할 때 **GripperDA_v1 (0, 0, 210)** 을 만들어 켠다.
     cell.yaml 좌표가 전부 그리퍼 TCP 기준이라 이게 없으면 좌표가 210 mm 아래로 간다.
-  · 힘 — 9/21 실기를 흉내 낸 가짜 힘(sim_f3_seq.py) · 나선 — 같은 길을 그린다(Virtual 드라이버가 amove_spiral 에 대답을 안 한다)
-  · 그리퍼 — 한석형 rig 와 같이 Virtual 그리퍼에 **폭·열기 명령만** 보낸다(Virtual 드라이버는 힘 'i'/'d' 를 모른다).
-    수세미 파지 프리셋(cell.presets.SPONGE)이 비어 있어 한석형 rig 값(30 mm)을 쓴다
+  · 힘 — 실기를 흉내 낸 가짜 힘(sim_f3_seq.py) · 나선 — 같은 길을 그린다(Virtual 드라이버가 amove_spiral 에 대답을 안 한다)
+  · 그리퍼 — F1 티칭 rig 와 같이 Virtual 그리퍼에 **폭·열기 명령만** 보낸다(Virtual 드라이버는 힘 'i'/'d' 를 모른다).
+    수세미 파지 프리셋(cell.presets.SPONGE)이 비어 있어 F1 티칭 rig 값(30 mm)을 쓴다
   · 헹굼 담금·팔레트 삽입 힘 감시는 하지 않는다(F2·F1 몫) — 자리에 가서 내려갔다 올라온다
   · 무게 재기·털기는 하지 않는다(F2 몫) — 그 자리에 가서 1 s 머문다
 🚨 실기에서는 실행을 거부한다. 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
@@ -36,9 +36,9 @@ from cobot_common.bootstrap import dsr                                     # noq
 from f1_handling import handling                                           # noqa: E402
 from f3_wipe import wipe                                                   # noqa: E402
 
-VIRTUAL_TCP = ('GripperDA_v1', [0.0, 0.0, 210.0, 0.0, 0.0, 0.0])           # 실기 TCP 이름 · 값(9/21 티칭 좌표에서 역산 ≈ 210)
-BOWL_GRIP_MM = 2.0                                                         # Virtual 그리퍼 폭 — 한석형 rig v6 값 그대로
-SPONGE_GRIP_MM = 30.0                                                      # 🟡 cell.presets.SPONGE 가 비어 있다 — 한석형 rig v6 값
+VIRTUAL_TCP = ('GripperDA_v1', [0.0, 0.0, 210.0, 0.0, 0.0, 0.0])           # 실기 TCP 이름 · 값(티칭 좌표에서 역산 ≈ 210)
+BOWL_GRIP_MM = 2.0                                                         # Virtual 그리퍼 폭 — F1 티칭 rig v6 값 그대로
+SPONGE_GRIP_MM = 30.0                                                      # 🟡 cell.presets.SPONGE 가 비어 있다 — F1 티칭 rig v6 값
 DWELL_S = 1.0                                                              # 저울·잔반통에서 머무는 시간 (F2 대신)
 
 _steps = []
@@ -63,7 +63,7 @@ def _set_tcp(log):
 
 
 class _Grip:
-    """한석형 rig v6 방식 — Virtual 그리퍼 /onrobot/sendCommand 에 폭(0.1 mm 단위) 또는 'o' 만 보낸다."""
+    """F1 티칭 rig v6 방식 — Virtual 그리퍼 /onrobot/sendCommand 에 폭(0.1 mm 단위) 또는 'o' 만 보낸다."""
 
     def __init__(self, log):
         from onrobot_rg_msgs.srv import SetCommand

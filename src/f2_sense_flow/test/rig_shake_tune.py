@@ -1,4 +1,4 @@
-"""흔들기 튜닝 시험대 — 키로 진폭·주기·가속도·기울기·속도를 바꾸고 스페이스로 바로 흔들어 본다 (민범진 · 9/22 · V-07 물 털기 "임팩트").
+"""흔들기 튜닝 시험대 — 키로 진폭·주기·가속도·기울기·속도를 바꾸고 스페이스로 바로 흔들어 본다 (V-07 물 털기 "임팩트").
 
     soc && python3 src/f2_sense_flow/test/rig_shake_tune.py --mode RINSE --kind BOWL      # 물 털기 (BASE X 직선 왕복)
     soc && python3 src/f2_sense_flow/test/rig_shake_tune.py --mode WASTE --kind BOWL      # 잔반 버리기 (J5 기울여 흔들기)
@@ -72,7 +72,7 @@ def main():
     count = a.count
     cfg.setdefault('run', {}).setdefault('vel_scale', 1.0)
     try:
-        log.info('E15 — 먼저 HOME 으로 간다 (낮으면 곧게 올라온 뒤에 · 9/22 충돌)')
+        log.info('E15 — 먼저 HOME 으로 간다 (낮으면 곧게 올라온 뒤에 · 테이블 충돌 이후)')
         go_home_safely(a.kind, log)
         log.info('준비됨 — 값을 바꾸고 스페이스로 흔든다. h 도움말 · q 끝')
         _show(log, a.mode, p, count)

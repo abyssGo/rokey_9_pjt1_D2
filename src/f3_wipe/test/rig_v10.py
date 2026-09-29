@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V-10 컵 안쪽 솔 삽입·문지르기 실기 시험 (F3-03 첫 단계) — 박진용.
+"""V-10 컵 안쪽 솔 삽입·문지르기 실기 시험 (F3-03 첫 단계).
 
     soc && python3 src/f3_wipe/test/rig_v10.py --real --stage find     # ① 바닥 찾기까지만 (맨 처음 이것부터)
     soc && python3 src/f3_wipe/test/rig_v10.py --real                  # ③ 전체 (기본 stage=scrub)
@@ -13,13 +13,13 @@
 
 이 rig 가 확인하는 것 (V-10)
   · 초기자세 HOME → z +40 → y +140(도로 안 내려온다, 여기가 세척 시작점) 으로 컵 위에 간 뒤 fast_down_mm(120) 빠르게
-    내려간 뒤 **힘으로 바닥을 찾는가** — 실측으로는 컵 위(HOME 높이 기준) ~ 바닥 90 mm(9/22 2차: 시작점이 40 높아져 120)
+    내려간 뒤 **힘으로 바닥을 찾는가** — 실측으로는 컵 위(HOME 높이 기준) ~ 바닥 90 mm(시작점이 40 높아져 120)
   · 솔이 얼마나 들어가는가 · 바닥에 닿을 때 힘이 어떻게 올라오는가
   · 세척(Move Periodic — 위아래 3 cm + 6번 조인트 좌우 ±90°, 주기 3.0 s × 5)이 컵 안에서 괜찮은가
     (제품 코드 wipe._scrub_cup 을 그대로 부른다 — 1·4번 조인트 감시 포함)
   · 컵이 홈 안에서 딸려 올라오거나 도는가 (옆 힘으로 본다)
 
-🔸 바닥 위치는 미리 정하지 않는다 — 빠른 하강 길이만 정하고(9/21 실측 90 − 10), 나머지는 contact_down 이 찾는다.
+🔸 바닥 위치는 미리 정하지 않는다 — 빠른 하강 길이만 정하고(실측 90 − 10), 나머지는 contact_down 이 찾는다.
 
 제품 코드와 같은 공용 함수(cc.*)만 쓴다 — 여기서 정한 값이 그대로 params.yaml 의 f3.wipe_cup 으로 간다.
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
@@ -42,7 +42,7 @@ AIR_FORCE_MAX_N = 5.0           # 멈춰 있는데 이보다 크면 툴 무게 �
 
 
 class Log:
-    """힘 샘플 + 구간별 요약. 도는 중에는 힘만 읽는다(위치를 같이 읽으면 로봇이 선다 — 9/20)."""
+    """힘 샘플 + 구간별 요약. 도는 중에는 힘만 읽는다(위치를 같이 읽으면 로봇이 선다)."""
 
     def __init__(self, p, node_log):
         self.p, self.log = p, node_log
@@ -195,7 +195,7 @@ def main() -> int:
         rec.summarize('cup-scrub', n0)
         log.info(f'끝: 아래쪽 끝 · 6번 축 {cc.joints()[5]:.1f}° · 문지르기 {time.monotonic() - t_scrub:.1f} s → 솔을 곧게 뽑는다')
         code = 0
-    except cc.ForceLimitError as e:                                      # 로봇은 정상 — 설계된 후퇴를 한다(AGENTS 규칙 2)
+    except cc.ForceLimitError as e:                                      # 로봇은 정상 — 설계된 후퇴를 한다
         log.error(f'🚨 힘 상한: {e} → 중단하고 후퇴한다')
     except KeyboardInterrupt:
         log.warning('Ctrl+C — 정리하고 끝낸다')
@@ -218,7 +218,7 @@ def main() -> int:
                 log.error('🚨 두산 오류로 ROS 가 꺼졌다 → 힘·순응이 켜진 채일 수 있다. 새 터미널에서 바로:\n'
                           '    soc && python3 src/cobot_common/test/release_force.py --home   (E-Stop 에 손)')
             else:
-                # 🚨 9/21 08:40 실기: 6번 관절이 163° 돌아 케이블이 꼬인 채 로봇이 멈췄는데 시험 도구가
+                # 🚨 실기: 6번 관절이 163° 돌아 케이블이 꼬인 채 로봇이 멈췄는데 시험 도구가
                 #    자동으로 HOME 으로 가려 했다(F4 가 rig_coords 8ae86d2 에서 발견·수정). 꼬인 채 움직이면 더 꼬인다.
                 #    힘·순응 해제는 모션이 아니라 언제나 한다. **움직이는 것은 로봇 위치를 알 때만.**
                 steps = [('힘·순응 끄기', cc.force_off)]

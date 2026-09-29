@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 """V-24 단독 시험 — cc.pause()·cc.resume()·cc.halt() 가 **이동 도중에** 먹는가. 🚨 Virtual 전용.
 
-HMI 의 "일시정지 ↔ 재개"(9/20 황인재 결정: 즉시 멈추고, 재개하면 하던 동작을 이어서)를 로봇 쪽에서 확인한다.
+HMI 의 "일시정지 ↔ 재개"(결정 E5: 즉시 멈추고, 재개하면 하던 동작을 이어서)를 로봇 쪽에서 확인한다.
     메인 스레드      : cc.move_joint_rel · cc.move_rel 로 긴 이동을 한다 — flow_node 가 기능 함수를 도는 자리
     통신 노드 스레드 : 타이머 콜백에서 cc.pause()·cc.resume()·cc.halt() 를 부른다 — /flow/stop·resume 콜백이 도는 자리
 
-실행 — 세 가지 모드 (rosinfo 로 RANGE=LOCALHOST 확인 · AGENTS 규칙 13)
+실행 — 세 가지 모드 (rosinfo 로 RANGE=LOCALHOST 확인)
   ① Virtual 시험 (기본, 지금까지 쓰던 것)   sod && sodvir  →  soc && python3 src/cobot_common/test/rig_pause.py
        시험용 좌표(config_virtual)로 크게 움직인다. 🚨 Virtual 이 아니면 거부한다.
-  ② 실기 예행연습 (오늘 밤, 로봇 없이 절차만)  soc && python3 src/cobot_common/test/rig_pause.py --real --rehearse
+  ② 실기 예행연습 (로봇 없이 절차만)        soc && python3 src/cobot_common/test/rig_pause.py --real --rehearse
        ③ 과 **같은 절차**를 Virtual 에서 돈다 — 진짜 cell.yaml 좌표 + 비어 있는 limits·motion 만 시험 값으로 채움.
        🚨 실기면 거부한다(시험 값으로 실기를 움직이지 않는다).
-  ③ 실기 확인 (V-24 · 9/21 저녁)             sod && sodreal →  PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_pause.py --real
+  ③ 실기 확인 (V-24)                        sod && sodreal →  PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_pause.py --real
        진짜 cell.yaml 그대로 · rig_pause.yaml 의 `real:` 절(작은 이동) · **단계마다 Enter** 로 사람이 확인하고 넘어간다.
        용기를 든 이동까지 보려면 그리퍼에 그릇을 쥐여 주고 --carrying 을 붙여 한 번 더 돈다(완료 기준 "관절·직선·용기를 든 이동 3회").
        🚨 E-Stop 을 손에 잡고, 로봇 반경 안에 사람이 없는지 확인한 뒤에 시작한다.

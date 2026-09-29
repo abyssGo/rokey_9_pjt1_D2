@@ -5,7 +5,7 @@
 
 soap 은 접촉 동작이 아니다(수조가 비어 있다) → 순응·힘제어·힘 감시가 없어야 한다.
 wipe_cup 은 **삽입만** 힘으로 찾고(contact_down), 문지르기는 순응을 끈 위치 제어다(관절 이동, 2.1903).
-🔧 9/22 3차(박진용): soap이 쥔 폭으로 수세미/컵솔을 스스로 가려 movej 없이 좌표로 작업 위치까지 데려간다.
+soap 이 쥔 폭으로 수세미/컵솔을 스스로 가려 movej 없이 좌표로 작업 위치까지 데려간다.
    wipe_bowl·wipe_cup 은 더 이상 스스로 위치를 찾지 않는다 — 호출되자마자 바로 하강하고, 끝나면 호출 시점
    높이로만 상승한다.
 실제 깊이·회전각은 V-10(실기)에서 확정한다 — 여기서는 순서·상한 처리만 본다.
@@ -72,7 +72,7 @@ class FakeCell:
         self.pose = list(POSE0)
         self.inserted = False
         self.halted = False
-        self.j6 = self.j6_min = self.j6_max = 21.0      # 컵 위 자세의 6번 축 (9/21 Virtual 기록)
+        self.j6 = self.j6_min = self.j6_max = 21.0      # 컵 위 자세의 6번 축 (Virtual 기록)
         self.j4 = 0.0                                    # 4번 조인트 — 움직이면 안 된다
         self.j4_during = 0.0                             # 세척 도는 동안 4번 조인트 (시험에서 바꾼다)
         self.periodic = 0
@@ -196,7 +196,7 @@ def test_soap_sponge_twists_then_updowns_then_goes_to_home(cell):
     assert len(rise) == 1 and rise[0][0] == 0.0 and rise[0][1] == 0.0
     move_xy = [c for c in rels if c[0] == pytest.approx(HOME_X - POSE0[0]) and c[1] == pytest.approx(HOME_Y - POSE0[1])]
     assert len(move_xy) == 1 and move_xy[0][2] == 0.0                      # 그다음 x·y만(수평)
-    assert 'move_joints' not in [c[0] for c in cell.calls]                 # movej 없음(박진용 9/22 3차)
+    assert 'move_joints' not in [c[0] for c in cell.calls]                 # movej 없음
     assert cell.pose[0] == pytest.approx(HOME_X) and cell.pose[1] == pytest.approx(HOME_Y) and cell.pose[2] == pytest.approx(HOME_Z)
 
 
@@ -215,7 +215,7 @@ def test_soap_cup_position_goes_to_cup_top_instead_of_home(cell):
 
 
 def test_soap_is_not_a_contact_motion(cell):
-    """수조가 비어 있다 → 순응·힘제어·힘 감시가 없어야 한다(AGENTS 규칙 3)."""
+    """수조가 비어 있다 → 순응·힘제어·힘 감시가 없어야 한다."""
     wipe.soap(2)
     names = [c[0] for c in cell.calls]
     assert 'contact_down' not in names and 'force_on' not in names and 'compliance_on' not in names
@@ -223,7 +223,7 @@ def test_soap_is_not_a_contact_motion(cell):
 
 
 def test_soap_count_is_ignored(cell):
-    """9/22: count 는 이제 안 쓴다(횟수는 config 의 twist_cycles·updown_cycles) — 0 이어도 그대로 돈다."""
+    """count 는 이제 안 쓴다(횟수는 config 의 twist_cycles·updown_cycles) — 0 이어도 그대로 돈다."""
     r = wipe.soap(0)
     assert r.ok and len([c for c in cell.calls if c[0] == 'periodic']) == 2
 
@@ -236,7 +236,7 @@ def test_soap_timeout(cell):
         CFG['f3']['soap']['duration_s'] = 60
     assert not r.ok and r.code == TIMEOUT
     names = [c[0] for c in cell.calls]
-    assert 'safe_retreat' not in names                                    # 9/22 2차: safe_z_mm 대신 목표 위치로 후퇴
+    assert 'safe_retreat' not in names                                    # safe_z_mm 대신 목표 위치로 후퇴
     rels = _rels(cell.calls)
     rise = [c for c in rels if c[2] == pytest.approx(HOME_Z - POSE0[2])]
     assert rise                                                           # 실패해도 목표 z 까지는 후퇴 시도
@@ -250,7 +250,7 @@ def test_soap_halt_does_not_auto_move(cell):
 
 
 def test_soap_detects_tool_lost_during_twist(cell, monkeypatch):
-    """9/23: 비틀기 도는 중 폭이 기준(soap 시작 때 잰 값)보다 크게 벗어나면 TOOL_LOST."""
+    """비틀기 도는 중 폭이 기준(soap 시작 때 잰 값)보다 크게 벗어나면 TOOL_LOST."""
     def dropped():
         cell.width = 20.0 + 5.0                      # slip_tol_mm(1.0)보다 훨씬 크게 벗어남 — 실기 재현 값 참고
         if cell.periodic > 0:
@@ -274,7 +274,7 @@ def _split(cell):
 
 
 def test_cup_does_not_seek_its_own_position(cell):
-    """🔧 9/22 3차: wipe_cup 은 더 이상 스스로 위치를 찾지 않는다 — 호출되자마자 바로 하강한다(soap이 이미 데려다 놨다는 전제)."""
+    """wipe_cup 은 더 이상 스스로 위치를 찾지 않는다 — 호출되자마자 바로 하강한다(soap이 이미 데려다 놨다는 전제)."""
     wipe.wipe_cup()
     assert 'move_to' not in [c[0] for c in cell.calls]                     # HOME 등 어디로도 스스로 이동 안 함
     rels = _rels(cell.calls)
@@ -282,7 +282,7 @@ def test_cup_does_not_seek_its_own_position(cell):
 
 
 def test_cup_returns_to_call_height_only(cell):
-    """⑦ 솔을 곧게 뽑아 **호출된 자리 높이로만** — 수평 복귀·HOME 이동 없음(박진용 9/22 3차)."""
+    """⑦ 솔을 곧게 뽑아 **호출된 자리 높이로만** — 수평 복귀·HOME 이동 없음."""
     wipe.wipe_cup()
     _work, back = _split(cell)
     assert 'move_to' not in [c[0] for c in back]                           # HOME으로 안 감
@@ -315,7 +315,7 @@ def _work_rels(cell):
 
 def test_cup_scrub_is_one_periodic_on_tool_z_and_rz(cell):
     """④⑤ Move Periodic 한 명령 · **TOOL** 기준 · z ±20 mm + rz(그리퍼 축 = 6번 조인트) ±180° · 같은 주기 6.3 s · 3 회.
-    🚨 rx 칸은 실기에서 4번 조인트를 돌렸다(9/21) — rx·ry 칸은 0 이어야 한다."""
+    🚨 rx 칸은 실기에서 4번 조인트를 돌렸다 — rx·ry 칸은 0 이어야 한다."""
     wipe.wipe_cup()
     per = _periodic(cell)
     assert len(per) == 1
@@ -370,7 +370,7 @@ def test_cup_no_room_to_spin_is_error_and_retreats(cell):
 
 def test_cup_stops_now_then_goes_home_if_j4_moves(cell):
     """🚨 세척 도는 중 4번 조인트가 1° 넘게 움직이면 **즉시 정지** → ROBOT_ERROR → 곧게 뽑아 호출된 높이로 복귀
-    (수세미·솔 둘 다 물러서 그릇처럼 자동 복귀해도 된다 — 박진용 9/22, PR #56 리뷰 대체)."""
+    (수세미·솔 둘 다 물러서 그릇처럼 자동 복귀해도 된다)."""
     cell.j4_during = 5.0
     r = wipe.wipe_cup()
     assert not r.ok and r.code == ROBOT_ERROR
@@ -419,7 +419,7 @@ def test_cup_over_time_is_timeout(cell):
 
 
 def test_cup_halt_does_not_auto_move(cell):
-    """강제정지 뒤에는 로봇 위치를 모른다 → 힘만 끄고 움직이지 않는다(9/21 케이블 꼬임 사고)."""
+    """강제정지 뒤에는 로봇 위치를 모른다 → 힘만 끄고 움직이지 않는다(실기 케이블 꼬임 사고)."""
     cell.halted = True
     with pytest.raises(wipe.cc.MotionHalted):
         wipe.wipe_cup()

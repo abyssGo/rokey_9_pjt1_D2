@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""그리퍼 함수(RG2) — 담당 민범진 (INF-02d). 함수 표는 docs/03_설계_SDD.md §3.1.
+"""그리퍼 함수(RG2) (INF-02d). 함수 표는 docs/03_설계_SDD.md §3.1.
 
 강사 배포 드라이버(`onrobot_rg_control`)를 통해 쓴다. 드라이버 소스에서 확인한 사실:
 
@@ -255,7 +255,7 @@ def grip_reset(empty_hand=False, wait_s=None):
     """안전 스위치를 푼다 — 툴 전원을 잠깐 껐다 켠다. 푼 뒤의 상태(dict)를 돌려준다.
 
     주의: 쥐고 있던 것을 떨어뜨린다. 전원이 끊기면 손가락을 잡아 주는 힘이 사라진다.
-       그래서 손이 빈 것을 눈으로 확인하고 `empty_hand=True` 로 불러야 실행한다(AGENTS 규칙 1).
+       그래서 손이 빈 것을 눈으로 확인하고 `empty_hand=True` 로 불러야 실행한다.
     주의: 메인 스레드에서만 부른다 — 콜백·타이머에서 용기를 떨어뜨리면 안 된다(SDD §3.2).
 
     하는 일  ① 지금 상태를 읽어 기록한다  ② 상자에 "툴 전원 재시작"(레지스터 0 ← 2, 상자 번호 63)을 쓴다
@@ -388,7 +388,7 @@ def _warn_if_stuck(before, after, what):
     전원을 다시 넣어야만 풀린다. 시연 중에 걸리면 그 자리에서 멈춘다.
     예전에는 "걸렸을 수도 있다" 고 짐작만 했다. 지금은 상자에서 직접 읽어
        걸렸다 / 아니다 를 말한다. 못 읽으면(Virtual·랜선 없음) 예전처럼 짐작으로 되돌아간다.
-    주의: 스스로 풀지는 않는다 — 전원을 껐다 켜면 쥔 것을 떨어뜨리기 때문이다(AGENTS 규칙 1).
+    주의: 스스로 풀지는 않는다 — 전원을 껐다 켜면 쥔 것을 떨어뜨리기 때문이다.
        사람이 `cc.grip_reset(empty_hand=True)` 를 부른다.
     """
     if before is None or after is None or abs(after - before) >= _SETTLE_SPAN_MM:
@@ -476,7 +476,7 @@ def _box_cfg():
     missing = [k for k in _BOX_KEYS if conf.get(k) is None]
     if missing:
         raise GripperBoxError(f'params.yaml 의 f2.gripper_box 에 {missing} 가 없거나 비어 있다 — '
-                              '그리퍼 상자 주소를 채운다 (AGENTS.md 규칙 6: 코드에 박지 않는다)')
+                              '그리퍼 상자 주소를 채운다 (주소는 코드가 아니라 설정에서 읽는다)')
     return conf
 
 
@@ -491,7 +491,7 @@ def _box_open(conf):
         from pymodbus.client import ModbusTcpClient
     except ImportError as e:
         raise GripperBoxError('pymodbus 가 없다 — sudo apt install python3-pymodbus '
-                              '(🚨 pip 로 깔면 최신판이 와서 드라이버가 죽는다 — AGENTS.md §5)') from e
+                              '(🚨 pip 로 깔면 최신판이 와서 드라이버가 죽는다)') from e
     client = ModbusTcpClient(host=str(conf['ip']), port=int(conf['port']),
                              timeout=float(conf['connect_timeout_s']))
     try:

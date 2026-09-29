@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""케이블 이상 감지 및 넛지(로봇팔 가볍게 밀기) 재개 기능 테스트 — 민범진 (F2)
+"""케이블 이상 감지 및 넛지(로봇팔 가볍게 밀기) 재개 기능 테스트 (F2)
 
 검증 시나리오:
 1. 정상 상태: jitter_g <= max_weigh_spread_g -> 정상 진행
@@ -13,7 +13,7 @@ import types
 
 from cobot_api import OK, ROBOT_ERROR, Result
 from f2_sense_flow.flow import Flow, Signals, RETRY_STEP, ABORTED
-from f2_sense_flow.sense import CableTightError, wait_for_nudge, recheck_cable
+from f2_sense_flow.sense import CableTightError, wait_for_nudge
 
 
 class MockLogger:
@@ -71,7 +71,7 @@ def _limits(monkeypatch, cc, **over):
 
 
 def test_wait_for_nudge_uses_the_shared_two_tap_detector(monkeypatch):
-    """🔄 9/24 E48: 넛지 감지는 툴 놓침 넛지와 같은 cc.check_nudge(15 N · 2번 밀기) — 두 번째 밀기가 잡히면 'nudge'."""
+    """E48: 넛지 감지는 툴 놓침 넛지와 같은 cc.check_nudge(15 N · 밀기 횟수 nudge_taps — 이 시험은 2번) — 그 횟수째 밀기가 잡히면 'nudge'."""
     import cobot_common as cc
     import f2_sense_flow.sense as sense
     _limits(monkeypatch, cc)
@@ -103,33 +103,8 @@ def test_wait_for_nudge_keeps_the_baseline_across_short_calls(monkeypatch):
     assert sense.wait_for_nudge(conf=conf, sig=sig, timeout_s=0.5) == 'resume' and sense._nudge_armed is False
 
 
-def test_recheck_cable_judges_ok_and_tight(monkeypatch):
-    """재검증: jitter 에 따라 정상/이상 판정."""
-    import cobot_common as cc
-    import f2_sense_flow.sense as sense
-
-    monkeypatch.setattr(cc, 'weigh', lambda n: None)
-    conf = {
-        'limits': {'max_weigh_spread_g': 50.0},
-        'nudge': {'recheck_samples': 5}
-    }
-
-    # 1. 정상 (jitter = 20g <= 50g)
-    monkeypatch.setattr(cc, 'weigh_last', lambda: {'jitter_g': 20.0})
-    is_ok, jitter, limit = sense.recheck_cable(conf)
-    assert is_ok is True
-    assert jitter == 20.0
-    assert limit == 50.0
-
-    # 2. 이상 (jitter = 70g > 50g)
-    monkeypatch.setattr(cc, 'weigh_last', lambda: {'jitter_g': 70.0})
-    is_ok, jitter, limit = sense.recheck_cable(conf)
-    assert is_ok is False
-    assert jitter == 70.0
-
-
 def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
-    """Flow 통합: 케이블 이상 발생 -> PAUSED -> 넛지 감지 -> 재검증 통과 -> 작업 재개(RETRY_STEP)."""
+    """Flow 통합: 케이블 이상 발생 -> PAUSED -> 넛지 감지 -> 제자리 재측정 없이 작업 재개(RETRY_STEP)."""
     log = MockLogger()
     cfg = {
         'flow': {
@@ -138,13 +113,9 @@ def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
         }
     }
 
-    def no_recheck(conf):
-        raise AssertionError('밀면 바로 재개한다 — 제자리 재측정을 하지 않는다')
-
     # f2 모듈 모의
     mock_f2 = types.SimpleNamespace(
         wait_for_nudge=lambda conf, sig, timeout_s: 'nudge',
-        recheck_cable=no_recheck,
     )
 
     flow = Flow(cfg, log, features={'f2': mock_f2})
@@ -256,7 +227,6 @@ def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
 
     mock_f2 = types.SimpleNamespace(
         wait_for_nudge=lambda conf, sig, timeout_s: 'nudge',
-        recheck_cable=lambda conf: (True, 10.0, 50.0)
     )
 
     flow = Flow(cfg, log, safe_retreat=mock_safe_retreat, pause=mock_pause, resume=mock_resume,
@@ -296,10 +266,7 @@ def test_cable_screen_resume_restarts_at_once_and_consumes_the_signal(monkeypatc
             sig.raise_('resume')
         return 'resume' if sig.peek('resume') else None
 
-    def no_recheck(conf):
-        raise AssertionError('제자리 재측정을 하지 않는다')
-
-    flow = Flow(cfg, log, features={'f2': types.SimpleNamespace(wait_for_nudge=wait_like_real, recheck_cable=no_recheck)})
+    flow = Flow(cfg, log, features={'f2': types.SimpleNamespace(wait_for_nudge=wait_like_real)})
     flow.step = 'WEIGH'
     flow._prev_step = 'WEIGH'
     sig = Signals()

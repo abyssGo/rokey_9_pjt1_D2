@@ -1,7 +1,7 @@
 """실패 정책이 params.yaml 설정대로 동작하는지 — TC-10 의 바탕.
 
 🚨 로봇·브링업·ROS 없이 돈다. flow.py 가 ROS 를 import 하지 않게 나눠 둔 덕분이다.
-실제 TC-10 은 flow_node 를 띄워 HMI·Ctrl+C 까지 확인한다(9/22 UT-FLOW).
+실제 TC-10 은 flow_node 를 띄워 HMI·Ctrl+C 까지 확인한다(UT-FLOW).
 """
 import threading
 import types
@@ -27,8 +27,8 @@ CFG = {'flow': {
                'FORCE_LIMIT': 'retry:1->isolate', 'TIMEOUT': 'retry:1->isolate',
                'RACK_JAM': 'retry:1->isolate', 'TOOL_FAIL': 'retry:1->isolate',
                'RACK_FULL': 'pause', 'ROBOT_ERROR': 'pause',
-               'GRIP_FAIL': 'pause',           # 9/20 결정 E12 — params.yaml 과 같은 값
-               'TOOL_LOST': 'pause'},          # 9/23 결정 E37 — params.yaml 과 같은 값
+               'GRIP_FAIL': 'pause',           # 결정 E12 — params.yaml 과 같은 값
+               'TOOL_LOST': 'pause'},          # 결정 E37 — params.yaml 과 같은 값
     'counts': {'soap_dips': 3, 'rinse_dips': 1, 'rinse_shakes': 3},
     'step_delay_s': 0.0,
     'done_hold_s': 0.0,     # 시험에서는 기다리지 않는다
@@ -104,7 +104,7 @@ def test_retry_recovers():
 def test_retry_does_not_rerun_earlier_steps():
     """🚨 재시도가 성공한 뒤 **그다음 단계로** 가야 한다 — 앞 단계로 되돌아가면 안 된다.
 
-    9/21 에 찾은 결함: 재시도를 세는 변수가 바깥의 단계 인덱스와 이름이 같아(둘 다 i)
+    찾은 결함: 재시도를 세는 변수가 바깥의 단계 인덱스와 이름이 같아(둘 다 i)
     재시도가 성공하면 단계 인덱스가 재시도 횟수로 덮였다. rack_place(마지막에서 두 번째)가
     한 번 실패했다 성공하면 **steps[1] 로 뛰어** 무게·안착·닦기·헹굼·적재를 한 바퀴 더 돌았다.
 
@@ -196,7 +196,7 @@ def test_full_order_calls_every_function():
         assert need in called, f'{need} 가 안 불렸다'
 
 
-# ────────────────────────────────── stop 위치 (9/20 V-20 결함 · SDD §5.1)
+# ────────────────────────────────── stop 위치 (V-20 결함 · SDD §5.1)
 class StopAfter(AutoResume):
     """resume 을 눌러 줄 때 "그때까지 몇 단계가 갔는지" 를 기록하는 시험용 깃발."""
 
@@ -214,7 +214,7 @@ class StopAfter(AutoResume):
 def test_stop_pauses_between_steps():
     """🚨 정지 버튼은 **단계 사이마다** 먹어야 한다 — 용기 하나를 끝까지 하고서가 아니라.
 
-    V-20(황인재 9/20)에서 "stop 뒤에도 RINSE·RACK 을 더 갔다" 로 드러난 결함.
+    V-20 에서 "stop 뒤에도 RINSE·RACK 을 더 갔다" 로 드러난 결함.
     실기에서는 함수 하나가 수십 초라, 이게 없으면 정지 버튼이 소프트 E-STOP 이 못 된다.
     """
     mock.configure([])
@@ -239,11 +239,11 @@ def test_stop_pauses_between_steps():
     assert sig.calls_at_pause == 3, \
         f'stop 뒤에 {sig.calls_at_pause - 3} 단계를 더 갔다 — 단계 사이에서 멈춰야 한다'
     assert f.step != 'PAUSED', 'resume 뒤 끝까지 가야 한다'
-    assert len(sig.calls) == 12, f'resume 뒤 남은 단계를 다 못 갔다 ({len(sig.calls)}/12)'   # 🔄 9/23 WEIGH 이동 단계 제거 → 12
+    assert len(sig.calls) == 12, f'resume 뒤 남은 단계를 다 못 갔다 ({len(sig.calls)}/12)'   # WEIGH 이동 단계 제거 → 12
 
 
 def test_stop_does_not_touch_the_gripper():
-    """🚨 멈출 때 그리퍼에 **아무 명령도 보내지 않는다** (SDD §5.1 · 황인재 9/20).
+    """🚨 멈출 때 그리퍼에 **아무 명령도 보내지 않는다** (SDD §5.1).
 
     든 채 멈추는 구간이 생기는데, 힘을 바꾸면 드라이버가 다시 파지하면서 놓칠 수 있다.
     기능 함수가 끝날 때 HOLD → NORMAL 로 되돌리므로 단계 사이는 이미 NORMAL 이다.
@@ -303,7 +303,7 @@ def test_pre_pressed_resume_does_not_release_next_pause():
 
 
 def test_pre_pressed_resume_does_not_skip_stop_between_steps():
-    """미리 눌린 resume 이 **단계 사이 stop**(9/20 V-20 수정)까지 무력화하면 안 된다.
+    """미리 눌린 resume 이 **단계 사이 stop**(V-20 수정)까지 무력화하면 안 된다.
 
     운전 중에 resume, 그 뒤에 stop 을 누른 상황 — 정지 버튼이 소프트 E-STOP 노릇을 하려면
     사람이 다시 누를 때까지 그 자리에 서 있어야 한다.
@@ -375,13 +375,13 @@ def test_new_code_in_retry_uses_new_policy():
     assert f.last_code == 'ROBOT_ERROR'
     assert f.isolated == 0, 'ROBOT_ERROR 를 격리로 처리하면 안 된다 — 로봇 위치를 모른다'
     assert sig.resumes >= 1, 'ROBOT_ERROR 인데 PAUSED 를 거치지 않았다 (SDD §7)'
-    # 9/20 PM 결정: ROBOT_ERROR 로 멈춘 용기**만** ERROR 로 기록한다
+    # ROBOT_ERROR 로 멈춘 용기**만** ERROR 로 기록한다
     # (GRIP_FAIL·RACK_FULL 은 재개하면 마저 해서 DONE 이 된다 — 아래 시험)
     assert [e['result'] for e in events] == ['ERROR'], 'ROBOT_ERROR 로 멈춘 용기는 ERROR 로 남는다'
 
 
 def test_resume_redoes_the_failed_step():
-    """🚨 GRIP_FAIL 로 멈춘 뒤 재개하면 **실패한 그 단계부터 다시** 한다 (IRD §8 · 9/20 결정 E12).
+    """🚨 GRIP_FAIL 로 멈춘 뒤 재개하면 **실패한 그 단계부터 다시** 한다 (IRD §8 · 결정 E12).
 
     전에는 재개해도 GO_ON(다음 용기)이라 **그 용기를 버렸다** — 사람이 가서 다시 쥐여 줬는데도
     버리는 셈이라, 재개 버튼과 중단 버튼이 똑같이 동작했다.
@@ -497,7 +497,7 @@ def test_resume_after_robot_error_goes_to_next_container():
     assert f.isolated == 0, 'ROBOT_ERROR 를 격리로 옮기면 안 된다'
 
 
-# ────────────────────────────────── 후퇴하면 안 되는 실패 (9/21 PM 요청 · SDD §7)
+# ────────────────────────────────── 후퇴하면 안 되는 실패 (SDD §7)
 def _flow_with(retreats, force_offs, no_retreat, fail_with):
     """f2.leftover_loop 이 주어진 예외를 던지는 Flow 를 만든다."""
     mods = load_features(['f1', 'f2', 'f3'])
@@ -521,7 +521,7 @@ def test_move_incomplete_does_not_retreat():
     """🚨 이동이 도중에 서면(MoveIncomplete) **후퇴하지 않는다.**
 
     로봇이 어디 있는지 모르는데 Z 를 올리는 후퇴를 하면 더 꼬인다
-    (9/21 08:40 케이블 꼬임과 같은 길) → 힘·순응만 끄고 사람이 확인한다.
+    (실기의 케이블 꼬임과 같은 길) → 힘·순응만 끄고 사람이 확인한다.
     """
     from cobot_common.motion import MoveIncomplete
     retreats, force_offs = [], []
@@ -539,7 +539,7 @@ def test_move_incomplete_does_not_retreat():
 
     assert before_signal == [0], '위치를 모르는데 사람 신호 **전에** 후퇴했다'
     assert force_offs, '힘·순응은 꺼야 한다'
-    # 🆕 E52(황인재 9/25): 사람이 확인하고 신호를 준 **뒤**에는 곧게 위로 → HOME 으로 출발점을 만든다(다음 PICK 이 아무 자리에서 출발하지 않게)
+    # E52: 사람이 확인하고 신호를 준 **뒤**에는 곧게 위로 → HOME 으로 출발점을 만든다(다음 PICK 이 아무 자리에서 출발하지 않게)
     assert len(retreats) == 1, f'사람 신호 뒤 HOME 출발 전에 한 번 후퇴해야 한다 ({len(retreats)}회)'
     assert f.last_code == 'ROBOT_ERROR'
 
@@ -637,7 +637,7 @@ def test_abort_keeps_going_when_a_cleanup_step_fails():
     assert orig is not None
 
 
-# ── 🚨 이동 **도중** 중단 (halt_errors 경로) — wait_resume 을 거치지 않는다 (PM 검토 PR #50)
+# ── 🚨 이동 **도중** 중단 (halt_errors 경로) — wait_resume 을 거치지 않는다
 class _Halted(RuntimeError):
     """cc.MotionHalted 대역 — 중단이 하던 이동을 끊었을 때 올라오는 예외."""
 
@@ -670,7 +670,7 @@ def _flow_halted_midmove(sig, n_containers=1):
 def test_abort_midmove_clears_the_flags():
     """🚨 이동 도중 중단은 wait_resume 을 **안 거친다** → abort_container 가 깃발을 내려야 한다.
 
-    안 내리면 stop·abort 가 남아 다음 용기·다음 실행까지 따라간다(PM 검토 PR #50).
+    안 내리면 stop·abort 가 남아 다음 용기·다음 실행까지 따라간다.
     """
     sig = AutoResume()
     f, events = _flow_halted_midmove(sig, n_containers=2)
@@ -685,7 +685,7 @@ def test_abort_midmove_clears_the_flags():
 def test_abort_retreats_before_going_home():
     """🚨 중단은 **수조 안**(헹굼 구간)에서도 눌린다 → HOME 으로 가기 전에 곧게 올라와야 한다.
 
-    9/22 17:27 실기: 수조 안 자세(z −13.6)에서 HOME 으로 간 관절 이동이 테이블을 가로질러
+    실기 충돌: 수조 안 자세(z −13.6)에서 HOME 으로 간 관절 이동이 테이블을 가로질러
     그리퍼가 상판을 쓸었다 → 비상정지 · 툴 전원이 끊겨 그리퍼 드라이버까지 죽었다.
     """
     order = []
@@ -776,7 +776,7 @@ def test_boom_with_count_only_throws_that_many_times():
     assert mock.code_for('soap') is None
 
 
-# ────────────────────────────────── 🆕 FLOW-05 (결정 E25) — 컵은 무게 단계를 건너뛴다
+# ────────────────────────────────── FLOW-05 (결정 E25) — 컵은 무게 단계를 건너뛴다
 def _calls_by_kind(cfg_extra):
     """가짜 기능으로 plan 한 바퀴 돌며 (종류, step, 함수) 를 모은다."""
     import copy
@@ -804,9 +804,9 @@ def test_flow05_cup_skips_weigh_bowl_keeps_it():
     assert not [x for x in cup if x[0] == 'WEIGH'], f'컵이 WEIGH 를 거쳤다: {cup}'
     assert ('WEIGH', 'leftover_loop') not in cup and ('WEIGH', 'move_to') not in cup
     assert cup[:2] == [('PICK', 'pick'), ('SEAT', 'place')], cup[:3]       # PICK 다음이 곧장 SEAT
-    assert ('WEIGH', 'leftover_loop') in bowl and ('WEIGH', 'move_to') not in bowl   # 🔄 9/23: WEIGH 이동 단계는 뺐다(weigh 가 HOME 경유로 스스로 감)
+    assert ('WEIGH', 'leftover_loop') in bowl and ('WEIGH', 'move_to') not in bowl   # WEIGH 이동 단계는 뺐다(weigh 가 HOME 경유로 스스로 감)
     assert (f.done_bowl, f.done_cup, f.isolated) == (2, 2, 0)              # 나머지 단계는 다 돈다
-    assert len(bowl) == 12 * 2 and len(cup) == 11 * 2                    # 🔄 9/23 그릇 12(WEIGH 이동 제거) · 컵 11(WEIGH 전부 생략)
+    assert len(bowl) == 12 * 2 and len(cup) == 11 * 2                    # 그릇 12(WEIGH 이동 제거) · 컵 11(WEIGH 전부 생략)
 
 
 def test_flow05_missing_key_keeps_old_behaviour():
@@ -878,7 +878,7 @@ def test_empty_zone_home_failure_pauses_then_resumes_and_retries():
         mock.reset()
 
 
-# ────────────────────────────────── 🆕 E52 (황인재 9/25 · 9/26 구현) — 로봇 오류 2단 신호 · 격리 정리 통일 · 툴 집기 실패는 멈춤
+# ────────────────────────────────── E52 — 로봇 오류 2단 신호 · 격리 정리 통일 · 툴 집기 실패는 멈춤
 def _spy_f1(mods, calls):
     """f1 의 모든 함수를 감싸 (이름, 인자) 를 calls 에 남긴다."""
     def spy(name, fn):
@@ -908,7 +908,7 @@ def _ns(api, mod):
 def test_robot_error_while_holding_opens_gripper_then_waits_for_second_signal(monkeypatch):
     """로봇 오류 + 쥔 것 있음 → 신호 1: **그리퍼만** 열림(팔은 안 움직임) → 사람이 받음 → 신호 2: 곧게 위로 → HOME → ERROR → 다음 용기.
 
-    황인재 9/25: 로봇이 제 위치를 모를 수 있으니 격리 구역으로 옮기지 않고 사람이 받아 처리한다.
+    E52: 로봇이 제 위치를 모를 수 있으니 격리 구역으로 옮기지 않고 사람이 받아 처리한다.
     """
     released, watches = [], []
     monkeypatch.setattr(flow_module.cc, 'release', lambda: released.append(1))
@@ -942,7 +942,7 @@ def test_robot_error_while_holding_opens_gripper_then_waits_for_second_signal(mo
     assert calls.count(('move_to', ('HOME', False))) == 1, '둘째 신호 뒤 HOME 으로 가야 한다'
     assert [(e['result'], e['code']) for e in events] == [('ERROR', 'ROBOT_ERROR')]
     assert f.isolated == 0 and f.holding is None and f.holding_tool is None
-    assert watches == [1], f'넛지는 첫 신호에만 — 둘째 신호(받은 뒤)는 재개 버튼만 받아야 한다(황인재 9/27 · 팔이 바로 움직임) ({len(watches)}회)'
+    assert watches == [1], f'넛지는 첫 신호에만 — 둘째 신호(받은 뒤)는 재개 버튼만 받아야 한다(E54 · 팔이 바로 움직임) ({len(watches)}회)'
 
 
 def test_robot_error_with_empty_hand_needs_one_signal_and_mentions_the_bed(monkeypatch):
@@ -971,7 +971,7 @@ def test_robot_error_with_empty_hand_needs_one_signal_and_mentions_the_bed(monke
 def test_robot_error_mid_pick_uses_gripper_width_when_record_says_empty(monkeypatch):
     """집는 **도중** 오류 — 기록은 빈손(pick 이 끝나지 않았다)인데 그리퍼는 이미 닫혀 있다(옆면 70.3) → 2단 신호로 그리퍼를 열어 받게 한다.
 
-    9/27 황인재 질문(컵을 옆으로 잡았을 때도 처리되나) 에서 찾은 빈틈: 폭으로 한 번 더 본다.
+    '컵을 옆으로 잡았을 때도 처리되나' 를 따져 보다 찾은 빈틈: 폭으로 한 번 더 본다.
     """
     released = []
     monkeypatch.setattr(flow_module.cc, 'release', lambda: released.append(1))

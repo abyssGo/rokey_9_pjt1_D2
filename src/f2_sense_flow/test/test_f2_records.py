@@ -145,5 +145,5 @@ def test_consumables_counted_during_run():
     """소모품 카운트가 용기 수만큼 올라간다 (HMI 가 /flow/state 로 본다)."""
     _, f = _run()
     assert f.sponge_uses == 4
-    assert f.soap_dips == 4                      # 🔄 9/27 용기당 1회(담금 횟수 3 과 무관)
+    assert f.soap_dips == 4                      # 용기당 1회(담금 횟수 3 과 무관)
     assert f.rinse_dips == 4 * CFG['flow']['counts']['rinse_dips']

@@ -35,26 +35,26 @@ def test_repo_cell_skeleton_uses_ird_ids():
     cell = config.load(SRC_CONFIG)['cell']
     assert set(cell) == {'limits', 'motion', 'force', 'presets', 'stations', 'zones', 'beds', 'rack'}
     assert set(cell['motion']) == {'vel_tcp_max_mm_s', 'acc_tcp_max_mm_s2', 'vel_joint_max_deg_s', 'acc_joint_max_deg_s2',
-                                   'vel_joint_fast_max_deg_s', 'acc_joint_fast_max_deg_s2',   # 🆕 9/23 E36 물 털기 전용 상한
+                                   'vel_joint_fast_max_deg_s', 'acc_joint_fast_max_deg_s2',   # E36 물 털기 전용 상한
                                    'move_timeout_s'}
     assert set(cell['force']) == {'compliance_stx', 'contact_step_mm', 'contact_vel_mm_s', 'contact_acc_mm_s2',
-                                  'retreat_vel_mm_s', 'retreat_acc_mm_s2', 'force_max_n', 'search_y_period_ratio'}   # 이슈 #7 ①
+                                  'retreat_vel_mm_s', 'retreat_acc_mm_s2', 'force_max_n', 'search_y_period_ratio'}   # 힘 함수 공용 값(V-03)
     beds = {'SPONGE_BED_B', 'SPONGE_BED_C'}
-    vias = {'RACK_B_VIA', 'RACK_B1_VIA', 'RACK_C_VIA'}           # 🆕 9/22 팔레트 경유점(f1.rack_place · 리마인드 §7 "stations 아래에") — IRD 자리는 아니다
-    extra = vias | {'RINSE_SHAKE', 'SOAP_PUMP'}                                # 🆕 9/23 E36 물 털기 자세(f2.shake at:) — IRD 스테이션이 아니라 f2 내부 자세(경유점과 같은 취급)
+    vias = {'RACK_B_VIA', 'RACK_B1_VIA', 'RACK_C_VIA'}           # 팔레트 경유점(f1.rack_place · stations 아래) — IRD 자리는 아니다
+    extra = vias | {'RINSE_SHAKE'}                                # E36 물 털기 자세(f2.shake at:) — IRD 스테이션이 아니라 f2 내부 자세(경유점과 같은 취급)
     assert set(cell['stations']) == (set(STATIONS) - beds) | extra   # 스펀지 홈은 beds 에 있다
     assert set(cell['beds']) == beds
     assert set(cell['zones']) == {RET_B, RET_C}
     assert set(cell['rack']['slots']) == set(RACK_SLOTS)
-    assert set(cell['presets']) == {'BOWL', 'CUP', 'CUP_SIDE', 'SPONGE', 'BRUSH'}   # 🆕 9/23 CUP_SIDE = 홈 C 옆면 재파지 전용(결정 ㉡)
-    # 9/20 CELL-04: 양식을 티칭 데이터에 맞췄다 — 종류별 · 용도별(point) · 슬롯별
+    assert set(cell['presets']) == {'BOWL', 'CUP', 'CUP_SIDE', 'SPONGE', 'BRUSH'}   # CUP_SIDE = 홈 C 옆면 재파지 전용(결정 ㉡)
+    # CELL-04: 양식을 티칭 데이터에 맞췄다 — 종류별 · 용도별(point) · 슬롯별
     for name in ('WEIGH', 'WASTE', 'SOAP', 'RINSE', 'ISOLATE'):
         assert set(cell['stations'][name]) == {'BOWL', 'CUP'}, name
     for name in ('TOOL_SPONGE', 'TOOL_BRUSH'):
         assert set(cell['stations'][name]) == {'pick', 'return'}, name
     assert set(cell['beds']['SPONGE_BED_B']) == {'place', 'wash', 'seat'}
-    assert set(cell['beds']['SPONGE_BED_C']) == {'place', 'wash', 'seat', 'regrip', 'regrip_preset'}   # 🔄 9/23 08:2x 결정 ㉡ 유지: 옆면 재파지(접근점 posx + 전용 프리셋)
-    assert all(len(cell['zones'][z]['slots']) == 2 for z in (RET_B, RET_C))       # 🔄 9/23 E41(강사 피드백): 그릇 2·컵 2 처음부터 배치 → 구역마다 자리 2개(E9 대체)
+    assert set(cell['beds']['SPONGE_BED_C']) == {'place', 'wash', 'seat', 'regrip', 'regrip_preset'}   # 결정 ㉡: 옆면 재파지(접근점 posx + 전용 프리셋)
+    assert all(len(cell['zones'][z]['slots']) == 2 for z in (RET_B, RET_C))       # E41(강사 피드백): 그릇 2·컵 2 처음부터 배치 → 구역마다 자리 2개(E9 대체)
 
 
 def _rotation(rx, ry, rz):
@@ -74,10 +74,10 @@ def _angle_between(p, q):
     return math.degrees(math.acos(max(-1.0, min(1.0, (trace - 1.0) / 2.0))))
 
 
-# ⚠ 접근점 → 끝점이 수직이 아닌 채로 옮겨 온 자세. 한석형이 다시 찍으면 여기서 지운다.
-#   · 9/20 저녁: RET_B 슬롯 1 은 접근(잡기1) → 그립(잡기2)이 수평 2.8 mm
-#   · RACK_C2 는 9/22 실기 좌표로 수직 정렬해 목록에서 제거했다.
-KNOWN_TILTED = set()                                            # 🔄 9/22 RET_B 접근점을 끝점 바로 위로 고쳐(민범진 · E14) 알려진 예외가 없어졌다
+# ⚠ 접근점 → 끝점이 수직이 아닌 채로 옮겨 온 자세. 다시 찍으면 여기서 지운다.
+#   · RET_B 슬롯 1 은 접근(잡기1) → 그립(잡기2)이 수평 2.8 mm 였다
+#   · RACK_C2 는 실기 좌표로 수직 정렬해 목록에서 제거했다.
+KNOWN_TILTED = set()                                            # RET_B 접근점을 끝점 바로 위로 고쳐(E14) 알려진 예외가 없어졌다
 
 
 def test_repo_approach_points_are_straight_above_end_points():
@@ -114,15 +114,15 @@ def test_repo_params_sections():
 
 def test_unfilled_lists_empty_cell_values():
     empty = config.unfilled(config.load(SRC_CONFIG))
-    # 9/21 저녁: V-01·V-05·V-23 실기로 **그릇·컵 프리셋을 채웠다**(민범진) → 이제 비어 있으면 안 된다
+    # V-01·V-05·V-23 실기로 **그릇·컵 프리셋을 채웠다** → 이제 비어 있으면 안 된다
     for kind in ('BOWL', 'CUP'):
         for key in ('grip_width_mm', 'grip_zero_mm', 'grip_force_n', 'hold_force_n', 'width_tol_mm'):
             assert f'cell.presets.{kind}.{key}' not in empty, f'{kind}.{key} 가 다시 비었다'
-    assert 'cell.presets.CUP.grip_target_mm' not in empty         # 🆕 결정 E19 — 컵의 고정 폭
-    assert 'cell.limits.safe_z_mm' not in empty                   # 9/21: limits·motion·seat 는 설계 문서 값으로 채웠다
+    assert 'cell.presets.CUP.grip_target_mm' not in empty         # 결정 E19 — 컵의 고정 폭
+    assert 'cell.limits.safe_z_mm' not in empty                   # limits·motion·seat 는 설계 문서 값으로 채웠다
     poses = [e for e in empty if not e.startswith('cell.presets.')]
-    assert poses == [], f'빈 자세가 남아 있다: {poses}'           # 9/21: 자세는 전부 찼다(E14 · 격리까지)
-    # 9/22 18:10 V-08 실기로 **툴 프리셋(SPONGE·BRUSH)도 채웠다**(황인재 · rig_tool_width --at-holder) → 남은 빈 값은 approach_z_mm 뿐
+    assert poses == [], f'빈 자세가 남아 있다: {poses}'           # 자세는 전부 찼다(E14 · 격리까지)
+    # V-08 실기로 **툴 프리셋(SPONGE·BRUSH)도 채웠다**(rig_tool_width --at-holder) → 남은 빈 값은 approach_z_mm 뿐
     for tool_ in ('SPONGE', 'BRUSH'):
         for key in ('grip_width_mm', 'grip_zero_mm', 'grip_force_n', 'width_tol_mm'):
             assert f'cell.presets.{tool_}.{key}' not in empty, f'{tool_}.{key} 가 다시 비었다'
@@ -188,13 +188,13 @@ def test_vel_scale_range(tmp_path, monkeypatch, text, ok):
 def test_repo_rack_exit_paths_are_relative_vectors():
     """팔레트 칸의 exit_rel_mm = 꽂고 놓은 뒤 빠져나오는 상대 이동 목록(BASE).
 
-    9/21 실기: 그릇 칸은 꽂은 자리에서 HOME 으로 곧장 가면 **그리퍼가 팔레트에 걸린다** → 먼저 칸 밖으로 빼야 한다.
+    실기: 그릇 칸은 꽂은 자리에서 HOME 으로 곧장 가면 **그리퍼가 팔레트에 걸린다** → 먼저 칸 밖으로 빼야 한다.
     컵 칸은 접근점이 있어 수직으로 되올라가므로 필요 없다.
     """
     slots = config.load(SRC_CONFIG)['cell']['rack']['slots']
     have = {name for name, s in slots.items() if s.get('exit_rel_mm')}
-    assert have == set(slots)                                           # 9/21 황인재: 컵 칸도 그릇 칸과 같은 방식으로 빠져나온다
-    # 🚨 들어가는 길에는 상대 이동이 **없다** — 내려온 뒤 y 로 밀어 넣으면 팔레트 **칸막이 벽에 걸린다**(9/21 실기, 황인재).
+    assert have == set(slots)                                           # 컵 칸도 그릇 칸과 같은 방식으로 빠져나온다
+    # 🚨 들어가는 길에는 상대 이동이 **없다** — 내려온 뒤 y 로 밀어 넣으면 팔레트 **칸막이 벽에 걸린다**(실기).
     #    적재는 '칸 바로 위 → z 만 하강 → 놓기'. 빼는 것만 exit_rel_mm 이다.
     assert not any(s.get('entry_rel_mm') for s in slots.values())
     for name in have:
@@ -205,7 +205,7 @@ def test_repo_rack_exit_paths_are_relative_vectors():
 def test_rig_coords_never_targets_a_filled_pose(tmp_path):
     """rig_coords ③(빈 자세는 KeyError · 안 움직임)의 목록은 **지금 비어 있는 자세**에서만 나와야 한다.
 
-    9/21 PR #51 검토(PM): 고정 목록(SOAP·ISOLATE)이 이 PR 로 전부 채워지자, ③ 이 **Enter 확인 없이**
+    검토에서 발견: 고정 목록(SOAP·ISOLATE)이 전부 채워지자, ③ 이 **Enter 확인 없이**
     실기 로봇을 SOAP → ISOLATE(실기 미확인 경로)로 움직이게 되어 있었다. 목록을 설정에서 뽑도록 고쳤고,
     채워진 자세가 들어오면 이 시험이 실패한다.
     """
@@ -217,7 +217,7 @@ def test_rig_coords_never_targets_a_filled_pose(tmp_path):
     spec.loader.exec_module(rig)                                    # 모듈 맨 위는 ROS 를 부르지 않는다(cobot_common 은 main 안에서)
 
     real = config.load(SRC_CONFIG)
-    assert rig._untaught(real) == []                                # 9/21: 빈 자세 0개 → ③ 은 아무 데도 가지 않는다
+    assert rig._untaught(real) == []                                # 빈 자세 0개 → ③ 은 아무 데도 가지 않는다
 
     shutil.copy(SRC_CONFIG / 'params.yaml', tmp_path / 'params.yaml')
     doc = yaml.safe_load((SRC_CONFIG / 'cell.yaml').read_text(encoding='utf-8'))
