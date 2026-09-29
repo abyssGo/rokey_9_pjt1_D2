@@ -881,17 +881,17 @@ class Flow:
                 sig.clear('stop')
                 self.log.info(f'재개 요청 감지(유형: {ev}) — 무게를 다시 재며 케이블을 확인한다')
 
-                # 주의: 넛지 때 강한 외력(예: >35 N)으로 제어기가 SAFE_STOP(5)에 걸릴 수 있다(실기).
-                #    자동 복구(set_robot_control 2)를 시도하고 STANDBY 로 돌아올 때까지 대기.
-                timeout_s = 2.0                                    # 설정을 못 읽을 때의 기본 2 s
-                try:
-                    timeout_s = float(cc.cfg().get('cell', {}).get('limits', {}).get('nudge_resume_settle_s', 2.0))
-                except Exception:
-                    pass
-                if callable(getattr(cc, 'recover_robot_if_needed', None)):
-                    if not cc.recover_robot_if_needed(timeout_s=timeout_s):
-                        if callable(getattr(cc, 'wait_robot_ready', None)) and not cc.wait_robot_ready(timeout_s):
-                            self.log.warn(f'재개 전 로봇이 {timeout_s:g} s 안에 STANDBY 로 안 돌아왔다 — 그래도 이어간다')
+                # 🚨 밀기를 알아챈 순간에는 손이 아직 팔에 있다 — 곧바로 이동을 보내면 제어기가 외력으로 그 이동을 붙잡아
+                #    움직이지도 끝나지도 않은 채 멈춰 있었다(실기: 감지 3 ms 뒤 movej → 외력 경고 7060 → 2 분 정지).
+                #    손을 뗄 시간(f2.nudge.settle_s)을 두고, 그 뒤에 보호정지 복구·STANDBY 확인(_recover_robot)을 한다.
+                if ev == 'nudge':
+                    self.message = '밀기 확인 — 손을 떼 주세요. 곧 무게를 다시 잽니다'
+                    try:
+                        settle_s = float(((cc.cfg().get('f2') or {}).get('nudge') or {}).get('settle_s') or 1.5)
+                    except Exception:                          # noqa: BLE001 — 설정을 못 읽어도 멈추지 않는다
+                        settle_s = 1.5
+                    time.sleep(settle_s)
+                self._recover_robot()
                 self._guard(self._resume, what='resume')
                 self.step = self._prev_step
                 self.message = '재개 — 무게를 다시 재며 케이블을 확인합니다'

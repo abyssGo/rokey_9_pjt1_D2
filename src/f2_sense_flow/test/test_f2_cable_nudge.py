@@ -199,6 +199,22 @@ def test_cable_still_tight_after_nudge_pauses_again_with_the_same_alert(monkeypa
     assert flow.done_bowl == 1 and flow.isolated == 0
 
 
+def test_cable_nudge_waits_for_hands_off_then_recovers_before_moving(monkeypatch):
+    """밀기를 알아챈 순간엔 손이 아직 팔에 있다 — settle(f2.nudge.settle_s) 만큼 기다리고, 보호정지 복구·STANDBY 확인을 한 **뒤에**
+    모션을 푼다(실기: 감지 3 ms 뒤 이동을 보내 제어기가 외력으로 붙잡아 2 분 멈춤)."""
+    import f2_sense_flow.flow as flow_module
+    order = []
+    monkeypatch.setattr(flow_module.time, 'sleep', lambda s: order.append(('sleep', s)))
+    cfg = {'flow': {'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}], 'policy': {}}}
+    flow = Flow(cfg, MockLogger(), resume=lambda: order.append(('resume',)),
+                features={'f2': types.SimpleNamespace(wait_for_nudge=lambda conf, sig, timeout_s: 'nudge')})
+    monkeypatch.setattr(flow, '_recover_robot', lambda: order.append(('recover',)))
+    flow.step = flow._prev_step = 'WEIGH'
+    assert flow.handle_cable_tight(Signals()) == RETRY_STEP
+    i_sleep = next(i for i, o in enumerate(order) if o[0] == 'sleep' and o[1] >= 1.0)
+    assert order.index(('recover',)) > i_sleep and order.index(('resume',)) > order.index(('recover',)), order
+
+
 def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
     """핵심 요구사항 검증: 케이블 이상 감지 시 safe_retreat 후퇴 동작이 실행되지 않고 모션 pause 가 호출됨."""
     log = MockLogger()
