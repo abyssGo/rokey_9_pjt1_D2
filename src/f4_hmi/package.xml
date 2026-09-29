@@ -4,7 +4,7 @@
   <name>f4_hmi</name>
   <version>0.1.0</version>
   <description>F4 시스템 모니터(웹 HMI) — hmi_bridge(FastAPI + rclpy + SQLite) · fake_state_pub(가짜 flow)</description>
-  <maintainer email="hwang-injae@users.noreply.github.com">황인재</maintainer>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>rclpy</exec_depend>

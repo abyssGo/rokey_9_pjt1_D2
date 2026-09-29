@@ -3,15 +3,15 @@
 <package format="3">
   <name>prewash_bringup</name>
   <version>0.1.0</version>
-  <description>PreWash-Cell 런치: prewash.launch.py(PC-A, flow_node 프로세스 1개) · prewash_mock.launch.py(로봇 없이 flow 전부 mock + hmi). SDD §10.</description>
-  <maintainer email="il1282113@gmail.com">hwang-injae</maintainer>
+  <description>PreWash-Cell 런치: prewash.launch.py(GPU PC(로봇 제어), flow_node 프로세스 1개) · prewash_mock.launch.py(로봇 없이 flow 전부 mock + hmi). SDD §10.</description>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>cobot_common</exec_depend>
-  <!-- flow_node(f2_sense_flow) · hmi_bridge(f4_hmi)는 의존으로 걸지 않는다: PC-B 는 f4_hmi 만, PC-A 는 f4_hmi 없이 빌드한다.
+  <!-- flow_node(f2_sense_flow) · hmi_bridge(f4_hmi)는 의존으로 걸지 않는다: 화면 PC 도 같은 워크스페이스를 빌드한다 · hmi_bridge 는 화면 PC 에서 실행한다.
        없는 패키지는 런치가 경고만 남기고 건너뛴다. -->
 
   <test_depend>python3-pytest</test_depend>
