@@ -1034,7 +1034,8 @@ def test_leftover_remain_isolates_physically_via_home():
 
 
 def test_force_limit_exhausted_returns_tool_regrips_from_bed_and_isolates():
-    """힘 상한(retry:1->isolate) 소진 → 툴 반납 → **스펀지 홈에서 용기 다시 집기** → HOME → 격리 → HOME. 사람 없이. 기록 코드 FORCE_LIMIT."""
+    """힘 상한(retry:1->isolate) 소진 → 툴 반납 → **스펀지 홈에서 용기를 위로 다시 집기(regrip_top)** → HOME → 격리 → HOME.
+    사람 없이. 기록 코드 FORCE_LIMIT."""
     mock.configure(['wipe_bowl:FORCE_LIMIT'])
     mods = load_features(['f1', 'f2', 'f3'])
     calls = []
@@ -1044,10 +1045,30 @@ def test_force_limit_exhausted_returns_tool_regrips_from_bed_and_isolates():
     f.run_plan(sig)
 
     assert sig.resumes == 0
-    seq = [(n, a) for n, a in calls if n in ('move_to', 'place', 'pick', 'tool')]
+    seq = [(n, a) for n, a in calls if n in ('move_to', 'place', 'pick', 'regrip_top', 'tool')]
     i = seq.index(('tool', ('SPONGE', 'RETURN')))
-    assert seq[i:] == [('tool', ('SPONGE', 'RETURN')), ('pick', ('SPONGE_BED_B', 'BOWL')), ('move_to', ('HOME', True)),
+    assert seq[i:] == [('tool', ('SPONGE', 'RETURN')), ('regrip_top', ('SPONGE_BED_B', 'BOWL')), ('move_to', ('HOME', True)),
                        ('place', ('ISOLATE', 'BOWL')), ('move_to', ('HOME', False))], seq[i:]
+    assert [(e['result'], e['code']) for e in events] == [('ISOLATED', 'FORCE_LIMIT')]
+    assert f.isolated == 1 and f.holding is None and f.on_bed is False
+
+
+def test_isolate_cleanup_regrip_failure_leaves_container_on_bed_and_skips_isolate_place():
+    """격리 정리에서 홈의 용기를 다시 집지 못하면(GRIP_FAIL) 용기는 홈에 남기고 **격리 구역에 가지 않는다**(빈손 헛걸음 방지) → HOME.
+    기록은 ISOLATED 그대로(사람이 치운다)."""
+    mock.configure(['wipe_bowl:FORCE_LIMIT', 'regrip_top:GRIP_FAIL'])
+    mods = load_features(['f1', 'f2', 'f3'])
+    calls = []
+    f1 = _spy_f1(mods, calls)
+    f, events, _ = _one_bowl(f1=f1)
+    sig = PauseWatcher()
+    f.run_plan(sig)
+
+    assert sig.resumes == 0
+    seq = [(n, a) for n, a in calls if n in ('move_to', 'place', 'pick', 'regrip_top', 'tool')]
+    i = seq.index(('tool', ('SPONGE', 'RETURN')))
+    assert seq[i:] == [('tool', ('SPONGE', 'RETURN')), ('regrip_top', ('SPONGE_BED_B', 'BOWL')),
+                       ('move_to', ('HOME', False))], seq[i:]
     assert [(e['result'], e['code']) for e in events] == [('ISOLATED', 'FORCE_LIMIT')]
     assert f.isolated == 1 and f.holding is None and f.on_bed is False
 

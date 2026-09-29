@@ -115,6 +115,10 @@ class F1Api(Protocol):
         """고정 슬롯 파지: 구역의 슬롯을 정해진 순서로 — 폭 범위 밖(빈 슬롯·헛잡음)이면 다음 슬롯, 다 돌면 EMPTY_ZONE.
         zone_id 가 SPONGE_BED_* 면 고정 위치 재파지(슬롯 1개). 코드 OK/EMPTY_ZONE/ROBOT_ERROR"""
 
+    def regrip_top(self, bed: str, kind: str) -> PickResult:
+        """스펀지 홈(SPONGE_BED_*)의 용기를 놓았던 자세에서 위로 다시 잡기(반납 구역에서 집을 때와 같은 파지) — 격리 정리용.
+        코드 OK/GRIP_FAIL/ROBOT_ERROR"""
+
     def place(self, station: str, kind: str = None) -> PlaceResult:
         """놓기(항상 release 까지). SPONGE_BED_* 면 안착 놓기. 코드 OK/SEAT_FAIL/FORCE_LIMIT/TIMEOUT/ROBOT_ERROR
         kind(BOWL/CUP): 종류별 자리(ISOLATE·WEIGH …)에 놓을 때 준다(좌표가 종류별이라). 그 밖의 자리는 생략"""

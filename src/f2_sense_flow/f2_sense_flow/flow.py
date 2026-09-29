@@ -555,8 +555,11 @@ class Flow:
     def _cleanup_and_isolate(self, sig, why):
         """치우고 격리한다 — 중단(/flow/abort)과 정책 격리(isolate · 재시도 소진)가 **같은 길**을 쓴다 (🆕 E52 · 황인재 9/25).
 
-        순서: 곧게 위로(safe_retreat) → HOME → 툴을 쥐었으면 반납 → 용기가 스펀지 홈에 있으면 **다시 집고 HOME** →
+        순서: 곧게 위로(safe_retreat) → HOME → 툴을 쥐었으면 반납 → 용기가 스펀지 홈에 있으면 **위에서 다시 집고 HOME** →
               격리 구역에 놓기 → HOME → ISOLATED(기록의 코드는 실패 원인 그대로).
+        홈에서 다시 집기는 f1.regrip_top — 반납 구역에서 집어 홈에 놓을 때와 같은 파지(컵은 벽 집기)라 격리 자세와 맞는다
+           (헹굼 앞 재파지 f1.pick 은 컵을 옆면으로 잡아 격리 구역에 옆으로 놓였다 · 실기).
+        다시 집지 못하면 용기는 홈에 남기고 격리 구역에 놓기를 건너뛴다(빈손으로 격리 자세에 가지 않는다) — 사람이 치운다.
         🚨 HOME 이 먼저인 이유: 결정 E7 로 이동에서 안전 높이 경유가 없어져 **지금 자리에서 다음 자리로 곧장** 간다.
         🚨 HOME 으로 가기 **전에** 곧게 올라온다 (9/22 17:27 실기 충돌): 헹굼·담금 구간은 수조 안 자세(z −13.6)라
            거기서 HOME 으로 가면 관절 이동이 테이블을 가로질러 그리퍼가 상판을 쓴다. safe_retreat 은 XY 그대로 Z 만 올린다.
@@ -580,12 +583,18 @@ class Flow:
             step('툴 반납', 'f1', 'tool', self.holding_tool, 'RETURN')
             self.holding_tool = None
             self.holding = None
+        left_on_bed = False
         if self.on_bed:                               # 세제·닦기 구간에서 왔다 — 용기는 스펀지 홈에 있다
             bed = 'SPONGE_BED_B' if self.kind == 'BOWL' else 'SPONGE_BED_C'
-            step('스펀지 홈에서 다시 집기', 'f1', 'pick', bed, self.kind)
-            step('HOME 복귀', 'f1', 'move_to', 'HOME', True)
+            if step('스펀지 홈에서 위로 다시 집기', 'f1', 'regrip_top', bed, self.kind).ok:
+                step('HOME 복귀', 'f1', 'move_to', 'HOME', True)
+            else:
+                left_on_bed = True
             self.on_bed = False
-        step('격리 구역에 놓기', 'f1', 'place', 'ISOLATE', self.kind)
+        if left_on_bed:
+            self.log.warn(f'{why} 정리 — 용기를 다시 집지 못해 스펀지 홈에 남겼다. 손이 비어 격리 구역에 놓기는 건너뛴다 · 사람이 치운다')
+        else:
+            step('격리 구역에 놓기', 'f1', 'place', 'ISOLATE', self.kind)
         step('HOME 복귀', 'f1', 'move_to', 'HOME', False)
         self.holding = None
 
@@ -1074,7 +1083,7 @@ class Flow:
         """
         if not r.ok:
             return
-        if fname == 'pick':
+        if fname in ('pick', 'regrip_top'):
             self.holding, self.on_bed = 'CONTAINER', False
         elif fname == 'place':
             self.holding = None

@@ -21,6 +21,14 @@ def pick(zone_id: str, kind: str) -> PickResult:
                       offset_x_mm=0.0, offset_y_mm=0.0)
 
 
+def regrip_top(bed: str, kind: str) -> PickResult:
+    """가짜 홈 위 다시 잡기 — 주입된 실패 코드가 있으면 그 코드로, 아니면 잡은 것처럼 돌려준다."""
+    code = code_for('regrip_top')
+    if code:
+        return PickResult.fail(code, attempts=1)
+    return PickResult(width_mm=_WIDTH_MM.get(kind, 60.0), attempts=1)
+
+
 def place(station: str, kind: str = None) -> PlaceResult:
     """가짜 놓기 — 주입된 실패 코드가 있으면 그 코드로, 아니면 보정 없이(offset_mm=0) 놓은 것으로 돌려준다."""
     code = code_for('place')

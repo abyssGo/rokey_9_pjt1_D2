@@ -122,6 +122,7 @@ def test_e60_wipe_fails_twice_isolates_and_hmi_db_keeps_the_code(tmp_path, code,
     tail = order[k + 1:]
     assert tail[:3] == [('retreat',), ('move_to', ('HOME', True)), ('tool', (tool_id, 'RETURN'))], tail
     assert tail[-2:] == [('place', ('ISOLATE', kind)), ('move_to', ('HOME', False))], tail
+    assert ('regrip_top', (bed, kind)) in tail and ('pick', (bed, kind)) not in tail, f'홈의 용기는 위로 다시 집는다(옆면 재파지 X) · {tail}'
     assert sig.resumes == 0, '재시도 소진은 사람을 부르지 않는다(E52 · isolate)'
     assert f.isolated == 1 and f.holding is None and f.holding_tool is None and f.on_bed is False
     assert [(e['result'], e['code'], e['rack_slot']) for e in events] == [('ISOLATED', code, '')]

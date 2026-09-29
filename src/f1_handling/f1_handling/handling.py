@@ -205,6 +205,14 @@ def _regrip(bed: str, kind: str) -> PickResult:
         if dz > 0.0:
             cc.move_rel(0.0, 0.0, dz, 'BASE')                       # 재파지 뒤 cup_entry_z_mm 까지 올린 뒤 다음 자리로(낮은 자세에서 곧장 가지 않게)
         return PickResult(width_mm=width, attempts=1)
+    return _regrip_at_place(bed, kind)
+
+
+def _regrip_at_place(bed: str, kind: str) -> PickResult:
+    """놓았던 자세(point='place')에서 위로 다시 잡는다 — 접근점 → 곧게 하강 → 종류 프리셋으로 grip → 접근점으로 되올라옴.
+
+    반납 구역에서 집어 홈에 놓을 때와 같은 파지다(컵은 벽 집기). 빈손이면 release → 되올라와 GRIP_FAIL.
+    """
     cc.release()
     up = float(cc.move_to(bed, False, kind, _PLACE_POINT) or 0.0)
     if up > 0.0:
@@ -219,6 +227,19 @@ def _regrip(bed: str, kind: str) -> PickResult:
     if up > 0.0:
         cc.move_rel(0.0, 0.0, up, 'BASE')
     return PickResult(width_mm=width, attempts=1)
+
+
+def regrip_top(bed: str, kind: str) -> PickResult:
+    """스펀지 홈의 용기를 **놓았던 자세에서 위로** 다시 잡는다 — 격리 정리(flow._cleanup_and_isolate)용. 코드 OK / GRIP_FAIL.
+
+    반납 구역에서 집어 홈에 놓을 때와 같은 파지(종류 프리셋 · 컵은 벽 집기)라 격리 구역 자세(cell.stations.ISOLATE)와 맞는다.
+    헹굼 앞 재파지(pick → _regrip)는 컵을 옆면(CUP_SIDE)으로 잡는다 — 뒤집어 팔레트 기둥에 꽂기 위한 파지라 격리에는 맞지 않는다.
+    그릇은 홈에 옆면 자세가 없어 pick(bed) 과 같은 길이다.
+    """
+    if bed not in (_cell().get('beds') or {}):
+        raise KeyError(f'cell.beds.{bed} 가 없다 — regrip_top 은 스펀지 홈(SPONGE_BED_*)만 받는다')
+    _grip_close(kind)                                               # 주의: 프리셋이 비었으면 움직이기 전에 KeyError
+    return _regrip_at_place(bed, kind)
 
 
 def place(station: str, kind: str = None) -> PlaceResult:
