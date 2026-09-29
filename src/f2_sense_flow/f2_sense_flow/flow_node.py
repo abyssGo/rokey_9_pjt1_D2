@@ -124,6 +124,7 @@ class Io:
         #       "멈췄는데 재개가 거부되는" 막다른 길이 된다.
         if self.flow.step == 'PAUSED' or cc.is_paused():
             cc.resume()                              # 멈춰 있던 이동을 이어서 끝낸다
+            self.sig.clear('stop')                   # 이동 도중 멈춘 것을 풀었으면 다음 단계 앞에서 또 멈추지 않게(재개 한 번이면 이어 간다)
             self.sig.raise_('resume')
             res.success, res.message = True, '재개합니다'
         else:
