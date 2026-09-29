@@ -3,9 +3,9 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 ID | SDD-PREWASH-001 · **v3.2** (2026-09-29) — v3.0(9/18 스크립트형 구조 · [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md)) + 동결 뒤 반영: §3.1 공중 점검 5 N(E58) · §6 운영 화면 9/25~27(E57) · §7 예외 처리(E42~E55 · E60~E63) · 케이블 멈춤 바로 재개(E64) · 격리 한 곳·위에서 다시 잡기(E65) · 지정 좌표 하강 곧게(E44 · E50) |
-| 상위 | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) · [02_인터페이스_IRD.md](02_인터페이스_IRD.md) · 일정표(구글 드라이브 xlsx) |
-| 그림 | 🔄 9/23 **[images/system_architecture_pc.html](images/system_architecture_pc.html)**(Archify 대화형 · 명세 `.archify.json` · 캡처 `.png`) |
+| 문서 ID | SDD-PREWASH-001 · **v3.2 제출판** (2026-09-29) — v3.0(9/18 스크립트형 구조 · [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md)) + 동결 뒤 반영: §3.1 공중 점검 5 N(E58) · §6 운영 화면 9/25~27(E57) · §7 예외 처리(E42~E55 · E60~E63) · 케이블 멈춤 바로 재개(E64) · 격리 한 곳·위에서 다시 잡기(E65) · 지정 좌표 하강 곧게(E44 · E50) · §14 향후 개선 |
+| 상위 | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) · [02_인터페이스_IRD.md](02_인터페이스_IRD.md) |
+| 그림 | **[images/system_architecture_pc.html](images/system_architecture_pc.html)**(Archify 대화형 · 명세 `.archify.json` · 캡처 `.png`) |
 
 이 문서는 요구사항을 "실제로 어떻게 만들 것인가"로 바꾼다. PC 배치, 노드·패키지, 통신, 워크셀 좌표, 상태 머신, 각 기능의 내부 절차, 오류 처리, 안전, 배포를 정한다. 강사 산출물(시스템 아키텍처·네트워크 구성도·동작 순서도·하드웨어 구성·인터페이스 정의서·노드 구조도·HMI 화면·예외/오류·위험요소/안전대책)은 §12 표에서 이 문서의 절로 연결한다.
 
@@ -15,9 +15,9 @@
 
 ![시스템 아키텍처](images/system_architecture_pc.png)
 
-🔄 9/23 최신 그림: **[images/system_architecture_pc.html](images/system_architecture_pc.html)** — Archify 로 만든 대화형 HTML(브라우저에서 열기 · 확대 · 경로 추적 · "시연 실행 경로 / 로봇 명령 경로 / 설정·기록" 보기 전환). 위 PNG 는 그 화면 캡처. 원본 명세는 `images/system_architecture_pc.archify.json`(수정 뒤 `archify deliver` 로 다시 만든다).
+대화형 그림: **[images/system_architecture_pc.html](images/system_architecture_pc.html)** — Archify 로 만든 대화형 HTML(브라우저에서 열기 · 확대 · 경로 추적 · "시연 실행 경로 / 로봇 명령 경로 / 설정·기록" 보기 전환). 위 PNG 는 그 화면 캡처. 원본 명세는 `images/system_architecture_pc.archify.json`(수정 뒤 `archify deliver` 로 다시 만든다).
 
-그림 규칙(9/23 Archify 판): **초록 = 우리 프로그램·함수 모듈**(flow_node · hmi_bridge · f1/f2/f3 · cobot_common) · **주황 = ROS 2 DDS**(토픽·서비스) · **보라 = 기록**(records.csv · prewash.db) · **회색 = 드라이버·장비**(두산·그리퍼 드라이버 · 컨트롤러 · RG2) · **점선 상자 = PC 경계와 로봇 셀**. 굵은 초록 화살표가 시연 실행 경로(시작 → flow_node → 기능 함수), 회색이 로봇 명령 경로(cobot_common → 드라이버 → 장비), 점선이 상태·설정 흐름이다. 화살표 라벨은 실제 이름(`/flow/*` · `cc.*` · 서비스·포트)이다.
+그림 규칙(Archify 판): **초록 = 우리 프로그램·함수 모듈**(flow_node · hmi_bridge · f1/f2/f3 · cobot_common) · **주황 = ROS 2 DDS**(토픽·서비스) · **보라 = 기록**(records.csv · prewash.db) · **회색 = 드라이버·장비**(두산·그리퍼 드라이버 · 컨트롤러 · RG2) · **점선 상자 = PC 경계와 로봇 셀**. 굵은 초록 화살표가 시연 실행 경로(시작 → flow_node → 기능 함수), 회색이 로봇 명령 경로(cobot_common → 드라이버 → 장비), 점선이 상태·설정 흐름이다. 화살표 라벨은 실제 이름(`/flow/*` · `cc.*` · 서비스·포트)이다.
 
 **구조 한 줄 요약(9/18 저녁 결정, [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md))**: `flow_node`가 **메인 프로그램**이다. f1·f2·f3는 노드가 아니라 **함수를 제공하는 파이썬 패키지**이고, `flow_node`의 메인 스레드가 그 함수를 차례로 부른다. 두산 API가 전제하는 "혼자 도는 스크립트" 방식 그대로다. ROS 통신은 flow ↔ HMI, 그리고 `cobot_common` ↔ 두산·그리퍼 드라이버뿐이다.
 
@@ -45,13 +45,13 @@ PC-A ↔ 컨트롤러는 두산 전용 TCP(DDS 아님). PC-A ↔ PC-B는 ROS 2 D
 | `/flow/event` | `cobot_msgs/msg/FlowEvent` | flow_node → hmi_bridge | PC-A → PC-B (DDS) |
 | ~~`/cell/force` · `/cell/gripping`~~ | — | — | ❌ **삭제(황인재 9/21 결정 E21)** — 발행한 적이 없고(HMI 가짜만), 힘제어는 몇 초뿐 · 컵은 파지 판정을 안 한다(E19). HMI 는 힘 그래프·파지 표시 대신 **셀 평면도에 로봇 위치·동작**을 그린다(새 인터페이스 없음) · IRD §6 |
 | `/flow/start` `/flow/stop` `/flow/resume` `/flow/abort`(9/20 신설) | `std_srvs/srv/Trigger` | hmi_bridge → flow_node | PC-B → PC-A (DDS) |
-| **기능 함수 12개** `f1.pick` `place` `move_to` `tool` `rack_place` · `f2.weigh` `leftover_loop` `shake` `dip` · `f3.soap` `wipe_bowl` `wipe_cup` | **파이썬 함수 호출** (반환 타입 `cobot_api.*Result`) | flow_node 메인 스레드 → 기능 패키지 | PC-A 같은 프로세스 (ROS 통신 아님) |
+| **기능 함수 13개** `f1.pick` `regrip_top`(E65) `place` `move_to` `tool` `rack_place` · `f2.weigh` `leftover_loop` `shake` `dip` · `f3.soap` `wipe_bowl` `wipe_cup` | **파이썬 함수 호출** (반환 타입 `cobot_api.*Result`) | flow_node 메인 스레드 → 기능 패키지 | PC-A 같은 프로세스 (ROS 통신 아님) |
 | `/dsr01/dsr_controller2/motion/move_joint` · `move_line` … | `dsr_msgs2/srv/MoveJoint` · `MoveLine` | cobot_common(DSR_ROBOT2) → dsr_controller2 | PC-A 내부 |
 | `/dsr01/dsr_controller2/force/task_compliance_ctrl` · `set_desired_force` · `release_force` · `get_workpiece_weight` | `dsr_msgs2/srv/…` | cobot_common → dsr_controller2 | PC-A 내부 |
-| `/onrobot/sendCommand` · 🟡 현재 폭 경로 | 그리퍼 드라이버의 srv (강사 배포 `onrobot_rg_control`). 현재 폭은 `/onrobot_joint_states`(JointState 관절각 → 폭 환산)가 후보 — **V-05에서 확정**. `OnRobotRGInput` 토픽은 나오지 않는다(9/19 확인) | cobot_common ↔ 그리퍼 드라이버 (명령 / 현재 폭) | PC-A 내부 |
+| `/onrobot/sendCommand` · `/onrobot_joint_states` | 그리퍼 드라이버의 srv (강사 배포 `onrobot_rg_control`). 현재 폭은 `/onrobot_joint_states`(JointState)의 `finger_joint` 관절각을 드라이버와 같은 식으로 폭(mm)으로 환산한다(구현 #17 · §3.1 `grip`). `OnRobotRGInput` 토픽은 나오지 않는다(9/19 확인) | cobot_common ↔ 그리퍼 드라이버 (명령 / 현재 폭) | PC-A 내부 |
 | `/dsr01/joint_states` | `sensor_msgs/msg/JointState` | dsr_controller2 → 모니터링 | PC-A |
 | dsr_controller2 ↔ 컨트롤러 | 두산 전용 TCP, 포트 12345 | | PC-A ↔ 컨트롤러 |
-| 브라우저 ↔ hmi_bridge | HTTP `GET /` · `POST /api/start|stop|resume|abort` · `GET /api/state` · `GET /api/history` · WS `/ws/state` (JSON) | | PC-B 내부 또는 LAN |
+| 브라우저 ↔ hmi_bridge | HTTP `GET /` · `POST /api/start` · `/api/stop` · `/api/resume` · `/api/abort` · `GET /api/state` · `/api/history` · `/api/usage` · `/api/kpi` · `/api/db/{table}` · `POST /api/replace/{item}` · WS `/ws/state` (JSON · IRD §6) | | PC-B 내부 또는 LAN |
 | hmi_bridge → prewash.db | SQLite 🔄 E57(9/27) 표 5개: `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`(소모품 교체) | | PC-B 내부 |
 
 `/dsr01/*`·`/onrobot/*`의 정확한 이름·필드는 [두산 ROS 2 매뉴얼(jazzy)](https://doosanrobotics.github.io/doosan-robotics-ros-manual/jazzy/services/motion_services.html)과 설치본으로 확인한다. 우리 코드는 `cobot_common`을 통해서만 부르므로 이름이 달라도 한 곳만 고친다.
@@ -104,7 +104,7 @@ PC-A ↔ 컨트롤러는 두산 전용 TCP(DDS 아님). PC-A ↔ PC-B는 ROS 2 D
 | `ISOLATE` | 격리 구역 — 로봇 오른쪽(잔반통 아래) | joint | 🔄 E65(9/29): 그릇·컵 **한 자리**(같은 관절값) — 시작 전 비우고, 격리가 생기면 다음 격리 전에 사람이 치운다(§7) |
 | `HOME` | 안전 자세 | joint | 모든 이동의 시작·끝 |
 
-하드웨어 구성: M0609 + 컨트롤러 + RG2(Compute Box) + PC-A·PC-B + 스위치 + 워크셀 기구(반납 구역 트레이, 잔반통, 스펀지 고정틀, 툴 홀더 2, 수조 2, 팔레트 모형, 격리 구역). 용기 그릇 2·컵 2, 잔반 대용품(구슬·쌀).
+하드웨어 구성: M0609 + 컨트롤러 + RG2(Compute Box) + PC-A·PC-B + 스위치 + 워크셀 기구(반납 구역 트레이, 잔반통, 스펀지 고정틀, 툴 홀더 2(비눗물 컵 · E18 — 세제 수조 없음), 헹굼 구역, 팔레트 모형, 격리 구역). 용기 그릇 2·컵 2, 잔반 대용품(구슬·쌀).
 
 ---
 
@@ -116,8 +116,8 @@ rokey_pjt01_ws/                ← 저장소 루트 (rokey_9_pjt1_D2)
 │   ├── cobot_api/             contracts.py (ID·코드·반환 타입·함수 서명 — IRD 정본, PM)
 │   ├── cobot_msgs/            msg/FlowState.msg · FlowEvent.msg (IRD 정본, PM)
 │   ├── cobot_common/          bootstrap.py (init — 두산 API 초기화·통신 노드, §3.2) · config.py (로더) · `__init__.py` (함수 재수출) [H] · motion.py (이동) [H] · gripper.py (그리퍼) [M] · weigh.py (무게) [M] · force.py (힘 함수) [P] · config/cell.yaml · config/params.yaml
-│   ├── f1_handling/           handling.py (pick·place·move_to·tool·rack_place) · test/rig_f1.py
-│   ├── f2_sense_flow/         sense.py (weigh·leftover_loop·shake·dip) · flow.py (상태 머신) · flow_node.py (메인 프로그램) · mock/mock_f1.py·mock_f3.py · logger.py · test/rig_f2.py
+│   ├── f1_handling/           handling.py (pick·regrip_top·place·move_to·tool·rack_place) · test/rig_f1.py
+│   ├── f2_sense_flow/         sense.py (weigh·leftover_loop·shake·dip) · flow.py (상태 머신) · flow_node.py (메인 프로그램) · mock/mock_f1.py·mock_f2.py·mock_f3.py · logger.py · test/rig_f2.py
 │   ├── f3_wipe/               wipe.py (soap·wipe_bowl·wipe_cup) · test/rig_f3.py
 │   ├── f4_hmi/                hmi_bridge.py · app.py (FastAPI) · static/test.html(시험 페이지) · fake_state_pub.py · db.py (SQLite) · web/(운영 화면 Next.js)
 │   └── prewash_bringup/       launch/prewash.launch.py · prewash_mock.launch.py
@@ -135,21 +135,20 @@ rokey_pjt01_ws/                ← 저장소 루트 (rokey_9_pjt1_D2)
 | `shutdown()` | [H] 동작 정지 명령(**최선 시도**) → 실행기 종료 → `rclpy.shutdown()`. 설치된 `DSR_ROBOT2.py`에는 정지 함수가 없어(`stop`·`move_stop` 없음, 9/19 확인) `motion/move_stop` 서비스(`dsr_msgs2/srv/MoveStop`)를 직접 부른다. **Virtual에서는 모션 중에도 먹는 것을 확인**(9/19 INF-02a: 모션 중 Ctrl+C → 0.08 s에 중단, `move_stop` 0.16 s, 브링업 재시작 없이 재실행 정상). 실기 확인은 V-24. 응답이 없으면 "브링업 재시작 필요"를 로그로 남긴다. 정지 방식은 `DR_QSTOP`(Stop Category 2) — 🟡 안전 담당(박진용) 확인, DSN-03 |
 | Ctrl+C(SIGINT) | [H] **`init()`이 단독으로 맡는다.** rclpy의 기본 SIGINT 처리기는 Ctrl+C 때 컨텍스트를 먼저 닫아 버려 `finally`의 정지 명령을 보낼 수 없으므로, `init()`이 그 처리기를 끈다. `flow_node`·`rig_f*.py`는 **`try/finally: cc.shutdown()`만** 쓰고 `signal.signal`을 따로 걸지 않는다 |
 | `move_to(station, carrying, kind=None, point=None) → 남은 높이 mm` | [H] station 의 티칭 자세로 **곧장** 간다(구현 #15 · 양식 #36 · ✅ **9/20 결정 E7 — 안전 높이 경유 삭제, 구현 #42**: 한석형 요청 · 황인재 승인. 팔레트 적재처럼 그리퍼를 눕혀 들어가는 자세는 안전 높이에서 자세가 안 나왔다). **자세 고르기**: `kind` = `'BOWL'`·`'CUP'` — 종류별 자리(WEIGH·WASTE·SOAP·RINSE·ISOLATE) / `point` = 한 자리에 자세가 여러 개일 때(툴 홀더 `'pick'`·`'return'` · 스펀지 홈 `'place'`·`'regrip'`·`'wash'` · 반납 구역은 **번호 1부터** — 9/20 E9 로 구역마다 1개). 골라야 하는데 안 주거나 틀리면 **움직이지 않고 ValueError**, 안 찍은 자세는 KeyError. **경로**: posj 면 관절 이동, posx 면 직선 이동 — 지금 자세에서 목표로 바로. 접근점(`approach_posx`)이 있으면 **접근점까지만** 가고 **끝점까지 남은 높이(접근점 z − 끝점 z)를 돌려준다**(접근점이 없으면 끝점까지 가고 0.0). 내려가는 것은 부르는 쪽이 `move_rel(0, 0, -up, 'BASE')`(자유 공간) 또는 `contact_down`(접촉)으로. 🚨 **경로의 안전은 자세를 부르는 순서(F1·flow)와 티칭(접근점)이 책임진다** — 실기에서 흐름 순서대로 구간마다 확인한다(V-22). 🚨 **도착 확인 `MoveIncomplete`**(#42): 이동이 끝났는데 목표에서 2 mm(관절은 1°) 넘게 떨어져 있으면 올린다 — 받은 쪽은 **힘·순응만 끄고 움직이지 않는다**(§7) — 컨트롤러가 이동을 도중에 세워도(속도·관절 한계의 안전 정지, 특이점) 비동기 이동은 '끝남'으로만 보이기 때문(9/20 Virtual: HOME → RACK_C1 이 122 mm 앞에서 섬). 이 오류 뒤에는 **로봇이 어디 있는지 모른다** → 기능 함수는 잡지 말고 위로, flow 는 `ROBOT_ERROR`(그 자리 정지 → PAUSED, 이어 내려가거나 재시도하지 않는다). `move_rel`·`move_joint_rel` 에는 걸지 않는다(힘제어 중에는 일부러 덜 간다). 이름은 `cell.stations`·`cell.beds`·`cell.zones`(`RET_*`)·`cell.rack.slots`(`RACK_*`)를 받는다(좌표는 전부 **BASE 절대 자세**). carrying이면 느린 속도. 속도 = `cell.motion.*_max_*`(100 % 기준) × `cell.limits.vel_*_pct` × `cfg()['run']['vel_scale']`. 값이 비어 있으면 **움직이지 않고 KeyError**. `cell.limits.safe_z_mm` 은 이동에 쓰지 않는다 — **접촉 동작 뒤 후퇴 높이**(`safe_retreat`)로만 남았다(✅ 황인재 확인 9/20 17:10) |
-| `move_rel(dx, dy, dz, frame, *, vel_mm_s=None, acc_mm_s2=None)` | [H] 상대 이동(슬롯 간 이동·하강·접촉 하강의 한 단계·후퇴), 자세(방향)는 그대로. `frame`은 `'BASE'`·`'TOOL'`. 속도 선택 인자는 [이슈 #7](https://github.com/hwang-injae/rokey_9_pjt1_D2/issues/7) 요청(✅ 9/19 PM 수락) — 없으면 `vel_carry_pct`(느린 쪽), 주면 그 값(`vel_scale`은 부르는 쪽이 곱한다)을 쓰되 100 % 기준 × `vel_scale`을 넘지 못한다. 접촉 하강은 아주 느리게 줘야 한다. 🟡 회전을 포함한 상대 이동은 아직 없다(rack_place 기울임·wipe_cup 툴 축 회전에 필요 — 안건) |
+| `move_rel(dx, dy, dz, frame, *, vel_mm_s=None, acc_mm_s2=None)` | [H] 상대 이동(슬롯 간 이동·하강·접촉 하강의 한 단계·후퇴), 자세(방향)는 그대로. `frame`은 `'BASE'`·`'TOOL'`. 속도 선택 인자는 [이슈 #7](https://github.com/hwang-injae/rokey_9_pjt1_D2/issues/7) 요청(✅ 9/19 PM 수락) — 없으면 `vel_carry_pct`(느린 쪽), 주면 그 값(`vel_scale`은 부르는 쪽이 곱한다)을 쓰되 100 % 기준 × `vel_scale`을 넘지 못한다. 접촉 하강은 아주 느리게 줘야 한다. 회전을 포함한 상대 이동은 두지 않았다 — 컵 닦기의 툴 축 회전은 `move_periodic`(§5.4), 팔레트 칸의 기울임은 칸마다 티칭한 자세(§4.3 `rack`)로 해결 |
 | `move_joint_rel(joint, delta_deg, *, time_s=None, carrying=True)` | [H] 관절 하나(1~6)만 지금 각도에서 상대 이동 — 털기·물 털기의 J5/J6 왕복(민범진 요청 B11, 구현 #15). `time_s`를 주면 그 시간에 맞춘다(`vel_scale` < 1이면 그만큼 늘어난다, 실측: 요청보다 약 0.13 s 길다). 🚨 순응·힘제어가 켜져 있으면 안 된다 → `force_off()` 뒤에. **평균 속도(\|delta_deg\| / 시간)가 `cell.motion.vel_joint_max_deg_s` × `vel_scale`을 넘으면 시간을 늘리고 경고**한다(#16) — 순간 최고 속도는 평균보다 높으므로 기준값은 여유 있게 |
-| `pause()` · `resume()` · `is_paused()` / `halt()` · `clear_halt()` · `is_halted()` · 예외 `MotionHalted` · `MoveTimeout` · `MoveIncomplete`(도착 확인 — 위 move_to 행, #42) | [H] **이동 도중 즉시 일시 정지·재개·강제정지**(V-24, 구현 #34). 세 이동 함수는 속이 **비동기 이동(`amovej`/`amovel`) + `check_motion` 0.05 s 폴링**이다 — 부르는 쪽에서는 달라진 것이 없다(이동이 끝나야 돌아온다, 일시 정지 중에는 재개를 기다린다). `pause()·resume()·halt()`는 **깃발만** 세우므로 통신 노드 콜백에서 불러도 된다(실제 `move_pause`·`move_resume`·`move_stop` 요청은 메인 스레드의 폴링 루프가 보낸다). 일시 정지 = 그 자리에서 멈춤 → 재개하면 **같은 이동을 이어서**. 강제정지 = 하던 이동은 `MotionHalted`로 끝나고, `clear_halt()` 전까지 새 이동도 `MotionHalted`(정지 뒤 다음 명령이 다시 움직이게 하는 것을 막는다). 이동 1번이 `cell.motion.move_timeout_s`(일시 정지 시간 제외)를 넘으면 정지 명령 + `MoveTimeout`. 기능 함수는 두 예외를 **잡지 말고 위로 올린다**. 🚨 먹는 범위: 이동 함수를 거치는 모든 이동 — 접촉 하강·닦기의 걸음(`move_rel`)도 걸음 도중에 멈춘다(순응·힘제어는 켜진 채). 먹지 않는 것: `move_periodic`(안착 탐색)·그리퍼·무게 대기 — 그 동작이 끝난 뒤 다음 이동에서 멈춘다. 가상 rig_pause 10/10 · 실기 V-24 빈손 통과(9/22 21:49) · 툴·용기를 든 채는 9/29 |
-| 🟡 `move_joint_rel(joint, delta_deg, vel_pct=None)` | [H] 관절 하나를 상대 각도만큼(털기·물 털기의 J5/J6 왕복용 — DSN-03 B11, 민범진 요청). 이름·인자는 구현 PR에서 확정 |
-| `grip(width, force) → width` | [M] RG2 파지(목표 폭·힘) + 완료 대기 + 폭 피드백. 강사 배포 `onrobot_rg_control`은 명령을 서비스(`/onrobot/sendCommand`)로 받는다. 🟡 현재 폭: 드라이버(`OnRobotRGControllerServer`)는 `OnRobotRGInput`을 **발행하지 않는다**(9/19 소스 확인: 나가는 것은 `/joint_states`→`/onrobot_joint_states` remap의 `JointState`뿐, 서비스는 `/onrobot/sendCommand`·`/onrobot/pose`·`/onrobot/restartPower`) → 구현 #17: `/onrobot_joint_states`의 `finger_joint` 관절각을 드라이버와 같은 식으로 폭(mm)으로 되돌린다(드라이버가 장치의 0.1 mm 단위 폭을 관절각으로 바꿔 내보내므로 장치가 읽은 폭과 같다) · 힘은 절대값을 못 줘서 2.5 N 계단(`'i'`/`'d'`)으로 맞추고 처음에 0 N으로 기준을 잡는다 · 완료는 `effort`(busy)로 판정. **실기 확인은 V-05** — (이전 메모) V-05에서 읽는 경로를 정한다(후보: `/onrobot_joint_states` 관절각 → 폭 환산을 통신 노드가 구독해 저장 — 구독은 `motion.py`의 `setup_io(node)`에 단다). `grip`은 그 값을 읽는다 |
+| `pause()` · `resume()` · `is_paused()` / `halt()` · `clear_halt()` · `is_halted()` · 예외 `MotionHalted` · `MoveTimeout` · `MoveIncomplete`(도착 확인 — 위 move_to 행, #42) | [H] **이동 도중 즉시 일시 정지·재개·강제정지**(V-24, 구현 #34). 세 이동 함수는 속이 **비동기 이동(`amovej`/`amovel`) + `check_motion` 0.05 s 폴링**이다 — 부르는 쪽에서는 달라진 것이 없다(이동이 끝나야 돌아온다, 일시 정지 중에는 재개를 기다린다). `pause()·resume()·halt()`는 **깃발만** 세우므로 통신 노드 콜백에서 불러도 된다(실제 `move_pause`·`move_resume`·`move_stop` 요청은 메인 스레드의 폴링 루프가 보낸다). 일시 정지 = 그 자리에서 멈춤 → 재개하면 **같은 이동을 이어서**. 강제정지 = 하던 이동은 `MotionHalted`로 끝나고, `clear_halt()` 전까지 새 이동도 `MotionHalted`(정지 뒤 다음 명령이 다시 움직이게 하는 것을 막는다). 이동 1번이 `cell.motion.move_timeout_s`(일시 정지 시간 제외)를 넘으면 정지 명령 + `MoveTimeout`. 기능 함수는 두 예외를 **잡지 말고 위로 올린다**. 🚨 먹는 범위: 이동 함수를 거치는 모든 이동 — 접촉 하강·닦기의 걸음(`move_rel`)도 걸음 도중에 멈춘다(순응·힘제어는 켜진 채). 먹지 않는 것: `move_periodic`(안착 탐색)·그리퍼·무게 대기 — 그 동작이 끝난 뒤 다음 이동에서 멈춘다. 가상 rig_pause 10/10 · 실기 V-24 빈손 통과(9/22 21:49) · 툴을 든 채 정지 → 재개 ✅ · 용기를 든 채 정지 → 중단 ✅(9/29 실기) |
+| `grip(width, force) → width` | [M] RG2 파지(목표 폭·힘) + 완료 대기 + 폭 피드백. 강사 배포 `onrobot_rg_control`은 명령을 서비스(`/onrobot/sendCommand`)로 받는다. 현재 폭: 드라이버(`OnRobotRGControllerServer`)는 `OnRobotRGInput`을 **발행하지 않는다**(9/19 소스 확인: 나가는 것은 `/joint_states`→`/onrobot_joint_states` remap의 `JointState`뿐, 서비스는 `/onrobot/sendCommand`·`/onrobot/pose`·`/onrobot/restartPower`) → 구현 #17: `/onrobot_joint_states`의 `finger_joint` 관절각을 드라이버와 같은 식으로 폭(mm)으로 되돌린다(드라이버가 장치의 0.1 mm 단위 폭을 관절각으로 바꿔 내보내므로 장치가 읽은 폭과 같다) · 힘은 절대값을 못 줘서 2.5 N 계단(`'i'`/`'d'`)으로 맞추고 처음에 0 N으로 기준을 잡는다 · 완료는 `effort`(busy)로 판정. 구독은 `gripper.py`의 `setup_io(node)`가 통신 노드에 달아 값을 저장하고, `grip`은 그 값을 읽는다 |
 | `grip_level(kind, level)` | [M] 파지 힘 2단계 전환: `NORMAL`(집기·이송) ↔ `HOLD`(털기·담금·물 털기, 더 꽉). 같은 폭 목표로 힘만 바꿔 다시 파지, 전환 후 폭 재확인(방법은 V-23) |
 | `release()` | [M] 그리퍼 열기 |
 | `grip_width() → mm` | [M] 현재 폭 읽기(박진용 F3 요청 — 닦는 중 툴이 밀렸는지 감시, ✅ 9/19 PM 결정). 경로: **강사 드라이버의 관절각 → 폭 환산이 먼저**(V-05에서 오차 ≤ 2 mm 확인 — 🚨 그릇 벽 파지가 ≈ 2 mm라 **닫힌 쪽(0~5 mm)에서는 반복 흔들림이 그릇 ↔ 빈손 간격의 절반 이하**여야 한다, V-01과 같이 확인), 안 되면 Compute Box XML-RPC를 읽기부터(박진용 제안서 · git 이력). 그리퍼 함수는 새 파일 `gripper.py` |
 | `weigh(n, reset=False) → g` | [M] 정지 → `get_workpiece_weight` n회의 **중앙값**(튄 값에 끌려가지 않게 — V-02 폭 40.8 g) · 실패값(음수 -1)은 버리고, 전부 실패면 예외(기능 함수가 `ROBOT_ERROR`로 변환) · 구현 #13. `reset`(0점 재설정)은 **선택 동작**: 응답 상한 3 s, 실패하면 다시 부르지 않고 계속 진행([TS-03](troubleshooting/TS-03_하중_reset_제어권_교착.md)) |
 | `force_on(axis, target, limit)` / `force_off()` | [P] 순응 ON(`cell.force.compliance_stx`) → 목표 힘 ON(−axis 방향, **절대값** `DR_FC_MOD_ABS` — 보통 `contact_down`으로 닿은 뒤 켠다). target < limit ≤ `cell.force.force_max_n` 검사. 끄는 순서는 힘 → 순응(구현 #20). 닦는 동안의 상한 감시는 `wipe.py` 가 `read_force()` 로 직접 읽어 본다(`_Log.watch`). 🔄 9/23 PR #104: 예전의 `force_check(axis, baseline)` 는 아무도 안 불러 삭제 |
 | `force_reached(axis, min, max) → bool` | [P] `check_force_condition(...) == 0`을 감싼 것. 🚨 실제 두산 함수는 **만족 `0` / 아니면 `-1`**을 돌려준다(DRL 매뉴얼의 True/False와 다름). `if check_force_condition():`으로 쓰면 판정이 뒤집힌다(TS-01 D) |
-| `read_force() → [fx, fy, fz, mx, my, mz]` · 예외 `ForceLimitError` · `MotionTimeout` | [P] 이슈 #7 요청(✅ 9/19 PM 수락). 힘 로그·`/cell/force`·상한 판정용 원시 힘 값. **공용 힘 함수는 실패를 예외로 알리고, 기능 함수(f1·f3)가 받아서 `FORCE_LIMIT`·`TIMEOUT` 코드로 바꾼다**(flow까지 새어 나오면 `ROBOT_ERROR`). 힘 함수가 읽는 공용 값은 `cell.yaml`의 `cell.force` 절(순응 강성·접촉 하강 단계·속도·후퇴 속도·절대 상한 `force_max_n` 등 8개 키 — 골격은 황인재, 값은 박진용이 그 절만 PR) |
+| `read_force() → [fx, fy, fz, mx, my, mz]` · 예외 `ForceLimitError` · `MotionTimeout` | [P] 이슈 #7 요청(✅ 9/19 PM 수락). 힘 로그·상한 판정용 원시 힘 값(`/cell/force` 발행은 E21 로 삭제). **공용 힘 함수는 실패를 예외로 알리고, 기능 함수(f1·f3)가 받아서 `FORCE_LIMIT`·`TIMEOUT` 코드로 바꾼다**(flow까지 새어 나오면 `ROBOT_ERROR`). 힘 함수가 읽는 공용 값은 `cell.yaml`의 `cell.force` 절(순응 강성·접촉 하강 단계·속도·후퇴 속도·절대 상한 `force_max_n` 등 8개 키 — 골격은 황인재, 값은 박진용이 그 절만 PR) |
 | `contact_down(max_depth, limit) → depth, force` | [P] **순응 ON 상태로 `contact_step_mm`씩 내려가며** **내려가기 직전보다 Z 힘이 limit만큼 커지거나**(접촉) max_depth에 이를 때까지(슬롯 파지·안착·삽입 공용, 구현 #20·#24 — 이전 설명 "amovel + stop" 대신 단계 하강). 🚨 절대 힘이 아니라 **시작 대비 변화량**으로 본다: 툴·용기를 쥐면 공중에서도 Fz가 2 N쯤 나와 절대값으로는 내려가기도 전에 "접촉"이 된다(9/20 실기). 돌려주는 `force`도 변화량. `depth < max_depth`면 접촉. 힘이 `force_max_n`을 넘으면 `ForceLimitError`, `cell.limits.timeout_s`를 넘으면 `MotionTimeout`, 끝나면 항상 순응 해제. 하강 속도 = `contact_vel_mm_s` × `vel_scale` |
 | `periodic_search(amp, period, duration)` | [P] Move Periodic으로 TOOL X·Y 왕복 탐색(Y 주기 = X 주기 × `search_y_period_ratio`), `duration`이 시간 한도, `vel_scale` < 1이면 주기를 늘린다(구현 #20). 🟡 동기 호출이라 도는 동안 힘을 보지 않는다 — V-04 전에 구간 나누기 또는 비동기 + 폴링으로 정한다 |
-| `safe_retreat()` | [P] 켜져 있는 힘·순응을 끄고 → X·Y는 그대로 Z만 `cell.limits.safe_z_mm`까지 올린다(이미 위면 안 움직임, 구현 #20). 🚨 두산 `DR_Error`가 난 프로세스에서는 `rclpy.shutdown()`이 불려 더 이상 명령이 안 나간다 → 그때는 새 프로세스의 복구 도구 `src/cobot_common/test/release_force.py`(TS 문서 예정) |
+| `safe_retreat()` | [P] 켜져 있는 힘·순응을 끄고 → X·Y는 그대로 Z만 `cell.limits.safe_z_mm`까지 올린다(이미 위면 안 움직임, 구현 #20). 🚨 두산 `DR_Error`가 난 프로세스에서는 `rclpy.shutdown()`이 불려 더 이상 명령이 안 나간다 → 그때는 새 프로세스의 복구 도구 `src/cobot_common/test/release_force.py`([TS-05](troubleshooting/TS-05_DR_Error_rclpy_shutdown_복구.md)) |
 | `compliance_on(stx=None)` · `compliance_off()` · `force_release()` · `where()` · `motion_done()` · `move_spiral(rev, rmax_mm, time_s)` · `move_arc(mid, end, vel_mm_s, vel_deg_s, radius_mm)` · `move_periodic(amp, period, repeat)` | [P] **닦기 접촉 모션**(구현 #43) — 순응·힘제어를 켠 채 도는 동작이라 힘 함수와 같이 둔다(f3 는 `cc.*` 만 부른다 — 두산 호출은 cobot_common 과 preflight 문지기에만). `compliance_on` = 순응만 ON(힘 방향과 같은 축으로 움직이는 나선 구간용) · `force_release` = 힘제어만 OFF(순응 유지) · `move_spiral`·`move_periodic` 은 **비동기로 시작**하고 부르는 쪽이 `motion_done()` 으로 기다리며 힘을 본다. 🚨 `move_spiral` 은 **속도로 부르면 드라이버가 통째로 멈춘다**(브링업 재시작) → `vel·acc 0 + time` 으로만. 반경 대비 회전 수가 많으면 **시작조차 하지 않는다**(반경 14 mm 에 7바퀴·1.5 s 는 안 돌고 2.8바퀴·3 s 는 돈다) → `where()` 로 확인. 🚨 `move_periodic` 은 진폭을 준 축에 **주기도 함께** 줘야 한다(두산 2.1218). 🚨 이 셋에는 **일시정지 폴링이 없다** → 구간이 끝난 뒤 다음 이동에서 먹는다 |
 
 ### 3.2 실행 뼈대 규약 (9/18 [TS-01](troubleshooting/TS-01_두산API_초기화_실행기_교착.md) → [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md))
@@ -299,7 +298,7 @@ f3:                                                                 # ── f3 
 flow:                                                               # ── flow 절 (민범진) ──
   plan: [{zone: RET_B, kind: BOWL, count: 2}, {zone: RET_C, kind: CUP, count: 2}]
   rack_order: {BOWL: [RACK_B1, RACK_B2], CUP: [RACK_C1, RACK_C2]}
-  policy: {EMPTY_ZONE: next_zone, LEFTOVER_REMAIN: isolate, SEAT_FAIL: isolate,      # 🔄 E52(9/25 · tune2): LEFTOVER_REMAIN isolate · TOOL_FAIL pause — main 동결판은 pause · retry:1->isolate
+  policy: {EMPTY_ZONE: next_zone, LEFTOVER_REMAIN: isolate, SEAT_FAIL: isolate,      # 🔄 E52(9/25): LEFTOVER_REMAIN isolate · TOOL_FAIL pause (전에는 pause · retry:1->isolate)
            FORCE_LIMIT: retry:1->isolate, TIMEOUT: retry:1->isolate, RACK_JAM: retry:1->isolate, TOOL_FAIL: pause,
            RACK_FULL: pause, ROBOT_ERROR: pause}
   consumables: {sponge_max_uses: 100, soap_max_dips: 60}
@@ -309,7 +308,7 @@ hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db
 ```
 좌표·힘·횟수는 전부 여기에 둔다. 코드에 숫자를 쓰지 않는다. 경로는 항상 패키지 기준 상대경로.
 
-**실제 파일(INF-04, PR #5)**: `cell.yaml`은 위 키 골격에 **값이 전부 비어 있다(null)** — 한석형이 티칭·검증 결과로 채운다(비어 있는 키는 `cobot_common.config.unfilled(cc.cfg())`, `init()`이 개수를 경고로 알린다). `params.yaml`의 `f1`·`f2`·`flow` 절은 위 예시 값, **`f3` 절은 박진용 실측 초안**(`wipe_bowl.radius_mm: [2, 9]` · `wipe_cup.insert_depth_mm: 90`, CELL-02a 기록(과정 기록 · git 이력))으로 들어갔다. 값의 주인은 각 절 주인이다.
+**실제 파일(INF-04, PR #5)**: `cell.yaml`은 처음에 위 키 골격만 있고 **값이 비어 있었다(null)** — 티칭·실기 결과로 채웠다(비어 있는 키는 `cobot_common.config.unfilled(cc.cfg())`, `init()`이 개수를 경고로 알린다). `params.yaml`은 처음에 `f1`·`f2`·`flow` 절이 위 예시 값, **`f3` 절이 박진용 실측 초안**(CELL-02a 기록(과정 기록 · git 이력))으로 들어갔고, 이후 실기 값으로 바뀌었다(현재 값은 파일 주석이 정본). 값의 주인은 각 절 주인이다.
 
 **추가된 키(PR #8·#9, 민범진 — 자기 절)**: `f2.weigh_settle_s`(재기 전 정지 대기) · `f2.weigh_reset_timeout_s`(0점 재설정 응답 상한 3 s, TS-03) · `flow.leftover_max_rounds`(`f2.leftover_loop(kind, N)`의 N, 기본 2 — flow가 넘기는 인자라 flow 절) · `flow.counts.soap_dips`·`rinse_dips`·`rinse_shakes`(용기 1개당 `soap`·`dip`·`shake`에 넘기는 횟수 3·1·3 — 코드에 있던 숫자를 뺐다) · `flow.done_hold_s`(plan 완료 뒤 `DONE`을 유지하는 시간, 발행 주기보다 길어야 HMI가 완료를 본다) · `flow.state_pub_hz`(`/flow/state` 발행 주기 2 Hz — 화면 갱신 주기 `hmi.state_rate_hz`와 **다른 값**) · `flow.step_delay_s`(기능 함수 사이 대기, 시험용·운전은 0) · `flow.records_path`(기록 CSV, 상대경로).
 
@@ -319,7 +318,7 @@ hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db
 | `use_mock:="f1,f3"` | `PREWASH_USE_MOCK` | `cc.cfg()['flow']['use_mock']` (YAML 값을 덮어씀) | 빈 값 = `[]` 전부 실제 · 변수가 없으면 YAML 그대로 · 이름은 `f1 f2 f3`만 |
 | `vel_scale:=0.3` | `PREWASH_VEL_SCALE` | `cc.cfg()['run']['vel_scale']` | **0 초과 1 이하**(속도를 낮추는 쪽으로만, 1 초과는 거부) · 없으면 1.0 · 이동 함수(`motion.py`)가 `cell.limits.vel_*_pct`에 곱한다 · rig를 손으로 돌릴 때는 `PREWASH_VEL_SCALE=0.3 python3 …/rig_f1.py` · 🔄 **예외 1개 (9/21 결정 E17)**: **F3 세척 동작(`wipe_bowl`·`wipe_cup`)은 vel_scale 을 따르지 않고 F3 가 `params.yaml` `f3` 절의 자기 속도로 관리한다** — 세척은 빠르기가 닦이는 정도를 정하는데 실기 기본 0.3 으로는 안 닦인다(박진용 요청 · 황인재 승인). ⚠️ 그래서 **0.3 으로 띄워도 F3 닦기는 감속되지 않는다** → F3 첫 실기는 `f3` 절의 속도 값을 직접 낮춰 시작한다 |
 
-**YAML 소유·키 이름 규칙 (🟡 PM 제안 — 9/19 DSN-03에서 확정)**
+**YAML 소유·키 이름 규칙 (PM 제안 — 9/19 DSN-03 B8 에서 이 제안을 기본값으로 쓰기로 함)**
 | 규칙 | 내용 | 예 |
 |---|---|---|
 | 소유 | `cell.yaml`은 **한석형 혼자**. `params.yaml`은 **절마다** 주인 1명(IRD §9): `f1` 한석형 · `f2`·`flow` 민범진 · `f3` 박진용 · `hmi` 황인재 | 남의 절 값이 필요하면 주인에게 요청 |
@@ -347,7 +346,7 @@ stateDiagram-v2
   WEIGH --> SEAT: ok
   WEIGH --> PAUSED: 케이블 떨림 80 g 초과 (그 자리 정지 · 후퇴 없음)
   SHAKE --> WEIGH: 재측정 (≤max_rounds)
-  SHAKE --> ISOLATE: LEFTOVER_REMAIN (E52 · 사람 없이 위로→HOME→격리→HOME · main 동결판은 E42 PAUSED)
+  SHAKE --> ISOLATE: LEFTOVER_REMAIN (E52 · 사람 없이 위로→HOME→격리→HOME)
   SEAT --> SOAP: ok
   SEAT --> ISOLATE: SEAT_FAIL
   SOAP --> WIPE
@@ -374,7 +373,7 @@ stateDiagram-v2
   PAUSED --> ISOLATE: abort (사람이 문제라고 판단 — 위로 → HOME → 툴 반납 → 홈 용기 위로 다시 잡기(E65) → HOME → 격리 → HOME → 다음 용기 · E52 정리 함수 통일, ROBOT_ERROR 에서는 거부)
 ```
 - 각 전이에서 `/flow/state` 발행(2 Hz 타이머 + 전이 즉시), 용기 종료 시 `/flow/event` + CSV 1행.
-- ✅ **정지 방식(황인재 9/20)** — 목적: 문제가 생겼을 때 **바로 멈췄다가, 사람이 보고 문제없으면 이어서** 하기. ① **일시 정지**(`/flow/stop`): 통신 노드가 두산 `move_pause`를 불러 **이동 도중 즉시** 멈춘다 — 이동 함수(`motion.py`)를 비동기 이동(`amovej`/`amovel`) + `check_motion` 폴링으로 바꿔야 성립한다(V-24a 시험: 동기 이동 중에는 `move_pause`가 이동이 끝난 뒤에야 처리된다 · 비동기에서는 0.13 s에 멈추고 `move_resume`으로 같은 동작이 이어진다). 호출하는 쪽(F1·F2·F3)의 코드는 바뀌지 않는다. ② **재개**(`/flow/resume`): 하던 이동을 이어서 — 🔄 9/29: 재개 때 `stop` 깃발도 내린다. 이동 도중 멈춘 것을 재개하면 다음 단계 앞에서 또 멈추지 않는다(**재개 한 번이면 이어 간다** · 전에는 두 번 눌러야 했다 · ✅ 실기 11:44: 닦기 중 정지 → 재개 → 다시 안 멈춤). ③ **중단**(`/flow/abort`): 그 용기를 접고(곧게 위로 → HOME → 툴 반납 → 홈 용기 위로 다시 잡기 → 격리 → HOME · §7 격리 마무리 순서) 다음 용기. ④ 🚨 **먹는 범위(구현 #34 기준으로 정정)**: 이동 함수를 거치는 모든 이동에서 즉시 멈춘다 — **접촉 하강·닦기의 걸음(`move_rel`)도 걸음 도중에 멈춘다**(순응·힘제어는 켜진 채 그 자리에 선다). 끝난 뒤에야 멈추는 것은 `move_periodic`(안착 탐색)·그리퍼·무게 대기와 닦기의 나선·원호·주기 운동(아래 알려진 제한)이다. 힘이 걸린 채 멈추는 동작은 Virtual에서 시험할 수 없었으므로 **9/22 오전 실기(V-24, 황인재 + 박진용)에서 확인**하고, 문제가 있으면 그 구간에서는 일시 정지를 미루게 한다. ⑤ 되돌아갈 자리: 9/22 오전까지 실기 확인이 안 되면 아래의 "단계 사이 정지"만으로 시연한다(서비스 이름이 같아 HMI는 그대로).
+- ✅ **정지 방식(황인재 9/20)** — 목적: 문제가 생겼을 때 **바로 멈췄다가, 사람이 보고 문제없으면 이어서** 하기. ① **일시 정지**(`/flow/stop`): 통신 노드가 두산 `move_pause`를 불러 **이동 도중 즉시** 멈춘다 — 이동 함수(`motion.py`)를 비동기 이동(`amovej`/`amovel`) + `check_motion` 폴링으로 바꿔야 성립한다(V-24a 시험: 동기 이동 중에는 `move_pause`가 이동이 끝난 뒤에야 처리된다 · 비동기에서는 0.13 s에 멈추고 `move_resume`으로 같은 동작이 이어진다). 호출하는 쪽(F1·F2·F3)의 코드는 바뀌지 않는다. ② **재개**(`/flow/resume`): 하던 이동을 이어서 — 🔄 9/29: 재개 때 `stop` 깃발도 내린다. 이동 도중 멈춘 것을 재개하면 다음 단계 앞에서 또 멈추지 않는다(**재개 한 번이면 이어 간다** · 전에는 두 번 눌러야 했다 · ✅ 실기 11:44: 닦기 중 정지 → 재개 → 다시 안 멈춤). ③ **중단**(`/flow/abort`): 그 용기를 접고(곧게 위로 → HOME → 툴 반납 → 홈 용기 위로 다시 잡기 → 격리 → HOME · §7 격리 마무리 순서) 다음 용기. ④ 🚨 **먹는 범위(구현 #34 기준으로 정정)**: 이동 함수를 거치는 모든 이동에서 즉시 멈춘다 — **접촉 하강·닦기의 걸음(`move_rel`)도 걸음 도중에 멈춘다**(순응·힘제어는 켜진 채 그 자리에 선다). 끝난 뒤에야 멈추는 것은 `move_periodic`(안착 탐색)·그리퍼·무게 대기와 닦기의 나선·원호·주기 운동(아래 알려진 제한)이다. 힘이 걸린 채 멈추는 동작은 Virtual에서 시험할 수 없어 실기로 넘겼다 — 실기: V-24 빈손 통과(9/22) · 툴을 든 채 세제 단계·닦기 중 정지 → 재개 ✅(9/29). ⑤ 되돌아갈 자리(쓰지 않았다): 실기 확인이 안 되면 아래의 "단계 사이 정지"만으로 시연하기로 했었다(서비스 이름이 같아 HMI는 그대로).
 - (기반 — 9/20 오전 구현 완료) `stop`은 현재 기능 함수가 끝난 뒤 다음 호출을 보류 — **용기 사이뿐 아니라 `process_one()`의 단계 사이마다** `stop` 깃발을 본다(9/20 V-20에서 발견한 결함의 기준, 재검증은 `rig_v20.py probe`). 용기·툴을 든 채 멈출 수 있다: 그때 **파지는 `NORMAL` 그대로**(기능 함수는 끝날 때 `HOLD` → `NORMAL`로 되돌리므로 단계 사이는 이미 `NORMAL`이다) — 🚨 멈추는 시점에 **그리퍼 명령을 새로 보내지 않는다**(힘을 바꾸면 다시 파지하므로 놓칠 수 있다), 놓지도 않는다. `resume`하면 다음 단계부터 이어 간다. 하드웨어 비상정지는 로봇 E-Stop.
 - **실행 구조**(§3.2): `flow_node.py`의 `main()`이 ① `cobot_common.init('flow_node')` ② 통신 노드(`io_node()`)에 `/flow/start·stop·resume` 서비스, `/flow/state` 2 Hz 타이머, `/flow/event` 발행기를 단다 — **콜백은 깃발(`start`·`stop`·`resume`)만 세운다** ③ 메인 스레드는 `start` 깃발을 기다렸다가 plan대로 기능 함수를 차례로 부르고, **호출 사이마다 `stop` 깃발을 본다.**
 - **예외 보호**: 모든 기능 함수 호출은 한 곳(`Flow.call(fn, *args)`)을 지난다. 예외가 나면 로그를 남기고 `Result.fail(ROBOT_ERROR)`로 바꾼 뒤 `safe_retreat()` → `PAUSED`. 프로세스가 하나라 이 보호가 없으면 함수 하나의 오류가 셀 전체를 멈춘다.
@@ -382,7 +381,7 @@ stateDiagram-v2
 - **종료**: Ctrl+C 처리는 `cobot_common.init()`이 맡는다(§3.1). `flow_node`는 메인 루프를 `try/finally`로 감싸 `cc.shutdown()`만 부르고, 신호 처리기를 따로 걸지 않는다.
 - **실패했을 때 툴 반납은 격리 정리(재시도 소진 · 중단)에서만** 한다(정상 흐름은 WIPE 단계가 매번 툴을 반납한다) — flow가 곧게 위로 → HOME → `tool(RETURN)`(쥔 툴을 홀더에). 멈춤(PAUSED)에서는 쥔 것을 그대로 두고 그 자리에 선다: 로봇 오류는 곧게 위로 한 번만 시도하고(위치를 모르는 `MoveIncomplete` 면 그것도 안 함) 사람 신호 뒤 그리퍼만 열며, 케이블 이상은 후퇴 없이 그 자리에서 멈춘다(§7).
 - **넛지·재개 뒤 로봇 복구**(`flow._recover_robot` — 넛지 재개 · 케이블 멈춤 재개 · 로봇 오류 신호 뒤에 부른다): 보호정지(SAFE_STOP)면 자동 복구(`set_robot_control` · E43) → STANDBY 가 될 때까지 본다(최대 `cell.limits.nudge_resume_settle_s` 3 s). 🔄 9/29: 복구 전 STANDBY 가 아니었으면(보호정지를 풀었으면) 이동 전 `cell.limits.nudge_after_reset_s`(**2 s**) 더 기다린다 — 풀린 직후 보낸 이동을 제어기가 곧 세웠다(실기: 복구 3 ms 뒤 HOME 이동 → 0.4 s 뒤 경고 7056 → `MoveIncomplete`). ✅ 리허설 12:26 실기: 케이블 멈춤에서 밀기 1번 → 보호정지 해제 로그 '이동 전 2 s 더 기다린다' → HOME 경유 무게 다시 통과.
-- 🟡 **알려진 제한(9/29 · 이번에는 고치지 않음)**: 닦기 동작 중 일시 정지는 **그 동작이 끝난 뒤** 멈춘다 — 컵 주기 운동 ≈13 s · 그릇 나선 ≈3 s(그 동작을 기다리는 루프가 정지 깃발을 보지 않는다 · §5.4). 개선 후보: 즉시 정지(`stop_now`) + 재개 때 닦기를 처음부터.
+- ⚠️ **알려진 제한(9/29 · 이번에는 고치지 않음)**: 닦기 동작 중 일시 정지는 **그 동작이 끝난 뒤** 멈춘다 — 컵 주기 운동 ≈13 s · 그릇 나선 ≈3 s(그 동작을 기다리는 루프가 정지 깃발을 보지 않는다 · §5.4). 개선 방향은 §14 향후 개선: 즉시 정지(`stop_now`) + 재개 때 닦기를 처음부터.
 
 ### 5.2 f1_handling — `handling.py` (한석형)
 **pick (고정 슬롯 파지 — 9/19 PM 결정 · 🔄 E41 로 슬롯 2개)** — ✅ **반납 구역은 구역마다 고정 슬롯 2개**다(E41 · E9 "내리막 공급 · 집는 자리 1개" 를 대체): 그릇 2·컵 2 를 처음부터 슬롯에 겹치지 않게 놓아 두고, **슬롯 1 부터 집고 비면 슬롯 2** 를 집는다(설정 `cell.zones.RET_B/RET_C.slots` 2개 · 슬롯 2 는 슬롯 1 에서 BASE x 만 옮긴 자리). 두 슬롯이 다 빈손이면 `EMPTY_ZONE`. 🚨 조건: 용기가 티칭한 슬롯 자리에 놓여야 한다(그릇은 벽 2 mm 를 집는다 — 목표 ±3 mm). (옛 안 E9: 내리막 공급으로 같은 자리에서 `count` 번 집기 · 그 전 안 "구역 + 탐색 파지: 겹침·어긋남 허용"은 일정 방어로 제외):
@@ -410,6 +409,8 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 - `zone_id`가 `SPONGE_BED_*`면 슬롯 1개(고정 위치 재파지).
 - 🆕 **`regrip_top(bed, kind)`**(E65 · 9/29) — 격리 정리 전용: 스펀지 홈의 용기를 **놓았던 자세에서 위로** 다시 잡는다(반납 구역에서 집을 때와 같은 파지 · 컵은 테두리 벽). 헹굼 앞 재파지(`pick(SPONGE_BED_C)`)는 컵을 옆면으로 잡는데, 그 파지로 격리하면 컵이 격리 구역에 옆으로 놓였다(실기). 빈손이면 놓고 되올라와 `GRIP_FAIL` — 격리 정리는 이때 멈추지 않고 용기를 홈에 남긴다(§7).
 
+> 🔄 **as-built(E44 · 9/23)**: 아래 안착 놓기·삽입 감시는 설계안이다. 시연 코드는 스펀지 홈·팔레트 칸 모두 접근점에서 곧게 내려 놓고 마지막 15 mm 만 30 mm/s 로 완충한다(`SEAT_FAIL`·`RACK_JAM` 은 나지 않는다).
+
 **place (안착 놓기)** — `station`이 `SPONGE_BED_B/C`일 때: 용기를 쥔 채 홈 상공(`cell.beds.*.seat.approach_z_mm`) → `force_on(z)` 순응 하강 → `contact_down`으로 접촉·깊이 판정 → 깊이 미달이면 `periodic_search(amp, period, max_s)` 중 접촉 조건 감시 → 들어가면 `release` → 후퇴(`OK`, `offset_mm`) / 한도 초과면 들고 후퇴(`SEAT_FAIL`). 그 외 station은 상공 → 하강 → 놓기 → 후퇴.
 
 **rack_place**: **`cell.rack.via` 경유**(🆕 9/21 E15 — 이것 없이 칸으로 곧장 가면 손목이 휘둘려 몸통에 부딪힌다) → 칸 접근점(있으면) → 끝점 → `force_on(z)` 하강 → `contact_down`으로 삽입력 감시 → 도달 시 `release` → **`cell.rack.slots.*.exit_rel_mm` 이 있으면 그 순서대로 빠져나온다**(그릇 칸: y −25 로 칸에서 뺀 뒤 z +100 — 곧장 올라가면 그리퍼가 팔레트에 걸린다) → 없으면 접근점으로 수직 복귀. 걸림(힘 > limit, 깊이 미달) → 후퇴 → `RACK_JAM`.
@@ -435,7 +436,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 
 ### 5.4 f3_wipe — `wipe.py` (박진용)
 - 🔄 **9/21 결정 E18 — 세제 수조를 따로 두지 않는다**(황인재): **툴 홀더(비눗물이 담긴 컵) 자리에서 위아래로 담근다.** `cell.stations.SOAP.BOWL/CUP` = 툴 홀더 좌표 + `f3.soap.depth_mm`(40) 로 **계산한 값**(🟡 BOWL z 105.24 · CUP z 167.27). 🚨 **`depth_mm` 을 바꾸면 `SOAP` 의 z 도 같이 바꿔야 한다**(cell.yaml 주석에 적음).
-- `soap(count, kind=None)`: 🔄 **PR #72(박진용 9/22)** — SOAP 자리로 가지 않고 **툴을 집은 자리에서** J6 ±`twist_deg`(20°) 비틀기 `twist_cycles`(3)회 → Z ±`updown_mm`(5) 왕복 `updown_cycles`(2)회(`move_periodic(scale=False)` · E17 속도 예외) → HOME 실측 z(`cell.stations.HOME.posx_z_mm`)까지 곧게 상승 → 관절 이동 HOME. `count` 는 이제 쓰지 않는다(횟수는 `f3.soap` 설정). 전용 상한 `f3.soap.duration_s` 60 s. 🟡 E18(홀더 비눗물 컵에서 담금)과 다른 동작 — `f1.tool(PICK)` 이 툴을 홀더에서 빼낸 뒤 부르면 세제가 안 묻을 수 있어 INT-F3 에서 F1-03 과 맞춘다. (옛 방식) 툴 든 채 SOAP 수조 담금 `count`회 — `cc.move_to('SOAP', True, kind)` → 남은 높이만큼 하강 → [`depth_mm` 하강 → `hold_s` → 상승] × count. **접촉 동작이 아니다**(수조 안은 비어 있다) → 순응·힘제어를 켜지 않는다. `cell.limits.timeout_s` 는 지키고(TIMEOUT), 담금 사이에서 강제정지를 본다.
+- `soap(count, kind=None)`: 🔄 **PR #72(박진용 9/22)** — SOAP 자리로 가지 않고 **툴을 집은 자리에서** J6 ±`twist_deg`(20°) 비틀기 `twist_cycles`(3)회 → Z ±`updown_mm`(5) 왕복 `updown_cycles`(2)회(`move_periodic(scale=False)` · E17 속도 예외) → HOME 실측 z(`cell.stations.HOME.posx_z_mm`)까지 곧게 상승 → 관절 이동 HOME. `count` 는 이제 쓰지 않는다(횟수는 `f3.soap` 설정). 전용 상한 `f3.soap.duration_s` 60 s. E18(홀더 비눗물 컵에서 담금)과는 E35 로 맞췄다 — `f1.tool(PICK)` 이 툴을 홀더 안에서 쥔 채(빼내지 않고) 끝나고, soap 가 그 자리에서 비틀기·왕복해 세제를 묻힌다(아래). (옛 방식) 툴 든 채 SOAP 수조 담금 `count`회 — `cc.move_to('SOAP', True, kind)` → 남은 높이만큼 하강 → [`depth_mm` 하강 → `hold_s` → 상승] × count. **접촉 동작이 아니다**(수조 안은 비어 있다) → 순응·힘제어를 켜지 않는다. `cell.limits.timeout_s` 는 지키고(TIMEOUT), 담금 사이에서 강제정지를 본다.
 - 🔄 **9/22 밤 E35(황인재 · PR #85 · 박진용 요청 #83)**: `f1.tool(PICK)` 은 잡은 자리(홀더 안)에서 끝나고 빼내지 않는다 — `soap` 이 그 자리에서 비틀기·왕복 뒤 **스스로** 작업 위치(수세미 = HOME x·y·z / 솔 = HOME + z40·y140)로 z→x·y 직선 이동(#83). `f1.tool(RETURN)` 은 같은 프로그램이 집었으면 집은 자리 위 +100 → 곧게 내려 놓기 → 올라오기(역순 · 🟡 힘 감시 없음), 아니면 return 자세 + contact_down(옛 방식).
 - `wipe_bowl()` — ✅ **9/20 실기 확정 절차(결정기록 E6 → E13) · 9/21 E17 · 9/22 E35 로 시작·끝 변경**: **soap 가 옮겨 준 자리**(HOME 좌표 · 툴 집기 자세의 손목 유지)에서 곧게 `fast_down_mm` 만큼 빠르게 → **`cc.contact_down` 으로 바닥 찾기**(시작 힘 대비 `f3.wipe_bowl.find_limit_n` 3 N · 최대 `find_max_mm`) → **순응만 ON**(`cc.compliance_on` — 찾은 자리 그대로, 더 누르지 않는다) → **바닥 나선 1회**(`cc.move_spiral` 2.8바퀴 · 반지름 = 벽 반지름 · `spiral_time_s` · 비틀기 없음) → **힘제어 ON**(`cc.force_on` `target_force_n` 1.5 N, 공중 기준값 보정) → **벽면 원호**(`cc.move_arc` 를 이어 붙여 나선과 **반대 방향** `turns`바퀴 + 손목 ±`twist_deg`) → `cc.force_release()`(힘제어만 끄고 순응 유지) → 그 높이에서 중심 복귀 → 순응 OFF → **호출 높이로 곧게 복귀**. 힘 로그 저장. (`SPONGE_BED_B.wash` 좌표는 쓰지 않는다)
   - **바닥은 찾고, 벽은 찾지 않는다**: 수세미가 물러 접촉 깊이가 실행마다 **12~17 mm 로 달라**(V-03 §G) 티칭 높이 하나로는 못 맞춘다 → 바닥은 `contact_down`. 반면 벽은 힘으로 잡히지 않아(로봇 순응보다 훨씬 무르고, 바닥 마찰 5~14 N 이 벽 신호 1~2 N 을 덮는다 · V-03 §3-C) **치수로 계산**한다: 벽 반지름 = (`bowl_inner_d_mm` − `tool.d_mm`) / 2 + `wall_press_mm`.
@@ -443,11 +444,11 @@ return EMPTY_ZONE (attempts = 슬롯 수)
   - 🚨 **나선 구간에는 힘제어를 켜지 않는다** — 나선은 툴 Z 축 모션이라 Z 힘제어와 **같은 방향**이고, 중급2 "힘 방향과 같은 방향의 모션 불가"에 걸려 9/20 실기에서 시작조차 하지 않았다. 벽면 원호는 X·Y 이동이라 함께 쓸 수 있다(폴리싱 예시).
   - 🚨 **나선은 TOOL 기준, 원호는 BASE 기준**이고 닦는 자세는 툴 Z 가 아래를 향한다(b≈180°) → **툴에서 반시계 = 베이스에서 시계**. 벽면을 "반대 방향"으로 돌리려면 나선이 실제로 돈 각도를 재서 그 반대로 준다(PR #43). TOOL·BASE 를 섞는 다른 동작(팔레트 기울임 등)에도 같은 함정이 있다.
   - 두산 이동(`move_spiral` · `move_arc` · `move_periodic` · `compliance_on` · `force_release`)은 `cobot_common/force.py`(박진용)에 공용 함수로 있고 `wipe.py` 는 `cc.*` 만 부른다(두산 호출은 cobot_common 과 preflight 문지기에만). 이 셋에는 **일시정지 폴링이 없다**(`move_periodic` 과 같은 취급) → 일시정지는 구간이 끝난 뒤 다음 이동에서 먹고, 구간 사이에서 `cc.is_halted()` 를 본다(§5.1 알려진 제한 — 컵 주기 운동 ≈13 s · 그릇 나선 ≈3 s 뒤에 멈춘다).
-- 🔄 **9/21 결정 E17 — F3 닦기 동작 변경(박진용 가상 검증)** — ✅ **PR #56 로 main 에 들어왔다**(9/21): ① 🔄 **닦기는 호출된 자리에서 시작해 그 높이로 끝난다**(E35 이후 · 작업 위치 이동은 soap). ② (9/21 당시 — 🔄 E35 뒤로는 작업 위치까지 옮기는 것은 soap, 거리는 `params.yaml` `f3` 절 · 지금 그릇 `fast_down_mm` 140 · 컵 120 · 컵의 z −40 없음) **그릇**: HOME 바로 아래 → 135 mm 빠르게 → 3 mm 씩 바닥 찾기. **컵**: HOME → z +40 → y +140 → z −40 → 80 mm 빠르게 → 바닥 찾기(돌아올 때 반대로). ③ 그래서 **`cell.beds.SPONGE_BED_B/C.wash` 좌표는 F3 가 쓰지 않는다**(티칭 불필요) — 대신 🚨 **닦는 자리가 `HOME` 기준 상대 위치로 정해진다 → `HOME` 을 다시 찍으면 닦는 자리가 같이 움직인다.** ④ 바닥 높이는 미리 정하지 않고 **힘으로만** 찾는다(E13 유지). ⑤ **`wipe_cup` 은 `move_periodic` 한 명령 · `ref=TOOL` · 회전은 TOOL rz(= 6번 관절)** — 🚨 TOOL rx 는 4번 관절을 돌린다(실기에서 부딪힐 뻔함) · Virtual 은 rx↔rz 를 뒤바꿔 움직이므로 Periodic 회전은 Virtual 결과를 믿지 않는다. 도는 동안 메인 스레드가 **1·4번 관절을 감시해 1° 넘으면 즉시 정지**(`cc.stop_now()` · QSTOP). 회전 속도는 움직이기 전에 컨트롤러 한계 225 °/s 와 비교(`check_spin_speed`), 6번 관절 한계(±360°)도 먼저 본다(`spin_room`). ⑥ **V-10 값(9/21 실기 확정 · PR #56)**: 위아래 TOOL z ±15 mm(총 30 mm) + **6번 관절 ±90°** · 주기 3.0 s × 5 회 · 가장 낮은 곳 = 바닥 + 3 mm · 컵 바닥 찾는 힘 **컵 전용 5 N**(`f3.wipe_cup.find_limit_n` — 공용 15 N 이면 컵이 스펀지 홈에 눌렸다) · 6번 관절 최고 188 °/s. SR-09 의 각도 = ±90°. ⑦ **세척 속도는 vel_scale 예외**(§6 표). 🔎 PR 검토 때 볼 것: ②의 거리(135·40·140·80 mm)가 코드가 아니라 `params.yaml` `f3` 절에 있는가(숫자는 코드가 아니라 설정 파일에)
+- 🔄 **9/21 결정 E17 — F3 닦기 동작 변경(박진용 가상 검증)** — ✅ **PR #56 로 main 에 들어왔다**(9/21): ① 🔄 **닦기는 호출된 자리에서 시작해 그 높이로 끝난다**(E35 이후 · 작업 위치 이동은 soap). ② (9/21 당시 — 🔄 E35 뒤로는 작업 위치까지 옮기는 것은 soap, 거리는 `params.yaml` `f3` 절 · 지금 그릇 `fast_down_mm` 140 · 컵 120 · 컵의 z −40 없음) **그릇**: HOME 바로 아래 → 135 mm 빠르게 → 3 mm 씩 바닥 찾기. **컵**: HOME → z +40 → y +140 → z −40 → 80 mm 빠르게 → 바닥 찾기(돌아올 때 반대로). ③ 그래서 **`cell.beds.SPONGE_BED_B/C.wash` 좌표는 F3 가 쓰지 않는다**(티칭 불필요) — 대신 🚨 **닦는 자리가 `HOME` 기준 상대 위치로 정해진다 → `HOME` 을 다시 찍으면 닦는 자리가 같이 움직인다.** ④ 바닥 높이는 미리 정하지 않고 **힘으로만** 찾는다(E13 유지). ⑤ **`wipe_cup` 은 `move_periodic` 한 명령 · `ref=TOOL` · 회전은 TOOL rz(= 6번 관절)** — 🚨 TOOL rx 는 4번 관절을 돌린다(실기에서 부딪힐 뻔함) · Virtual 은 rx↔rz 를 뒤바꿔 움직이므로 Periodic 회전은 Virtual 결과를 믿지 않는다. 도는 동안 메인 스레드가 **1·4번 관절을 감시해 1° 넘으면 즉시 정지**(`cc.stop_now()` · QSTOP). 회전 속도는 움직이기 전에 컨트롤러 한계 225 °/s 와 비교(`check_spin_speed`), 6번 관절 한계(±360°)도 먼저 본다(`spin_room`). ⑥ **V-10 값(9/21 실기 확정 · PR #56)**: 위아래 TOOL z ±15 mm(총 30 mm) + **6번 관절 ±90°** · 주기 3.0 s × 5 회 · 가장 낮은 곳 = 바닥 + 3 mm · 컵 바닥 찾는 힘 **컵 전용 5 N**(`f3.wipe_cup.find_limit_n` — 공용 15 N 이면 컵이 스펀지 홈에 눌렸다) · 6번 관절 최고 188 °/s. SR-09 의 각도 = ±90°. ⑦ **세척 속도는 vel_scale 예외**(§4.3 실행 인자 표). ②의 거리는 코드가 아니라 `params.yaml` `f3` 절에 둔다(숫자는 코드가 아니라 설정 파일에)
 - `wipe_cup()` — ✅ **9/21 V-10 실기 확정(PR #56·#57)**: **soap 가 옮겨 준 컵 위**(HOME + z `over_cup_up_mm` 40 · y `over_cup_dy_mm` 140 — HOME 높이에서 옆으로 가면 솔이 컵 테두리에 걸린다)에서 곧게 내려가 `fast_down_mm` 만큼 빠르게 → `cc.contact_down` 으로 바닥 찾기(**컵 전용 `find_limit_n` 5 N**) → 힘 풀고 (`lift_mm` 3 + `stroke_mm` 15) 만큼 띄워 **왕복의 가운데**로 → **`cc.move_periodic` 한 명령 · `ref=TOOL` · 위아래 z ±15 mm + 6번 관절 rz ±90°** · 주기 3.0 s × 5 (`scale=False` — vel_scale 예외 E17) — 도는 동안 **1·4번 관절 감시, 1° 넘으면 즉시 정지하고 자동으로 움직이지 않는다**(`JointGuardStop` → 힘만 끔 → `ROBOT_ERROR` → 사람이 확인) → 가장 낮은 곳(바닥 + 3)으로 내려 끝 → 곧게 뽑아 **호출 높이로 복귀**. 움직이기 전에 회전 최고 속도 ≤ 225 °/s(컨트롤러 한계 · 알람 1212)·6번 관절 한계 여유를 계산해 넘으면 시작하지 않는다.
   - 🚨 `amp`·`period` 는 `[x, y, z, rx, ry, rz]` 6개이고 **어떤 축에 진폭을 주면 같은 축의 주기도 줘야 한다**(빠지면 두산 오류 2.1218 — 중급1 p.71~72). 진폭은 **편진폭**이라 한 번 왕복의 총 이동은 2배다.
   - 삽입 깊이 = `tool.clean_h_mm − (fast_gap_mm − 실제로 찾은 거리)` — "접근점에서 내려온 거리"에는 컵 위 빈 공간이 섞여 있어 솔이 들어간 길이와 무관하다(PR #43 에서 고침). `insert_min_mm` 보다 얕으면 바닥 전에 막힌 것 · `keep_in_mm` 은 왕복 꼭대기에서도 솔이 컵 안에 남아 있어야 하는 길이.
-  - 값 4개(`stroke_mm` · `twist_deg` · `period_s` · `lift_mm`)는 **V-10 에서 확정**한다(SR-09 는 각도를 정하지 않는다).
+  - 값 4개(`stroke_mm` · `twist_deg` · `period_s` · `lift_mm`)는 ✅ **V-10(9/21 실기)에서 확정**했다(위 E17 ⑥ · SR-09 는 각도를 정하지 않는다).
 
 ### 5.5 hmi_bridge (황인재) — 시스템 모니터
 - 구조: FastAPI(uvicorn) + rclpy 스레드. rclpy는 별도 스레드에서 `spin`, `/flow/*` 서비스 호출은 요청 스레드를 막지 않게 실행(HMI는 두산 API를 쓰지 않으므로 TS-01과 무관). WebSocket이 `/flow/state`·`/flow/event`를 브라우저에 밀어준다.
@@ -458,7 +459,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
   | 제어 | 시작 · **일시 정지**(항상 보임 — 누르면 **즉시** 그 자리에서 멈춤) · **재개**(하던 동작을 이어서) · **중단**(그 용기를 격리하고 다음 용기). 활성 조건은 §6. 멈추면 화면에 **"일시 정지됨 — 어느 단계"** 를 크게 띄운다(한계 문구는 넣지 않는다). 🚨 이 버튼을 **"E-STOP"이라 부르지 않는다** — 비상정지는 로봇(티치펜던트)의 E-Stop 버튼뿐이다 |
   | 상태 | 모드/단계(step), 현재 용기·구역, 진행률(done/target), 사이클 타임 |
   | 구역·팔레트 | 반납 구역 2칸(대기/처리중/완료), 팔레트 칸 4개(그릇 2·컵 2 — 비어 있음/적재) |
-  | 수량·소모품 | 그릇·컵 성공/격리, 수세미 사용·세제/헹굼 담금 바(임계 도달 시 색) |
+  | 수량·소모품 | 그릇·컵 성공/격리, 소모품 바(수세미 · 솔 · 세제 · 잔반통 — 임계 도달 시 색 · E56 · E57, §6) |
   | 통신 | ROS 연결 점(초록/빨강, `/flow/state` 2 s 이상 없으면 빨강), 마지막 수신 시각 |
   | 오류·알람 | 마지막 코드 + 메시지, 오류 로그 목록(붉은 경고 우선) |
   | 이력 | 최근 이벤트 표(SQLite), 무게 전/후, 시도 횟수, 결과 |
@@ -467,43 +468,43 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 ---
 
 ## 6. 휴먼 인터페이스
-🔄 9/25 화면 완성 · 9/27 기록 DB(F4-04) · 누적 KPI(F4-05) · 소모품 4줄 · 잔반통 한도 추가(E57)(F4 · UT-F4 TC-11 항목 1~18 · `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md`). 화면 구성 표는 `src/f4_hmi/README.md`.
+🔄 9/25 화면 완성 · 9/27 기록 DB(F4-04) · 누적 KPI(F4-05) · 소모품 4줄 · 잔반통 한도 추가(E57)(F4 · UT-F4 TC-11 항목 1~18 · `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md`) · ✅ F4 검증 완료(9/29 실제 flow 실행 · 소리 확인). 화면 구성 표는 `src/f4_hmi/README.md`.
 | 요소 | 동작 |
 |---|---|
 | 연결 표시 | 맨 위 점: `flow 연결됨` / `flow 연결 끊김 — 마지막 값`(2 s 이상 `/flow/state` 없음 · 버튼 전부 비활성 · 마지막 화면 유지) / `HMI 서버에 닿지 않는다` |
 | 시작 | IDLE 에서만 활성. plan 순서대로 처리 |
 | 일시 정지 | 항상 표시 · 운전 중에만 활성 = 즉시 멈춤 → PAUSED(닦기의 나선·주기 운동은 그 동작을 마친 뒤 — 컵 ≈13 s · 그릇 ≈3 s · §5.1 알려진 제한) |
-| 재개 · 중단 | PAUSED 에서만. **재개** = 멈춘 단계부터 이어서(이동 도중 멈춘 것도 재개 한 번 · 9/29 · ✅ 실기 11:44) · **중단** = 그 용기를 접고(곧게 위로 → HOME → 툴 반납 → 홈 용기 위로 다시 잡기 → 격리 → HOME · E11 · E65) 다음 용기. 로봇 오류(ROBOT_ERROR) 멈춤에서는 flow_node 가 중단을 거절한다 — **케이블 이상**도 코드가 ROBOT_ERROR 라 같다(화면 버튼은 켜지지만 누르면 거절 문구) → 케이블 멈춤은 가볍게 밀기·재개로만 푼다. 🔄 E52(9/25 · tune2 · HMI 370eb72): 로봇 오류 멈춤은 **2단 안내** — 신호 1(가볍게 밀기 15 N 1번 또는 재개) → 그리퍼만 열림 → 사람이 받음 → **화면 재개 버튼**(E54 9/27 · 두 번째 신호는 밀기 아님) → 위로 → HOME → 이 용기 오류 기록 · 빈손이면 신호 1번(가볍게 밀기 또는 재개) · 로봇 오류도 첫 신호는 넛지 허용 · 갈래 `tool_fail` 추가(홀더 확인 → 가볍게 밀기 → 다시 집기). 누르면 flow 의 대답 문구를 그대로 보여 준다(응답 ≤ 1 s · TC-11) |
+| 재개 · 중단 | PAUSED 에서만. **재개** = 멈춘 단계부터 이어서(이동 도중 멈춘 것도 재개 한 번 · 9/29 · ✅ 실기 11:44) · **중단** = 그 용기를 접고(곧게 위로 → HOME → 툴 반납 → 홈 용기 위로 다시 잡기 → 격리 → HOME · E11 · E65) 다음 용기. 로봇 오류(ROBOT_ERROR) 멈춤에서는 flow_node 가 중단을 거절한다 — **케이블 이상**도 코드가 ROBOT_ERROR 라 같다(화면 버튼은 켜지지만 누르면 거절 문구) → 케이블 멈춤은 가볍게 밀기·재개로만 푼다. 🔄 E52(9/25): 로봇 오류 멈춤은 **2단 안내** — 신호 1(가볍게 밀기 15 N 1번 또는 재개) → 그리퍼만 열림 → 사람이 받음 → **화면 재개 버튼**(E54 9/27 · 두 번째 신호는 밀기 아님) → 위로 → HOME → 이 용기 오류 기록 · 빈손이면 신호 1번(가볍게 밀기 또는 재개) · 로봇 오류도 첫 신호는 넛지 허용 · 갈래 `tool_fail` 추가(홀더 확인 → 가볍게 밀기 → 다시 집기). 누르면 flow 의 대답 문구를 그대로 보여 준다(응답 ≤ 1 s · TC-11) |
 | 멈춤 안내(알람 상자) | PAUSED 면 **원인별** 제목 + 무슨 일 + 할 일 1~3 + 코드(§7 문구): 운영자 정지 · 케이블 이상(주황 · 붉지 않음) · 툴 놓침(홀더에 다시 꽂고 넛지/재개) · 잔반 남음(E42 · 덜고 재개 / 중단) · 집기 실패 · 팔레트 가득 · 로봇 오류(🔄 E55 9/27: 별도 붉은 카드 없이 일반 멈춤 카드 주황 `멈춤 — 로봇 확인` · 중단 비활성) · 툴 집기 실패(E52 · 홀더 확인) · 안내는 모두 짧게(제목 + 할 일 2~3줄 · 9/27) · HTML no-store |
 | 단계 표시줄 | 8단계 그림 카드 + 격리 · 지금 = 파랑 · 멈춤(로봇 오류 포함) = 주황(멈춘 단계를 기억 · E55) |
 | 지금 하는 일 | 큰 그림 · 한 줄 설명 · 이번 용기 경과 · 몇 번째 · 다음 할 일 · 상태 알약(`진행 중` · `일시 정지` · `멈춤 — 툴 놓침` …) |
 | 팔레트 | 4칸 입체 그림(넣는 순서 ① 그릇 1 → ④ 컵 2 · `flow.rack_order`) · 가득 차면 교체 안내(RACK_FULL → PAUSED → 교체 후 재개 / 중단) · 누적 · 컵은 **뒤집혀 얹힌** 그림(E38 · 9/27) |
 | 진행 · 사이클 · 소모품 | 그릇/컵 수량 막대 · 반납 구역 남은 수·상태(`비었음`) · 격리 수 · 용기 1개 시간 · 수세미/세제 교체까지(임계 도달 시 색) · 🔄 E56(9/27): 소모품 칸 = **수세미(그릇 완료 수 / 100) · 솔(컵 완료 수 / 100) · 세제(세제 묻힌 용기 수 / 60)** — 교체 주기 `flow.consumables.sponge_max_uses 100` · 헹굼 담금 행은 제거 · 한도 초과는 표시만(멈추지 않음) |
-| 이력 | 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀 · 원인 · 시도 수) · 문제만 보기 필터. 🟡 케이블 이상으로 중단한 용기는 이벤트 코드가 ROBOT_ERROR 라 '로봇 오류'로 적힘(사유를 이벤트에 실으려면 flow 변경 · 시연 뒤) |
+| 이력 | 끝난 용기마다 한 줄(완료 · 격리 · 오류 · 건너뜀 · 원인 · 시도 수) · 문제만 보기 필터 |
 | 소리 | 한 가지 음으로 두 경우만 — 멈추면(PAUSED 진입) 1번 · 다시 움직이면(PAUSED → 운전) 2번 · 케이블이 아직 떨려 다시 멈추는 것도 새 멈춤이라 1번(E64 · 세 번째 경우가 아니다) · 빈 구역(건너뜀)은 소리 없이 알림만 · 실제 소리 확인 ✅(9/29) |
-| 로봇 없이 확인 | `hmi_bridge` + 가짜 flow `fake_state_pub`(대본 9종: normal · paused · isolate · error · empty_zone · 🆕 tool_lost · leftover_remain · cable · tool_fail — 9/29 예외 ③④①⑨ 화면 연습) 또는 ros bag 재생(`_bags/0923_full_0.5`) · 한 번에 하나만(같은 토픽) |
-| 누적 KPI(F4-05 · 🔄 E57 9/27) | 이번 실행 / 오늘 / 전체 — 처리량 · 처리율 · 용기당 평균 시간 · 시간당 · 멈춤 수 · 잔반 g. 근거는 `prewash.db`(F4-04). 가짜 검증 ✅ · 🟡 실제 flow 기록은 9/29 |
+| 로봇 없이 확인 | `hmi_bridge` + 가짜 flow `fake_state_pub`(대본 9종: normal · paused · isolate · error · empty_zone · 🆕 tool_lost · leftover_remain · cable · tool_fail — 예외 ③④①⑨ 화면) 또는 9/23 실제 실행을 녹화한 ros bag 재생(저장소 밖 로컬 파일 · 명령은 `src/f4_hmi/README.md`) · 한 번에 하나만(같은 토픽) |
+| 누적 KPI(F4-05 · 🔄 E57 9/27) | 이번 실행 / 오늘 / 전체 — 처리량 · 처리율 · 용기당 평균 시간 · 시간당 · 멈춤 수 · 잔반 g. 근거는 `prewash.db`(F4-04). 가짜 검증 ✅ · 실제 flow 연결 ✅(9/29 · F4 검증 완료) |
 | 잔반통 교체(🔄 E57) | 마지막 교체 뒤 버린 잔반 합 ≥ 50 kg → 브리지가 정지 → "잔반통 교체" 카드 → **교체 완료** 버튼 → 재개. 소모품 4줄(수세미 · 솔 · 세제 · 잔반통)마다 교체 완료 버튼 · 시연 중엔 한도에 닿지 않음 |
-| 미구현(시연 뒤) | 격리 구역 비움 확인 버튼 · 노션 화면 gif(NOTE-02) — F4-04 · F4-05 는 9/27 구현(E57) |
+| 미구현(§14 향후 개선) | 격리 구역 비움 확인 버튼 — F4-04 · F4-05 는 9/27 구현(E57) |
 
 ## 7. 예외·오류 처리
 | 코드 | 발생 | 처리 | 표시 |
 |---|---|---|---|
 | `EMPTY_ZONE` | 탐색 최대 횟수까지 파지 실패 | 구역 종료, 다음 구역 (SKIPPED 기록) | 정보 |
-| `LEFTOVER_REMAIN` | 털기 후에도 임계 초과 | 🔄 E52(9/25 · tune2 · ✅ 9/29 ④ 실기 — 그릇 2 사람 없이 격리): **격리(isolate)** — 사람 없이 위로 → HOME → 격리 → HOME → 다음 용기(#90/#103 경로 · 정리 함수 통일). E42(9/23)의 pause 는 정책 isolate 가 기록만 남기던 빈틈 때문이었고 E52 로 닫힘 — main 동결판은 아직 pause | 경고 |
+| `LEFTOVER_REMAIN` | 털기 후에도 임계 초과 | 🔄 E52(9/25 · ✅ 9/29 ④ 실기 — 그릇 2 사람 없이 격리): **격리(isolate)** — 사람 없이 위로 → HOME → 격리 → HOME → 다음 용기(#90/#103 경로 · 정리 함수 통일). E42(9/23)의 pause 는 정책 isolate 가 기록만 남기던 빈틈 때문이었고 E52 로 닫힘 | 경고 |
 | `SEAT_FAIL` | 탐색 한도 초과 | 격리 | 경고 |
-| `TOOL_FAIL` | 툴 폭 범위 밖(툴 없음) | 🔄 E52(9/25 · tune2): **멈춤(PAUSED)** — 격리 없이 홀더 확인 → 가볍게 밀기 15 N 1번(또는 재개) → 툴 집기부터 다시(툴 놓침 뒤 재PICK 실패도 같음). main 동결판은 재시도 1회 → 격리 | 경고 |
+| `TOOL_FAIL` | 툴 폭 범위 밖(툴 없음) | 🔄 E52(9/25): **멈춤(PAUSED)** — 격리 없이 홀더 확인 → 가볍게 밀기 15 N 1번(또는 재개) → 툴 집기부터 다시(툴 놓침 뒤 재PICK 실패도 같음 · 전에는 재시도 1회 → 격리). ✅ 9/29 ⑨ 실기: 빈 홀더 15.90 mm → `TOOL_FAIL` → 솔 꽂기 → 밀기 → 다시 집기 18.90 mm · 격리 0 | 경고 |
 | `GRIP_FAIL` | f2: 털기·담금 전후 그리퍼 폭이 `slip_tol_mm` 넘게 변함(미끄러짐) · 무게가 `min_net_g` 아래(빈손) | ✅ **PAUSED + 알림 → 사람이 확인**(황인재 9/20 — `params.yaml` `flow.policy.GRIP_FAIL: pause`). pick 안의 헛잡음은 지금처럼 F1 이 다음 시도로 소화 | 오류 |
-| `FORCE_LIMIT` / `TIMEOUT` | 닦기·삽입·하강 | 남은 나선·주기 운동 즉시 정지(`stop_now`) → 힘·순응 끄고 곧게 위로(E60) → 닦기는 툴을 쥐었을 때만 그 자리(`safe_z`)에서 재시도 1회, 툴이 없으면 `TOOL_LOST` 멈춤(E61 · 정정: HOME 이동 없음 · 바닥을 못 찾으면 로봇 오류로 그 자리 정지) → 또 실패하면 격리 — 🔄 E52(9/25 · tune2): 격리는 **정리 함수 하나**(위로 → HOME → 툴 반납 → 스펀지 홈에 용기가 있으면 위에서 다시 잡고(`regrip_top` · E65 · 못 잡으면 홈에 남기고 격리 놓기 건너뜀) HOME → 격리 → HOME · 중단 버튼과 같은 길 · 기록 코드는 원인 유지) — E42 가 지적한 "기록만" 빈틈 닫힘 | 경고 |
+| `FORCE_LIMIT` / `TIMEOUT` | 닦기·삽입·하강 | 남은 나선·주기 운동 즉시 정지(`stop_now`) → 힘·순응 끄고 곧게 위로(E60) → 닦기는 툴을 쥐었을 때만 그 자리(`safe_z`)에서 재시도 1회, 툴이 없으면 `TOOL_LOST` 멈춤(E61 · 정정: HOME 이동 없음 · 바닥을 못 찾으면 로봇 오류로 그 자리 정지) → 또 실패하면 격리 — 🔄 E52(9/25): 격리는 **정리 함수 하나**(위로 → HOME → 툴 반납 → 스펀지 홈에 용기가 있으면 위에서 다시 잡고(`regrip_top` · E65 · 못 잡으면 홈에 남기고 격리 놓기 건너뜀) HOME → 격리 → HOME · 중단 버튼과 같은 길 · 기록 코드는 원인 유지) — E42 가 지적한 "기록만" 빈틈 닫힘 · 🟡 E60(닦기 힘 상한 → 즉시 정지)은 자동 시험만(실기 미실시) | 경고 |
 | `RACK_JAM` | 삽입 걸림 | 후퇴 → 재시도 1회 → 격리 — 🔄 E44(9/23): 적재를 감시 없이 곧게 놓으므로 **시연 코드에서는 발생하지 않는다**(걸리면 컨트롤러 충돌 감지 → `ROBOT_ERROR`) | 경고 |
 | `RACK_FULL` | 칸 소진 | PAUSED + 알림 | 오류 |
-| `TOOL_LOST` 🆕 E37(9/23) | 닦는 중(soap · wipe) 그리퍼 폭이 기준에서 `slip_tol_mm` 넘게 벗어남(툴 놓침 · f3 감시 스레드가 `halt`) | **그 자리 정지 → PAUSED + 알림** → 사람이 툴을 홀더에 넣고 **넛지(15 N · 1번 · E48) 또는 HMI 재개** → 로봇 STANDBY 확인 → 곧게 위로 → **툴 집기 단계부터 다시**(툴 집기 → 세제 → 닦기 · E62 · 세제가 닦는 자리로 옮겨 준다) · 다시 집기 실패는 `TOOL_FAIL` 정책 · 후퇴 실패는 로봇 오류 절차. 격리 아님 | 경고 |
-| 케이블 이상(코드 아님 · 🆕 #93) | 무게 재기 표본의 떨림이 `f2.limits.max_weigh_spread_g`(**80 g** · E47) 초과 → `CableTightError` | **그 자리 정지(후퇴 없음) → PAUSED + 알림**(케이블 확인 요청) → 사람이 케이블 정리 → 가볍게 밀기(넛지) 또는 HMI 재개 → 🔄 **E64(9/29 · E63 정정): 바로 재개** — 제자리 재측정(`sense.recheck_cable`)은 쓰지 않는다. 밀기로 알아챘으면 손 뗄 시간(`f2.nudge.settle_s` 1.5 s) → 보호정지 복구·STANDBY 확인(`_recover_robot` · `set_robot_control` · E43 — 복구 전 STANDBY 가 아니었으면 이동 전 `cell.limits.nudge_after_reset_s` 2 s 더) → **무게 단계를 처음부터 다시**(HOME 경유) — 그 무게 재기가 케이블을 다시 본다 → 아직 떨리면 **같은 케이블 멈춤이 다시 걸리고**(알림창·소리) 새 신호를 기다린다(E63 취지 · 남은 신호로 혼자 다시 재지 않음). 근거(9/29 실기): 제자리 재측정 중 손이 닿아 떨림이 수천 g 으로 튀어 다섯 번 밀어야 재개 · 밀기 감지 직후 보낸 이동이 외력 경고와 함께 붙잡혀 멈춤. ✅ 새 방식 실기(리허설 12:26): 떨림 156 g → 밀기 1번 → 2 s 더 대기 → HOME 경유 무게 다시 −3.9 g 통과 · 멈춤 약 8 s | 경고 |
-| `ROBOT_ERROR` | dsr 오류·충돌 정지·기능 함수에서 새어 나온 예외 | ✅ **그 자리 정지 → PAUSED + 알림, 사람이 복구**(황인재 9/20). 🔄 **E52(9/25 · tune2)**: 격리 구역으로 가지 않는다(위치를 모를 수 있다). 쥔 것이 있으면 **2단** — 신호 1(가볍게 밀기 15 N 1번 또는 재개 버튼) → 그리퍼만 열기(팔 안 움직임) → 사람이 받아 처리(툴은 홀더에 · 스펀지 홈 용기도) → **신호 2 = 화면 재개 버튼만**(E54 9/27 · 가볍게 밀기 아님 — 손이 로봇에 닿은 채 팔이 움직이지 않게 · 받는 사람이 물러난 뒤 누른다) → 곧게 위로 → HOME → 이 용기 ERROR 기록 → 다음 용기. 빈손이면 신호 1번(가볍게 밀기 또는 재개) — 기록이 빈손이라도 그리퍼 폭 ≤ 100 mm 면 쥔 것으로 본다(55fe450). 힘을 못 읽으면 첫 신호도 재개 버튼만 기다린다. 🔄 **E55(9/27)**: 이 2단 절차는 화요일 시험·발표에서 **제외** — 코드는 안전망으로 유지. 신호 2 뒤의 이동은 사람이 로봇 상태를 보고 주는 것이므로 아래 MoveIncomplete 규칙과 어긋나지 않는다. 명령이 아직 나가면 `safe_retreat()`를 한 번만 시도한다. 🚨 **단 `cc.MoveIncomplete` 는 예외다 — 후퇴(`safe_retreat`)도 하지 않는다**(9/21 추가): 그 오류는 "로봇이 어디 있는지 모른다"는 뜻이라 어떤 자동 이동도 위험하다(9/21 08:40 실기: 6번 관절 163° 회전으로 **케이블이 꼬인 채** 멈췄는데 도구가 자동으로 HOME 으로 가려 했다). 힘·순응은 끄되(모션이 아니다) **움직이지 않고** 사람에게 넘긴다. 힘 상한(`ForceLimitError`)은 로봇이 정상이라는 뜻이므로 설계대로 후퇴한다 — 구분해서 처리한다. 🚨 두산 `DR_Error`(우리 코드가 두산 함수에 잘못된 인자를 넘긴 경우 — 설치된 `DSR_ROBOT2.py`의 896곳이 전부 인자 타입·값 오류)가 나면 두산 코드가 그 프로세스의 `rclpy.shutdown()`을 불러 **같은 프로그램에서는 더 이상 명령을 못 보낸다** → 운영자가 새 프로세스로 `src/cobot_common/test/release_force.py`(남은 힘·순응 끄기)를 실행 → 셀 재시작. 예방은 Virtual 연속 3회 시험(§3.2 ⑧) | 오류 |
+| `TOOL_LOST` 🆕 E37(9/23) | 닦는 중(soap · wipe) 그리퍼 폭이 기준에서 `slip_tol_mm` 넘게 벗어남(툴 놓침 · f3 감시 스레드가 `halt`) | **그 자리 정지 → PAUSED + 알림** → 사람이 툴을 홀더에 넣고 **넛지(15 N · 1번 · E48) 또는 HMI 재개** → 로봇 STANDBY 확인 → 곧게 위로 → **툴 집기 단계부터 다시**(툴 집기 → 세제 → 닦기 · E62 · 세제가 닦는 자리로 옮겨 준다) · 다시 집기 실패는 `TOOL_FAIL` 정책 · 후퇴 실패는 로봇 오류 절차. 격리 아님. ✅ 9/29 ③ 실기: 컵 1 세제 중 솔을 뽑음 → 밀기 → 툴 집기부터 다시(솔 18.90 mm) → 닦기 → C1 완료 · 수세미·나선 중 놓침(E60·E61 경로)은 자동 시험만 | 경고 |
+| 케이블 이상(코드 아님 · 🆕 #93) | 무게 재기 표본의 떨림이 `f2.limits.max_weigh_spread_g`(**80 g** · E47) 초과 → `CableTightError` | **그 자리 정지(후퇴 없음) → PAUSED + 알림**(케이블 확인 요청) → 사람이 케이블 정리 → 가볍게 밀기(넛지) 또는 HMI 재개 → 🔄 **E64(9/29 · E63 정정): 바로 재개** — 제자리 재측정(E63 방식)은 하지 않는다. 밀기로 알아챘으면 손 뗄 시간(`f2.nudge.settle_s` 1.5 s) → 보호정지 복구·STANDBY 확인(`_recover_robot` · `set_robot_control` · E43 — 복구 전 STANDBY 가 아니었으면 이동 전 `cell.limits.nudge_after_reset_s` 2 s 더) → **무게 단계를 처음부터 다시**(HOME 경유) — 그 무게 재기가 케이블을 다시 본다 → 아직 떨리면 **같은 케이블 멈춤이 다시 걸리고**(알림창·소리) 새 신호를 기다린다(E63 취지 · 남은 신호로 혼자 다시 재지 않음). 근거(9/29 실기): 제자리 재측정 중 손이 닿아 떨림이 수천 g 으로 튀어 다섯 번 밀어야 재개 · 밀기 감지 직후 보낸 이동이 외력 경고와 함께 붙잡혀 멈춤. ✅ 새 방식 실기(리허설 12:26): 떨림 156 g → 밀기 1번 → 2 s 더 대기 → HOME 경유 무게 다시 −3.9 g 통과 · 멈춤 약 8 s | 경고 |
+| `ROBOT_ERROR` | dsr 오류·충돌 정지·기능 함수에서 새어 나온 예외 | ✅ **그 자리 정지 → PAUSED + 알림, 사람이 복구**(황인재 9/20). 🔄 **E52(9/25)**: 격리 구역으로 가지 않는다(위치를 모를 수 있다). 쥔 것이 있으면 **2단** — 신호 1(가볍게 밀기 15 N 1번 또는 재개 버튼) → 그리퍼만 열기(팔 안 움직임) → 사람이 받아 처리(툴은 홀더에 · 스펀지 홈 용기도) → **신호 2 = 화면 재개 버튼만**(E54 9/27 · 가볍게 밀기 아님 — 손이 로봇에 닿은 채 팔이 움직이지 않게 · 받는 사람이 물러난 뒤 누른다) → 곧게 위로 → HOME → 이 용기 ERROR 기록 → 다음 용기. 빈손이면 신호 1번(가볍게 밀기 또는 재개) — 기록이 빈손이라도 그리퍼 폭 ≤ 100 mm 면 쥔 것으로 본다. 힘을 못 읽으면 첫 신호도 재개 버튼만 기다린다. 🔄 **E55(9/27)**: 이 2단 절차는 9/29 실기 시험·발표에서 **제외** — 코드는 안전망으로 유지. 신호 2 뒤의 이동은 사람이 로봇 상태를 보고 주는 것이므로 아래 MoveIncomplete 규칙과 어긋나지 않는다. 명령이 아직 나가면 `safe_retreat()`를 한 번만 시도한다. 🚨 **단 `cc.MoveIncomplete` 는 예외다 — 후퇴(`safe_retreat`)도 하지 않는다**(9/21 추가): 그 오류는 "로봇이 어디 있는지 모른다"는 뜻이라 어떤 자동 이동도 위험하다(9/21 08:40 실기: 6번 관절 163° 회전으로 **케이블이 꼬인 채** 멈췄는데 도구가 자동으로 HOME 으로 가려 했다). 힘·순응은 끄되(모션이 아니다) **움직이지 않고** 사람에게 넘긴다. 힘 상한(`ForceLimitError`)은 로봇이 정상이라는 뜻이므로 설계대로 후퇴한다 — 구분해서 처리한다. 🚨 두산 `DR_Error`(우리 코드가 두산 함수에 잘못된 인자를 넘긴 경우 — 설치된 `DSR_ROBOT2.py`의 896곳이 전부 인자 타입·값 오류)가 나면 두산 코드가 그 프로세스의 `rclpy.shutdown()`을 불러 **같은 프로그램에서는 더 이상 명령을 못 보낸다** → 운영자가 새 프로세스로 `src/cobot_common/test/release_force.py`(남은 힘·순응 끄기)를 실행 → 셀 재시작. 예방은 Virtual 연속 3회 시험(§3.2 ⑧) | 오류 |
 | 통신 끊김 | `/flow/state` 2 s 이상 없음 | HMI 버튼 비활성, 빨간 표시 | 오류 |
 
 공통: 실패했을 때 툴 반납은 격리 정리(재시도 소진 · 중단)에서만 한다(정상 흐름은 WIPE 단계가 매번 반납) — 곧게 위로 → HOME → 쥔 툴을 홀더에 반납. 멈춤(PAUSED)에서는 쥔 것을 그대로 두고 그 자리에 선다. 로봇 오류는 기능 함수에서 예외가 새어 나오면 곧게 위로 한 번만 시도하고(위치를 모르는 `MoveIncomplete` 면 그것도 안 함), 사람 신호 뒤 그리퍼만 연다. 케이블 이상은 후퇴 없이 그 자리에서 멈춘다. 반납 구역 `pick` 의 헛잡음은 내부 재탐색(슬롯 1 → 슬롯 2)으로 소화하고, 스펀지 홈 재파지가 빈손이면 `GRIP_FAIL` → 멈춤(격리 정리 중의 `regrip_top` 은 멈추지 않고 용기를 홈에 남긴다).
-🔄 **E44(9/23 · 황인재)**: 놓기·팔레트 적재·툴 반납은 **힘 감시 없이** 티칭/집은 자리로 곧게 내려가 놓고 마지막 15 mm 만 30 mm/s 로 완충한다(`f1.insert_approach_mm 0` · `tool_return_depth_mm 0` · `land_slow_mm 15`) — 삽입 걸림·홀더 밀림 판정이 없고 컨트롤러 충돌 감지가 마지막 보호. 값을 양수로 두면 예전 감시 갈래로 돌아간다. 위 예외 중 흐름 안 실기가 없는 것(빈 구역 · 잔반 과다 멈춤 · 툴 놓침 · 케이블 · 버튼)은 **9/29 오전 INT-4b 대본**으로 확인하고 통과한 것만 시연에 넣는다(E45). → 9/29 오전 결과: 빈 구역 ✅ · 잔반 자동 격리 ✅ · 툴 놓침 ✅ · 툴 집기 실패 ✅ · 정지·재개 ✅(재개 두 번 필요 → 고침 → 재개 한 번 ✅ 11:44) · 중단 ✅ · 케이블 ✅(옛 방식 → E64 새 방식도 ✅ 리허설 12:26 · 밀기 1번 · 멈춤 약 8 s) · 로봇 오류 2단은 제외(E55) · 🟡 E60(닦기 힘 상한 → 즉시 정지) 단독 확인은 실기 미실시 · 자동 시험만. → 리허설 ✅(12:22~12:31 · 약 9분 · 1.0 배속): 그릇 1 · 컵 2 · 격리 0(B2 는 용기 없어 건너뜀) · 새 C1·C2 자세로 흐름 안 적재 ✅(곧게 앉음).
+🔄 **E44(9/23 · 황인재)**: 놓기·팔레트 적재·툴 반납은 **힘 감시 없이** 티칭/집은 자리로 곧게 내려가 놓고 마지막 15 mm 만 30 mm/s 로 완충한다(`f1.insert_approach_mm 0` · `tool_return_depth_mm 0` · `land_slow_mm 15`) — 삽입 걸림·홀더 밀림 판정이 없고 컨트롤러 충돌 감지가 마지막 보호. 값을 양수로 두면 예전 감시 갈래로 돌아간다. 위 예외 중 흐름 안 실기가 없던 것(빈 구역 · 잔반 과다 멈춤 · 툴 놓침 · 케이블 · 버튼)은 **9/29 오전 INT-4b** 에서 확인했고 통과한 것만 시연에 넣었다(E45 · 결과는 [결과표 §7](04_결과_결과표.md)). → 9/29 오전 결과: 빈 구역 ✅ · 잔반 자동 격리 ✅ · 툴 놓침 ✅ · 툴 집기 실패 ✅ · 정지·재개 ✅(재개 두 번 필요 → 고침 → 재개 한 번 ✅ 11:44) · 중단 ✅ · 케이블 ✅(옛 방식 → E64 새 방식도 ✅ 리허설 12:26 · 밀기 1번 · 멈춤 약 8 s) · 로봇 오류 2단은 제외(E55) · 🟡 E60(닦기 힘 상한 → 즉시 정지) 단독 확인은 실기 미실시 · 자동 시험만. → 리허설 ✅(12:22~12:31 · 약 9분 · 1.0 배속): 그릇 1 · 컵 2 · 격리 0(B2 는 용기 없어 건너뜀) · 새 C1·C2 자세로 흐름 안 적재 ✅(곧게 앉음).
 
 **격리 마무리 순서(✅ 황인재 9/20 · 🔄 E52 9/25 · E65 9/29)** — "격리"는 처리하다 실패한 **용기**를 팔레트 대신 격리 구역(`ISOLATE`)에 내려놓고 다음 용기로 넘어가는 것이다. 중단(`/flow/abort`)과 정책 격리(재시도 소진 등)가 같은 정리 함수(`flow._cleanup_and_isolate`)를 쓴다. 실패한 순간 로봇이 툴을 쥐고 있고 용기는 스펀지 홈에 있을 수 있으므로 순서는 **① 곧게 위로(`safe_retreat`) → HOME → ② 쥔 툴이 있으면 홀더에 반납(`tool(…, RETURN)`) → ③ 용기가 스펀지 홈에 있으면 놓았던 자세에서 위로 다시 잡기(`f1.regrip_top` · 반납 구역에서 집을 때와 같은 파지 · 컵은 테두리 벽) → HOME (이미 쥐고 있으면 그대로) → ④ `place(ISOLATE)` → ⑤ HOME**. 다시 잡지 못하면 용기는 홈에 남기고 격리 구역에 가지 않는다(빈손) → HOME · 사람이 치운다. 치우는 중이라 한 단계가 실패해도 멈추지 않고 로그에 남긴 채 다음 단계로 간다(기록 코드는 실패 원인 그대로). 🚨 **격리 자리는 그릇·컵 한 곳**(`cell.stations.ISOLATE.BOWL` = `CUP` 관절값 · 그릇 전용 J1 단독 회전 경로와 `f1.isolate_drop_mm` 는 없앴다 · E65) — 한 실행에서 격리가 두 번 생기면 두 번째가 첫 번째 위로 내려간다 → **운영 주의: 시작 전 격리 구역을 비우고, 격리가 생기면 다음 격리 전에 사람이 치운다.** 실기: 9/29 닦기 중 중단 → 솔 반납 → 홈 컵 위로 다시 잡기 → 격리 ✅ · 헹굼 담금 중 중단 → 쥔 채 격리 ✅.
 
@@ -521,7 +522,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 | 액체 | 수조에 물 없음(모션만), 잔반 대용품은 고형물 |
 
 ## 9. 테스트·검증 계획
-원칙: **구현 → 사전 검증(V) → L1 단위기능 테스트(녹화) → L2 단위기능 통합 → L3 셀 통합 → L4 전체 통합**. 이전 단계 통과 없이 다음 단계 금지. 날짜·담당·로봇 슬롯은 일정표(구글 드라이브 xlsx, §13)에서 관리하고 여기서는 **무엇을 어떻게 통과시키는가**만 정한다.
+원칙: **구현 → 사전 검증(V) → L1 단위기능 테스트(녹화) → L2 단위기능 통합 → L3 셀 통합 → L4 전체 통합**. 이전 단계 통과 없이 다음 단계 금지. 날짜·담당·로봇 슬롯은 팀 내부 일정표(§13)에서 관리하고 여기서는 **무엇을 어떻게 통과시키는가**만 정한다.
 
 
 ### 9.1 단계와 책임
@@ -642,7 +643,7 @@ soc && python3 src/f3_wipe/test/rig_f3.py bowl -n 3     # soap | bowl | cup
 ```
 런치 인자: `use_mock:="f1,f3"`(빈 값이면 전부 실제), `vel_scale:=0.3`(실기 런치 기본 0.3, mock 런치 1.0), `hmi:=true`(PC 1대로 돌릴 때 hmi_bridge도 같이). 인자는 환경변수로 프로그램에 간다(§4.3 실행 인자). 첫 실기는 `vel_scale 0.2~0.3`. 🚨 `flow_node`에는 런치에서도 손으로도 **`name=`·`namespace=`·`--ros-args -r __node:=…`를 주지 않는다** — 프로세스 안의 두 노드(`flow_node` · `flow_node_dsr`)에 모두 걸려 이름이 같아진다. 없는 패키지(f2_sense_flow·f4_hmi)는 런치가 경고만 남기고 건너뛴다. `flow_node`를 끌 때는 **멈춰 있을 때** Ctrl+C 한 번. 움직이는 중의 Ctrl+C는 정지 명령을 최선으로 시도할 뿐이다(V-24) — 급하면 Ctrl+C가 아니라 **E-Stop**. 움직이는 중에 죽였으면 브링업부터 다시.
 
-## 11. 확인 중
+## 11. 초기 확인 항목(모두 설계에 반영)
 | 항목 | 담당 | 기한 |
 |---|---|---|
 | 두산 서비스 접두사는 `/dsr01/dsr_controller2/`로 확인(9/18 Virtual). 힘(박진용 `force.py`)·하중(민범진 `weigh.py`)·그리퍼 IO(한석형 `motion.py`) 서비스의 필드는 각자 `cobot_common` 자기 파일을 쓰면서 확인 | 박진용·민범진·한석형 | 9/19 |
@@ -661,7 +662,7 @@ soc && python3 src/f3_wipe/test/rig_f3.py bowl -n 3     # soap | bowl | cup
 ## 12. 강사 요구 산출물 ↔ 이 문서
 | 강사 산출물 | 위치 |
 |---|---|
-| 시스템 아키텍처 | §1 그림 + [images/system_architecture_pc.html](images/system_architecture_pc.html)(9/23 Archify · 명세 `.archify.json` · 캡처 `.png`) |
+| 시스템 아키텍처 | §1 그림 + [images/system_architecture_pc.html](images/system_architecture_pc.html)(Archify · 명세 `.archify.json` · 캡처 `.png`) |
 | 네트워크 구성도 | §1.2 |
 | 동작 순서도 | §4.1, §5.1 |
 | 하드웨어 구성 | §2 |
@@ -672,5 +673,12 @@ soc && python3 src/f3_wipe/test/rig_f3.py bowl -n 3     # soap | bowl | cup
 | 위험요소·안전대책 | §8 |
 | Business Requirements | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) |
 
-## 13. 일정표 (정본: 구글 드라이브)
-일정표는 **구글 시트**가 정본이다([일정표(구글 시트)](https://docs.google.com/spreadsheets/d/1ikTAYTa8bgZofF_3RgP5jDoOipSZBPB1/edit?usp=sharing)). 시트: Time Line(팀별 색 간트) · 상세(산출물·완료기준) · 마일스톤·로봇 슬롯(강사 일정·마감·로봇 슬롯·제출 규칙) · 완료 목록 · 규칙 · 변경이력. + 담당별 `할일_이름` 4장(Time Line에서 자동으로 뽑은 쉬운 말 체크리스트). 갱신은 PM(황인재)만(진행·상태·변경이력). 저장소에는 사본을 두지 않는다.
+## 13. 일정
+일정은 팀 내부 시트로 관리한다(저장소에는 두지 않는다).
+
+## 14. 향후 개선
+| 항목 | 지금 | 개선 방향 |
+|---|---|---|
+| 닦기 동작 중 일시 정지 즉시 멈춤 | 닦기의 나선(그릇 ≈3 s)·주기 운동(컵 ≈13 s)은 그 동작이 끝난 뒤 멈춘다 — 동작을 기다리는 루프가 정지 깃발을 보지 않는다(§5.1 알려진 제한) | 남은 동작을 즉시 정지(`stop_now` · E60 과 같은 방식)하고, 재개 때 닦기를 처음부터 한다 |
+| 세제 펌프(세제 자동 보충) | 쓰지 않는다(E66) — 세제는 용기마다 한 번 툴 홀더의 비눗물 컵에 툴을 담가 묻힌다(E18 · E35). 이번 범위에는 이것으로 충분했다 | 펌프로 세제를 자동 보충한다 |
+| 격리 구역 비움 확인 | 격리 자리가 한 곳이라 격리가 두 번 생기면 겹친다 → 시작 전 비우고, 격리가 생기면 사람이 치운다(E65 · §7) | HMI 에 격리 구역 비움 확인 버튼(§6 미구현) |

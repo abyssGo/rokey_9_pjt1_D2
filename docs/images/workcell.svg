@@ -9,14 +9,14 @@
 <g fill="#F4C0D1" stroke="#993556"><ellipse cx="100" cy="160" rx="18" ry="13"/><ellipse cx="145" cy="160" rx="18" ry="13"/><ellipse cx="190" cy="160" rx="18" ry="13"/><circle cx="100" cy="198" r="11"/><circle cx="145" cy="198" r="11"/><circle cx="190" cy="198" r="11"/></g>
 <text x="215" y="164" font-size="11" fill="#72243E">RET_B</text><text x="215" y="202" font-size="11" fill="#72243E">RET_C</text>
 <!-- 잔반통 -->
-<circle cx="155" cy="300" r="34" fill="#F1EFE8" stroke="#5F5E5A"/><circle cx="155" cy="300" r="22" fill="none" stroke="#5F5E5A"/><text x="155" y="352" text-anchor="middle" font-weight="600" fill="#2C2C2A">② 잔반통 · WEIGH</text><text x="155" y="368" text-anchor="middle" font-size="11" fill="#444">무게 → 털기 3~5회 → 재측정</text>
+<circle cx="155" cy="300" r="34" fill="#F1EFE8" stroke="#5F5E5A"/><circle cx="155" cy="300" r="22" fill="none" stroke="#5F5E5A"/><text x="155" y="352" text-anchor="middle" font-weight="600" fill="#2C2C2A">② 잔반통 · WEIGH</text><text x="155" y="368" text-anchor="middle" font-size="11" fill="#444">무게 → 털기 → 다시 재기(최대 2번)</text>
 <!-- 격리 -->
-<rect x="70" y="420" width="170" height="80" rx="8" fill="#FCEBEB" stroke="#A32D2D"/><text x="155" y="445" text-anchor="middle" font-weight="600" fill="#501313">격리 구역 ISOLATE</text><text x="155" y="465" text-anchor="middle" font-size="11" fill="#791F1F">잔반 미제거 · 안착/닦기 실패</text>
+<rect x="70" y="420" width="170" height="80" rx="8" fill="#FCEBEB" stroke="#A32D2D"/><text x="155" y="445" text-anchor="middle" font-weight="600" fill="#501313">격리 구역 ISOLATE</text><text x="155" y="465" text-anchor="middle" font-size="11" fill="#791F1F">잔반 남음 · 재시도 실패 · 중단</text>
 <!-- 스펀지 고정틀 -->
 <rect x="300" y="110" width="220" height="120" rx="10" fill="#FAEEDA" stroke="#854F0B"/><text x="410" y="132" text-anchor="middle" font-weight="600" fill="#412402">③ 스펀지 고정틀 (SPONGE_BED)</text>
 <ellipse cx="360" cy="180" rx="34" ry="24" fill="#fff" stroke="#BA7517"/><text x="360" y="184" text-anchor="middle" font-size="11" fill="#633806">그릇 홈</text>
 <circle cx="460" cy="180" r="22" fill="#fff" stroke="#BA7517"/><text x="460" y="184" text-anchor="middle" font-size="11" fill="#633806">컵 홈</text>
-<text x="410" y="222" text-anchor="middle" font-size="11" fill="#633806">안착 실패 → Move Periodic 탐색 · 힘제어 닦기(안쪽만)</text>
+<text x="410" y="222" text-anchor="middle" font-size="11" fill="#633806">곧게 내려 앉히기 · 힘제어 닦기(안쪽만)</text>
 <!-- 툴 홀더 -->
 <rect x="300" y="250" width="220" height="60" rx="8" fill="#F1EFE8" stroke="#5F5E5A"/><text x="410" y="270" text-anchor="middle" font-weight="600" fill="#2C2C2A">툴 홀더</text>
 <rect x="330" y="280" width="60" height="18" rx="3" fill="#FAC775" stroke="#854F0B"/><text x="360" y="293" text-anchor="middle" font-size="10" fill="#412402">수세미 툴</text>
@@ -45,5 +45,5 @@
 <path d="M655 270 V318" marker-end="url(#a)"/>
 </g>
 <text x="56" y="565" font-size="12" fill="#555">경로: ① 반납 구역 → ② 잔반통 상공(무게·털기) → ③ 스펀지 홈(안착·툴 픽업·세제·닦기·툴 반납) → ⑤ 헹굼 → ⑥ 팔레트 지정 칸 · 실패 시 격리</text>
-<text x="56" y="585" font-size="12" fill="#555">판단: 파지 폭(잡혔나) · 하중(잔반) · 툴 힘(닦기) · 위치(도달) — 비전·센서 없음</text>
+<text x="56" y="585" font-size="12" fill="#555">판단: 파지 폭(잡혔나) · 하중(잔반) · 툴 힘(닦기) · 위치(도달) — 비전·외부 센서 없음</text>
 </svg>
