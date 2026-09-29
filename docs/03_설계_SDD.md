@@ -316,7 +316,7 @@ hmi: {port: 8000, state_rate_hz: 2, disconnect_after_s: 2.0, db_path: prewash.db
 | 런치 인자 | 환경변수 | 읽는 곳 | 규칙 |
 |---|---|---|---|
 | `use_mock:="f1,f3"` | `PREWASH_USE_MOCK` | `cc.cfg()['flow']['use_mock']` (YAML 값을 덮어씀) | 빈 값 = `[]` 전부 실제 · 변수가 없으면 YAML 그대로 · 이름은 `f1 f2 f3`만 |
-| `vel_scale:=0.3` | `PREWASH_VEL_SCALE` | `cc.cfg()['run']['vel_scale']` | **0 초과 1 이하**(속도를 낮추는 쪽으로만, 1 초과는 거부) · 없으면 1.0 · 이동 함수(`motion.py`)가 `cell.limits.vel_*_pct`에 곱한다 · rig를 손으로 돌릴 때는 `PREWASH_VEL_SCALE=0.3 python3 …/rig_f1.py` · 🔄 **예외 1개 (9/21 결정 E17)**: **F3 세척 동작(`wipe_bowl`·`wipe_cup`)은 vel_scale 을 따르지 않고 F3 가 `params.yaml` `f3` 절의 자기 속도로 관리한다** — 세척은 빠르기가 닦이는 정도를 정하는데 실기 기본 0.3 으로는 안 닦인다(박진용 요청 · 황인재 승인). ⚠️ 그래서 **0.3 으로 띄워도 F3 닦기는 감속되지 않는다** → F3 첫 실기는 `f3` 절의 속도 값을 직접 낮춰 시작한다 |
+| `vel_scale:=1.0`(실기·mock 런치 기본 · E67) | `PREWASH_VEL_SCALE` | `cc.cfg()['run']['vel_scale']` | **0 초과 1 이하**(속도를 낮추는 쪽으로만, 1 초과는 거부) · 없으면 1.0 · 이동 함수(`motion.py`)가 `cell.limits.vel_*_pct`에 곱한다 · rig를 손으로 돌릴 때는 `PREWASH_VEL_SCALE=0.3 python3 …/rig_f1.py` · 🔄 **예외 1개 (9/21 결정 E17)**: **F3 세척 동작(`wipe_bowl`·`wipe_cup`)은 vel_scale 을 따르지 않고 F3 가 `params.yaml` `f3` 절의 자기 속도로 관리한다** — 세척은 빠르기가 닦이는 정도를 정하는데 낮춘 배속(0.3 등)으로는 안 닦인다(박진용 요청 · 황인재 승인). ⚠️ 그래서 **0.3 으로 띄워도 F3 닦기는 감속되지 않는다** → F3 첫 실기는 `f3` 절의 속도 값을 직접 낮춰 시작한다 |
 
 **YAML 소유·키 이름 규칙 (PM 제안 — 9/19 DSN-03 B8 에서 이 제안을 기본값으로 쓰기로 함)**
 | 규칙 | 내용 | 예 |
@@ -633,7 +633,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 ```bash
 # PC-A
 sod && sodreal                                     # 실기 브링업 (Virtual은 sodvir)
-soc && ros2 launch prewash_bringup prewash.launch.py vel_scale:=0.3     # flow_node 프로세스 1개
+soc && ros2 launch prewash_bringup prewash.launch.py vel_scale:=1.0     # flow_node 프로세스 1개 · 기본 1.0(E67)
 # PC-B
 soc && ros2 run f4_hmi hmi_bridge                  # http://<PC-B>:8000
 # 로봇·드라이버 없이 (한 PC) — 기능 전부 mock
@@ -641,7 +641,7 @@ soc && ros2 launch prewash_bringup prewash_mock.launch.py
 # 내 기능만 단독 시험 (브링업 뒤)
 soc && python3 src/f3_wipe/test/rig_f3.py bowl -n 3     # soap | bowl | cup
 ```
-런치 인자: `use_mock:="f1,f3"`(빈 값이면 전부 실제), `vel_scale:=0.3`(실기 런치 기본 0.3, mock 런치 1.0), `hmi:=true`(PC 1대로 돌릴 때 hmi_bridge도 같이). 인자는 환경변수로 프로그램에 간다(§4.3 실행 인자). 첫 실기는 `vel_scale 0.2~0.3`. 🚨 `flow_node`에는 런치에서도 손으로도 **`name=`·`namespace=`·`--ros-args -r __node:=…`를 주지 않는다** — 프로세스 안의 두 노드(`flow_node` · `flow_node_dsr`)에 모두 걸려 이름이 같아진다. 없는 패키지(f2_sense_flow·f4_hmi)는 런치가 경고만 남기고 건너뛴다. `flow_node`를 끌 때는 **멈춰 있을 때** Ctrl+C 한 번. 움직이는 중의 Ctrl+C는 정지 명령을 최선으로 시도할 뿐이다(V-24) — 급하면 Ctrl+C가 아니라 **E-Stop**. 움직이는 중에 죽였으면 브링업부터 다시.
+런치 인자: `use_mock:="f1,f3"`(빈 값이면 전부 실제), `vel_scale:=1.0`(실기·mock 런치 기본 1.0 · E67 — 9/29 1.0 무정지 확인), `hmi:=true`(PC 1대로 돌릴 때 hmi_bridge도 같이). 인자는 환경변수로 프로그램에 간다(§4.3 실행 인자). 처음 켜는 셀·재티칭 뒤 첫 실행은 `vel_scale:=0.3` 으로 낮춰 확인한다. 🚨 `flow_node`에는 런치에서도 손으로도 **`name=`·`namespace=`·`--ros-args -r __node:=…`를 주지 않는다** — 프로세스 안의 두 노드(`flow_node` · `flow_node_dsr`)에 모두 걸려 이름이 같아진다. 없는 패키지(f2_sense_flow·f4_hmi)는 런치가 경고만 남기고 건너뛴다. `flow_node`를 끌 때는 **멈춰 있을 때** Ctrl+C 한 번. 움직이는 중의 Ctrl+C는 정지 명령을 최선으로 시도할 뿐이다(V-24) — 급하면 Ctrl+C가 아니라 **E-Stop**. 움직이는 중에 죽였으면 브링업부터 다시.
 
 ## 11. 초기 확인 항목(모두 설계에 반영)
 | 항목 | 담당 | 기한 |
