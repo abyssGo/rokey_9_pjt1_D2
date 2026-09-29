@@ -20,7 +20,7 @@ import threading
 import time
 
 import cobot_common as cc
-from cobot_api import OK, PICK, ROBOT_ERROR, TOOL_FAIL, TOOL_LOST, Result
+from cobot_api import OK, OPERATOR_ABORT, PICK, ROBOT_ERROR, TOOL_FAIL, TOOL_LOST, Result
 
 from .logger import Consumables, Records, now_iso
 
@@ -553,6 +553,9 @@ class Flow:
         sig.clear('abort')
         sig.clear('stop')
         self._clear_halt()                            # 중단 때 세운 강제정지를 푼다(안 풀면 새 이동도 거부된다)
+        # 기록 코드 = 관리자 중단. 이동 도중 중단은 끊긴 이동이 last_code 를 ROBOT_ERROR 로 남겨 이력에 '로봇 오류'로 보였고,
+        #    실패 멈춤(툴 집기 실패 등)에서 중단해도 격리한 이유는 사람의 결정이다 — 멈춘 원인은 멈춤 기록(pauses)에 따로 남는다.
+        self.last_code = OPERATOR_ABORT
         return self._cleanup_and_isolate(sig, '중단')
 
     def _cleanup_and_isolate(self, sig, why):

@@ -603,6 +603,7 @@ def test_abort_cleans_up_in_the_decided_order():
     assert tail[2] == ('move_to', ('HOME', False)), f'HOME 으로 끝나야 한다 — {tail}'
     assert f.isolated == 1
     assert [e['result'] for e in events] == ['ISOLATED'], '중단한 용기는 ISOLATED 로 남는다'
+    assert [e['code'] for e in events] == ['OPERATOR_ABORT'], '중단 격리의 기록 코드는 관리자 중단이다(실패 원인 코드가 아니다)'
 
 
 def test_abort_returns_the_tool_it_was_holding():
@@ -678,6 +679,8 @@ def test_abort_midmove_clears_the_flags():
 
     assert [e['result'] for e in events] == ['ISOLATED', 'DONE'], \
         '첫 용기는 중단으로 격리, 둘째 용기는 정상이어야 한다'
+    assert events[0]['code'] == 'OPERATOR_ABORT', \
+        f"이동 도중 중단도 '관리자 격리'로 남아야 한다 — 끊긴 이동의 ROBOT_ERROR 가 아니라 ({events[0]['code']})"
     assert (sig.peek('stop'), sig.peek('abort')) == (False, False), \
         f"깃발이 남았다 — stop={sig.peek('stop')} abort={sig.peek('abort')}"
 

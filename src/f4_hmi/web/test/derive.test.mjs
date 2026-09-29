@@ -58,8 +58,9 @@ test('알람 — 멈춤은 원인별 안내(제목·할 일) · 로봇 오류도
   assert.equal(D.alarm(d(st({ step: 'WIPE' }))), null);
 });
 
-test('이력 원인 — 운영자 중단은 코드 OK 라도 "운영자 중단" · SKIPPED 는 빈 구역', () => {
-  assert.equal(D.why({ result: 'ISOLATED', code: 'OK' }), '운영자 중단');
+test('이력 원인 — 관리자 중단은 "관리자 격리"(코드 OPERATOR_ABORT · 예전 기록 OK) · SKIPPED 는 빈 구역', () => {
+  assert.equal(D.why({ result: 'ISOLATED', code: 'OPERATOR_ABORT' }), '관리자 격리');
+  assert.equal(D.why({ result: 'ISOLATED', code: 'OK' }), '관리자 격리');
   assert.equal(D.why({ result: 'ISOLATED', code: 'LEFTOVER_REMAIN' }), '잔반이 남음');
   assert.equal(D.why({ result: 'SKIPPED', code: 'EMPTY_ZONE' }), '빈 구역');
   assert.equal(D.why({ result: 'ERROR', code: 'TOOL_LOST' }), '툴 놓침');
@@ -161,3 +162,10 @@ test('넛지 안내는 넛지로 풀리는 멈춤에만 — 로봇 오류 신호
   assert.ok(!D.nudgeOk(A('OK', '일시 정지 — 운영자 요청')));
 });
 
+
+test('이력 무게 — 0 g 아래(센서 오차)는 0 g 로 · 둘 다 없으면 -', () => {
+  assert.equal(D.weightText({ weight_before_g: -18.1, weight_after_g: -18.1 }), '0 → 0 g');
+  assert.equal(D.weightText({ weight_before_g: 85.5, weight_after_g: 15.8 }), '86 → 16 g');
+  assert.equal(D.weightText({ weight_before_g: 70.6, weight_after_g: -3.2 }), '71 → 0 g');
+  assert.equal(D.weightText({ weight_before_g: 0, weight_after_g: 0 }), '-');
+});

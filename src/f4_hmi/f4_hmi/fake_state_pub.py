@@ -190,7 +190,7 @@ class FakeFlow(Node):
         else:
             kind = st['kind']
             self._emit(dict(kind=kind, zone_id=st['zone_id'], rack_slot='', attempts=1, weight_before_g=0.0, weight_after_g=0.0,
-                            result='ISOLATED', code=st['last_code'], duration_s=0.0, force_log_path=''))
+                            result='ISOLATED', code='OPERATOR_ABORT', duration_s=0.0, force_log_path=''))   # 실제 flow 와 같이 관리자 중단 코드
             self.isolated_extra += 1
             finished_in_script = any(s.event and s.event['result'] == 'DONE' for s in self.scenes if s.item == self.scene.item)
             if finished_in_script:
