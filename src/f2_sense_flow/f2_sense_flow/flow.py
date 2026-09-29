@@ -625,6 +625,12 @@ class Flow:
         #    지우는 것과 같은 이유). abort_container 가 제 자리에서 지우지만, 두 번째 방어선을 둔다.
         sig.clear('abort')
         self.message = ''
+        # 회차마다 0 부터 센다 — 사람이 팔레트를 새로 놓고 시작을 누른다. 안 지우면 지난 회차의 수가 남아
+        #    팔레트 칸 배정(_next_slot)이 마지막 칸부터 시작하고, 화면의 팔레트 그림·진행 수도 지난 회차 그대로다.
+        #    소모품 횟수(sponge_uses · soap_dips · rinse_dips)는 교체할 때까지 이어 센다 — 지우지 않는다.
+        self.done_bowl = self.done_cup = self.isolated = 0
+        self.rack_slot = ''
+        self.last_code = OK
 
         saw_container = False
         last_zone_empty = False

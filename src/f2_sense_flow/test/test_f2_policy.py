@@ -1264,3 +1264,27 @@ def test_abort_during_bowl_retry_wipe_is_handled_now(monkeypatch):
     assert [e['result'] for e in events] == ['ISOLATED', 'DONE'], f'중단한 용기만 격리 · 다음 용기는 정상이어야 한다 {events}'
     assert f._halted is False
 
+
+
+# ── 새로 시작하면 수량을 0 부터 — 팔레트 칸 배정과 화면의 팔레트 그림이 이 수를 따른다
+def test_second_run_counts_from_zero_and_fills_the_first_slot_again():
+    """한 회차를 끝내고 다시 시작하면 완료·격리 수가 0 부터다 — 첫 그릇은 다시 첫 칸(RACK_B1)에 들어간다.
+    (안 지우면 지난 회차 수가 남아 마지막 칸부터 넣고, 화면의 팔레트 그림도 지난 회차 그대로였다)"""
+    mods = load_features(['f1', 'f2', 'f3'])
+    slots = []
+    f1 = _ns(F1Api, mods['f1'])
+    f1.rack_place = lambda rack_slot, kind: (slots.append(rack_slot), mods['f1'].rack_place(rack_slot, kind))[1]
+    cfg = {'flow': dict(CFG['flow'], rack_order={'BOWL': ['RACK_B1', 'RACK_B2'], 'CUP': ['RACK_C1', 'RACK_C2']})}
+    events = []
+    f = Flow(cfg, Quiet(), publish_event=events.append)
+    f.f = {'f1': f1, 'f2': mods['f2'], 'f3': mods['f3']}
+    f.plan = [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 2}]
+    f.run_plan(PauseWatcher())
+    assert (f.done_bowl, f.isolated) == (2, 0) and slots == ['RACK_B1', 'RACK_B2']
+    used = (f.sponge_uses, f.soap_dips)
+    f.isolated, f.last_code = 1, 'TOOL_LOST'                   # 지난 회차에 남은 값
+    f.run_plan(PauseWatcher())
+    assert (f.done_bowl, f.done_cup, f.isolated) == (2, 0, 0), '지난 회차 수가 남았다'
+    assert slots == ['RACK_B1', 'RACK_B2'] * 2, slots
+    assert f.sponge_uses > used[0] and f.soap_dips > used[1], '소모품 횟수는 이어서 센다'
+    assert [e['result'] for e in events] == ['DONE'] * 4
