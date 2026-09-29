@@ -74,6 +74,7 @@
 | `/flow/abort` | srv `std_srvs/Trigger` | 🆕 ✅ 신설(황인재 9/20) — `PAUSED`일 때만. 사람이 **문제가 있다고 판단하면 지금 용기를 접는다**: **먼저 곧게 위로(safe_retreat) → `HOME` 자세로**(✅ 황인재 9/20 17:25 — 이동에서 안전 높이 경유를 없앴으므로 임의의 자세에서 다음 자리로 곧장 가지 않게) → 쥐고 있는 툴 반납 → 🔄 용기가 스펀지 홈에 있으면 `f1.regrip_top` 으로 위에서 다시 잡고 `HOME`(E52 · E65 — 못 잡으면 홈에 남기고 빈손으로 `HOME` · 사람이 치운다) → 용기를 격리 구역(`ISOLATE`)에 놓기(`f1.place('ISOLATE', kind)`) → `HOME` → **다음 용기**부터. 이벤트는 `ISOLATED`. 🚨 `ROBOT_ERROR`로 멈춘 경우는 **거부**한다(로봇 위치를 모른다 — 사람이 복구, SDD §7) |
 | `/flow/state` | msg `cobot_msgs/FlowState` @2 Hz | 아래 정의. HMI는 2 s 이상 안 오면 "연결 끊김" 표시 |
 | `/flow/event` | msg `cobot_msgs/FlowEvent` | 용기 1개 완료·격리·오류마다 1건 → HMI가 SQLite에 저장 |
+| `/flow/weigh` | msg `cobot_msgs/WeighLive` | 🆕 E70(9/29) — 무게를 재는 동안 표본을 하나 읽을 때마다 1건 + 다 재면 중앙값 1건. 값은 빈 용기 기준값을 뺀 g. HMI 는 '지금 하는 일' 카드에 칸으로 보여 준다(WebSocket `type=weigh` · `GET /api/state` 의 `weigh`). 가짜 기능만 돌 때는 내지 않는다 |
 | ~~`/cell/force`~~ | ~~msg `std_msgs/Float32` @10 Hz(닦는 동안만)~~ | ❌ **삭제(황인재 9/21 결정 E21)** — main 어디에서도 발행하지 않았다(HMI 가짜 발행기만). F3 힘제어는 그릇 벽면을 도는 몇 초뿐이고 컵은 없어(E17), 실제 로봇에서는 HMI 그래프가 늘 "닦는 중 아님" 이었다 → **HMI 힘 그래프 삭제**. 힘 데이터는 F3 가 용기마다 CSV(`force_log_path`)로 남긴다 — 발표에 힘제어를 보이려면 그 파일로 그래프를 따로 그린다. (9/20 결정: 힘 그래프를 넣는다 → 철회) |
 | ~~`/cell/gripping`~~ | ~~msg `std_msgs/Bool`~~ | ❌ **삭제(황인재 9/21 결정 E21)** — 발행 코드가 한 번도 안 들어왔고, 결정 E19 로 **컵은 쥐었는지 판정하지 않으므로** "파지 중" 을 정확히 낼 수도 없다 → **HMI 파지 표시 삭제**. 대신 HMI 는 **셀 평면도 위에 로봇이 지금 어디서 무엇을 하는지** 그린다(`cell.yaml` 좌표 + `/flow/state` 의 step — 새 인터페이스 없음). 민범진·박진용은 발행을 만들지 않는다 |
 | HMI 브리지 | REST `POST /api/start` `/api/stop` `/api/resume` `/api/abort`, `GET /api/state`, `GET /api/history` · `/api/usage` · `/api/kpi?period=`(`run`·`today`·`all`) · `/api/db/{table}` · `POST /api/replace/{item}`, WS `/ws/state` | FastAPI가 rclpy로 중계 (화면 PC · `hmi.host` 127.0.0.1 → `http://localhost:8000`) |
@@ -114,8 +115,16 @@ string result           # DONE / ISOLATED / ERROR / SKIPPED
 string code
 float32 duration_s
 string force_log_path
+
+# WeighLive.msg  (E70 · 9/29)
+string kind              # BOWL / CUP / ""
+uint8 target_n           # 잴 횟수 (params.yaml f2.weigh_samples)
+float32[] samples_g      # 지금까지 잰 값(g) — 잰 순서대로 · 빈 용기 기준값을 뺀 값
+bool done                # 다 쟀다 — median_g 가 유효하다
+float32 median_g         # 최종 중앙값(g) — done 일 때만
+builtin_interfaces/Time stamp
 ```
-`cobot_msgs` v3.0은 이 메시지 2개만 담는다(서비스 12개 삭제). `/flow/*` 서비스는 `std_srvs/Trigger`.
+`cobot_msgs` 는 이 메시지 3개만 담는다(v3.0 의 2개 + 9/29 `WeighLive` · 서비스 12개 삭제). `/flow/*` 서비스는 `std_srvs/Trigger`.
 
 ## 8. 호출 순서 (flow_node)
 ```python
@@ -164,5 +173,5 @@ f1.pick('RET_B', 'BOWL') → f1.move_to('WEIGH', True, 'BOWL') → f2.leftover_l
 
 ## 10. 시험용 가짜 구현
 - **`f2_sense_flow.mock.mock_f1` · `mock_f2` · `mock_f3`**(✅ `mock_f2` 추가 — 황인재 9/20, 코드는 그 전부터 있었다): 실제 모듈과 **같은 함수 이름·같은 인자**로 즉시 `Result(ok=True)`를 돌려주고, 설정으로 실패 코드를 주입한다(`flow.mock.fail_on: ["place:SEAT_FAIL"]`). flow는 `params.yaml`의 `flow.use_mock: [f1, f3]`로 어느 쪽을 import할지 고른다. 전부 mock이면 두산 드라이버 없이 돈다 — flow·HMI 개발용, 민범진 제공. 서명 일치는 `cobot_api.check_api(mock_f1, F1Api)`로 검사한다.
-- **`fake_state_pub`**: `/flow/state`·`/flow/event`를 시나리오대로 발행 — HMI 개발용, 황인재 제작.
+- **`fake_state_pub`**: `/flow/state`·`/flow/event`·`/flow/weigh`를 시나리오대로 발행 — HMI 개발용, 황인재 제작.
 - **단독 시험 스크립트** `rig_f1.py`·`rig_f2.py`·`rig_f3.py`: `cobot_common.init('rig_f1')` 뒤 자기 함수만 직접 부른다(SDD §3.2). 용기·툴은 손으로 놓아 준다.

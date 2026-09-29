@@ -47,6 +47,7 @@ GPU PC ↔ 컨트롤러는 두산 전용 TCP(DDS 아님 · 유선 고정 192.168
 |---|---|---|---|
 | `/flow/state` | `cobot_msgs/msg/FlowState` (2 Hz) | flow_node → hmi_bridge | GPU PC → 화면 PC (DDS · Discovery Server) |
 | `/flow/event` | `cobot_msgs/msg/FlowEvent` | flow_node → hmi_bridge | GPU PC → 화면 PC (DDS · Discovery Server) |
+| `/flow/weigh` | `cobot_msgs/msg/WeighLive` (무게를 재는 동안 표본마다 · E70) | flow_node → hmi_bridge | GPU PC → 화면 PC (DDS · Discovery Server) |
 | ~~`/cell/force` · `/cell/gripping`~~ | — | — | ❌ **삭제(황인재 9/21 결정 E21)** — 발행한 적이 없고(HMI 가짜만), 힘제어는 몇 초뿐 · 컵은 파지 판정을 안 한다(E19). HMI 는 힘 그래프·파지 표시 대신 **셀 평면도에 로봇 위치·동작**을 그린다(새 인터페이스 없음) · IRD §6 |
 | `/flow/start` `/flow/stop` `/flow/resume` `/flow/abort`(9/20 신설) | `std_srvs/srv/Trigger` | hmi_bridge → flow_node | 화면 PC → GPU PC (DDS · Discovery Server) |
 | **기능 함수 13개** `f1.pick` `regrip_top`(E65) `place` `move_to` `tool` `rack_place` · `f2.weigh` `leftover_loop` `shake` `dip` · `f3.soap` `wipe_bowl` `wipe_cup` | **파이썬 함수 호출** (반환 타입 `cobot_api.*Result`) | flow_node 메인 스레드 → 기능 패키지 | GPU PC 같은 프로세스 (ROS 통신 아님) |
@@ -68,7 +69,7 @@ GPU PC ↔ 컨트롤러는 두산 전용 TCP(DDS 아님 · 유선 고정 192.168
 | `f3_wipe` | 함수 모듈 `wipe.py` (노드 아님) + `test/rig_f3.py` | 박진용 | `f3` 절 | GPU PC |
 | `cobot_common` | 라이브러리: 두산 API를 감싼 공용 로봇 함수 + **초기화(`init`, §3.2)** + 설정 로더·`config/cell.yaml`·`params.yaml` | **네 사람 분담(9/19)**: 초기화·로더 황인재 · 이동·그리퍼 한석형 · `weigh` 민범진 · 힘 함수와 **패키지 정리·리뷰 박진용** · 좌표 값(`cell.yaml`)은 한석형 | 두 파일 | GPU PC |
 | `cobot_api` | 라이브러리: **기능 함수의 약속**(ID·코드·반환 타입·함수 서명, IRD 정본). 로봇 코드 없음 | **황인재(PM)** | IRD | GPU PC · 화면 PC |
-| `cobot_msgs` | 메시지 2개(`FlowState`·`FlowEvent`, IRD 정본) | **황인재(PM)** — `src/cobot_msgs/msg/`를 그대로 복사 | IRD | GPU PC · 화면 PC |
+| `cobot_msgs` | 메시지 3개(`FlowState`·`FlowEvent`·`WeighLive`, IRD 정본) | **황인재(PM)** — `src/cobot_msgs/msg/`를 그대로 복사 | IRD | GPU PC · 화면 PC |
 | `f4_hmi` | **노드 `hmi_bridge`** (+ `fake_state_pub` 개발용) | 황인재 | `hmi` 절 | 화면 PC |
 | `prewash_bringup` | launch: `prewash.launch.py` · `prewash_mock.launch.py` | 황인재(PM) | — | GPU PC |
 
@@ -118,7 +119,7 @@ rokey_pjt01_ws/                ← 저장소 루트 (rokey_9_pjt1_D2)
 ├── docs/                      문서·메시지 정본·이미지·회의록·트러블슈팅
 ├── src/
 │   ├── cobot_api/             contracts.py (ID·코드·반환 타입·함수 서명 — IRD 정본, PM)
-│   ├── cobot_msgs/            msg/FlowState.msg · FlowEvent.msg (IRD 정본, PM)
+│   ├── cobot_msgs/            msg/FlowState.msg · FlowEvent.msg · WeighLive.msg (IRD 정본, PM)
 │   ├── cobot_common/          bootstrap.py (init — 두산 API 초기화·통신 노드, §3.2) · config.py (로더) · `__init__.py` (함수 재수출) [H] · motion.py (이동) [H] · gripper.py (그리퍼) [M] · weigh.py (무게) [M] · force.py (힘 함수) [P] · config/cell.yaml · config/params.yaml
 │   ├── f1_handling/           handling.py (pick·regrip_top·place·move_to·tool·rack_place) · test/rig_f1.py
 │   ├── f2_sense_flow/         sense.py (weigh·leftover_loop·shake·dip) · flow.py (상태 머신) · flow_node.py (메인 프로그램) · mock/mock_f1.py·mock_f2.py·mock_f3.py · logger.py · test/rig_f2.py
@@ -377,6 +378,8 @@ stateDiagram-v2
   PAUSED --> ISOLATE: abort (사람이 문제라고 판단 — 위로 → HOME → 툴 반납 → 홈 용기 위로 다시 잡기(E65) → HOME → 격리 → HOME → 다음 용기 · E52 정리 함수 통일, ROBOT_ERROR 에서는 거부)
 ```
 - 각 전이에서 `/flow/state` 발행(2 Hz 타이머 + 전이 즉시), 용기 종료 시 `/flow/event` + CSV 1행.
+- **회차마다 0 부터 센다**(E71 · 9/29): 시작할 때 완료 수(`done_bowl`·`done_cup`) · 격리 수 · 팔레트 칸 · 마지막 코드를 지운다 — 팔레트 칸 배정과 화면의 팔레트 그림이 지난 회차에 머물지 않게. 소모품 횟수는 교체할 때까지 이어 센다. 운영: 시작 전에 팔레트와 격리 구역을 비운다.
+- **무게**(E70 · 9/29): 표본 30개 × 0.5 s(약 15 s 창)의 중앙값. 표본을 읽을 때마다 `/flow/weigh` 로 내보내 화면에 재는 값을 보여 준다.
 - ✅ **정지 방식(황인재 9/20)** — 목적: 문제가 생겼을 때 **바로 멈췄다가, 사람이 보고 문제없으면 이어서** 하기. ① **일시 정지**(`/flow/stop`): 통신 노드가 두산 `move_pause`를 불러 **이동 도중 즉시** 멈춘다 — 이동 함수(`motion.py`)를 비동기 이동(`amovej`/`amovel`) + `check_motion` 폴링으로 바꿔야 성립한다(V-24a 시험: 동기 이동 중에는 `move_pause`가 이동이 끝난 뒤에야 처리된다 · 비동기에서는 0.13 s에 멈추고 `move_resume`으로 같은 동작이 이어진다). 호출하는 쪽(F1·F2·F3)의 코드는 바뀌지 않는다. ② **재개**(`/flow/resume`): 하던 이동을 이어서 — 🔄 9/29: 재개 때 `stop` 깃발도 내린다. 이동 도중 멈춘 것을 재개하면 다음 단계 앞에서 또 멈추지 않는다(**재개 한 번이면 이어 간다** · 전에는 두 번 눌러야 했다 · ✅ 실기 11:44: 닦기 중 정지 → 재개 → 다시 안 멈춤). ③ **중단**(`/flow/abort`): 그 용기를 접고(곧게 위로 → HOME → 툴 반납 → 홈 용기 위로 다시 잡기 → 격리 → HOME · §7 격리 마무리 순서) 다음 용기. ④ 🚨 **먹는 범위(V-24 구현 기준으로 정정)**: 이동 함수를 거치는 모든 이동에서 즉시 멈춘다 — **접촉 하강·닦기의 걸음(`move_rel`)도 걸음 도중에 멈춘다**(순응·힘제어는 켜진 채 그 자리에 선다). 끝난 뒤에야 멈추는 것은 `move_periodic`(안착 탐색)·그리퍼·무게 대기와 닦기의 나선·원호·주기 운동(아래 알려진 제한)이다. 힘이 걸린 채 멈추는 동작은 Virtual에서 시험할 수 없어 실기로 넘겼다 — 실기: V-24 빈손 통과(9/22) · 툴을 든 채 세제 단계·닦기 중 정지 → 재개 ✅(9/29). ⑤ 되돌아갈 자리(쓰지 않았다): 실기 확인이 안 되면 아래의 "단계 사이 정지"만으로 시연하기로 했었다(서비스 이름이 같아 HMI는 그대로).
 - (기반 — 9/20 오전 구현 완료) `stop`은 현재 기능 함수가 끝난 뒤 다음 호출을 보류 — **용기 사이뿐 아니라 `process_one()`의 단계 사이마다** `stop` 깃발을 본다(9/20 V-20에서 발견한 결함의 기준, 재검증은 `rig_v20.py probe`). 용기·툴을 든 채 멈출 수 있다: 그때 **파지는 `NORMAL` 그대로**(기능 함수는 끝날 때 `HOLD` → `NORMAL`로 되돌리므로 단계 사이는 이미 `NORMAL`이다) — 🚨 멈추는 시점에 **그리퍼 명령을 새로 보내지 않는다**(힘을 바꾸면 다시 파지하므로 놓칠 수 있다), 놓지도 않는다. `resume`하면 다음 단계부터 이어 간다. 하드웨어 비상정지는 로봇 E-Stop.
 - **실행 구조**(§3.2): `flow_node.py`의 `main()`이 ① `cobot_common.init('flow_node')` ② 통신 노드(`io_node()`)에 `/flow/start·stop·resume` 서비스, `/flow/state` 2 Hz 타이머, `/flow/event` 발행기를 단다 — **콜백은 깃발(`start`·`stop`·`resume`)만 세운다** ③ 메인 스레드는 `start` 깃발을 기다렸다가 plan대로 기능 함수를 차례로 부르고, **호출 사이마다 `stop` 깃발을 본다.**
@@ -384,6 +387,7 @@ stateDiagram-v2
 - **mock 전환**: `params.yaml`의 `flow.use_mock: [f1, f3]`에 있는 기능은 `f2_sense_flow.mock.mock_f1`처럼 같은 함수 이름의 가짜 모듈을 import한다. 전부 mock이면 `cobot_common.init(robot=False)`로 드라이버 없이 돈다.
 - **종료**: Ctrl+C 처리는 `cobot_common.init()`이 맡는다(§3.1). `flow_node`는 메인 루프를 `try/finally`로 감싸 `cc.shutdown()`만 부르고, 신호 처리기를 따로 걸지 않는다.
 - **실패했을 때 툴 반납은 격리 정리(재시도 소진 · 중단)에서만** 한다(정상 흐름은 WIPE 단계가 매번 툴을 반납한다) — flow가 곧게 위로 → HOME → `tool(RETURN)`(쥔 툴을 홀더에). 멈춤(PAUSED)에서는 쥔 것을 그대로 두고 그 자리에 선다: 로봇 오류는 곧게 위로 한 번만 시도하고(위치를 모르는 `MoveIncomplete` 면 그것도 안 함) 사람 신호 뒤 그리퍼만 열며, 케이블 이상은 후퇴 없이 그 자리에서 멈춘다(§7).
+- **넛지로 재개할 때는 먼저 기다린다**(`flow._after_nudge` · E69 · 9/29): 밀기를 알아챈 순간에는 손이 아직 팔에 있어, 곧바로 이동을 보내면 제어기가 외력으로 그 이동을 세운다. 넛지로 풀리는 멈춤 전부(케이블 · 툴 놓침 · 툴 집기 실패 · 로봇 오류 신호 1)에서 손을 뗄 시간(`f2.nudge.settle_s` 1.5 s)을 기다린 뒤 아래 복구를 한다. 재개 버튼은 기다리지 않는다. 자동 시험 ✅ · 실기 확인 전.
 - **넛지·재개 뒤 로봇 복구**(`flow._recover_robot` — 넛지 재개 · 케이블 멈춤 재개 · 로봇 오류 신호 뒤에 부른다): 보호정지(SAFE_STOP)면 자동 복구(`set_robot_control` · E43) → STANDBY 가 될 때까지 본다(최대 `cell.limits.nudge_resume_settle_s` 3 s). 🔄 9/29: 복구 전 STANDBY 가 아니었으면(보호정지를 풀었으면) 이동 전 `cell.limits.nudge_after_reset_s`(**2 s**) 더 기다린다 — 풀린 직후 보낸 이동을 제어기가 곧 세웠다(실기: 복구 3 ms 뒤 HOME 이동 → 0.4 s 뒤 경고 7056 → `MoveIncomplete`). ✅ 리허설 12:26 실기: 케이블 멈춤에서 밀기 1번 → 보호정지 해제 로그 '이동 전 2 s 더 기다린다' → HOME 경유 무게 다시 통과.
 - ⚠️ **알려진 제한(9/29 · 이번에는 고치지 않음)**: 닦기 동작 중 일시 정지는 **그 동작이 끝난 뒤** 멈춘다 — 컵 주기 운동 ≈13 s · 그릇 나선 ≈3 s(그 동작을 기다리는 루프가 정지 깃발을 보지 않는다 · §5.4). 개선 방향은 §14 향후 개선: 즉시 정지(`stop_now`) + 재개 때 닦기를 처음부터.
 
