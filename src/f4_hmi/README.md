@@ -72,10 +72,11 @@ cd src/f4_hmi/web && node --test test/          # 화면 계산(derive.js — �
 
 ## 로봇 없이 화면 확인하는 법
 ```bash
-soc && ros2 run f4_hmi hmi_bridge                                                    # 터미널 1 → http://localhost:8000
-soc && ros2 run f4_hmi fake_state_pub tool_lost --speed 0.5                          # 터미널 2 — 대본 이름을 바꿔 가며(멈춤을 천천히 보려면 --speed 0.4)
+# 최상위 README 5-2 의 첫 세 줄(cd · source · export)을 먼저 친 터미널에서
+ros2 run f4_hmi hmi_bridge                                                           # 터미널 1 → http://localhost:8000
+ros2 run f4_hmi fake_state_pub tool_lost --speed 0.5                                 # 터미널 2 — 대본 이름을 바꿔 가며(멈춤을 천천히 보려면 --speed 0.4)
 # 🚨 화면(web/app)을 고쳤으면 `cd src/f4_hmi/web && npm run build` 뒤 **브라우저를 새로고침(Ctrl+Shift+R)** — 열려 있던 탭은 옛 JS 를 계속 돈다. 브리지는 HTML 에 no-store 를 붙인다(app.py)
-soc && ros2 bag play <bag 폴더> --topics /flow/state /flow/event --loop --rate 3   # 녹화해 둔 실행 재생(버튼은 안 됨 · bag 은 저장소에 없다)
+ros2 bag play <bag 폴더> --topics /flow/state /flow/event --loop --rate 3   # 녹화해 둔 실행 재생(버튼은 안 됨 · bag 은 저장소에 없다)
 ```
 🚨 가짜 flow 와 bag 재생, 실제 flow_node 는 **한 번에 하나만**(같은 토픽). UT-F4 TC-11 결과: `docs/test_logs/` 의 UT-F4 TC-11 HMI 시험 기록.
 

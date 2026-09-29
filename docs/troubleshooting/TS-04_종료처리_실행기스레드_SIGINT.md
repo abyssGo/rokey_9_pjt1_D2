@@ -30,7 +30,7 @@ terminate called without an active exception
 [INFO] [flow_node]: Ctrl+C — 정리하고 끝낸다
 Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
 ```
-콘솔에는 찍히지만 **`/rosout` 토픽에는 안 나간다.** PC-B(HMI)에서 로그를 보는 쪽은 종료 과정을 못 본다.
+콘솔에는 찍히지만 **`/rosout` 토픽에는 안 나간다.** 화면 PC(HMI)에서 로그를 보는 쪽은 종료 과정을 못 본다.
 
 ---
 
@@ -164,7 +164,7 @@ pluggy._manager.PluginValidationError: Plugin 'launch_testing' for hook 'pytest_
 **확인**: 시스템 pytest(`/usr/bin/python3 -m pytest`)로는 그냥 된다. 팀 표준은 **시스템 colcon·pytest**(*"colcon은 시스템 설치, venv는 HMI 전용"*).
 **해결**: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest ...` 또는 시스템 python 사용.
 
-> 민범진 PC는 venv 가 기본 활성화돼 있어 이 문제가 난다. 통합(L3·L4) 때 **PC-A 는 민범진 PC 를 쓰지 않기로** 했으므로(9/19 결정) 환경은 그대로 둔다.
+> 민범진 PC는 venv 가 기본 활성화돼 있어 이 문제가 난다. 통합(L3·L4) 때 **GPU PC 는 민범진 PC 를 쓰지 않기로** 했으므로(9/19 결정) 환경은 그대로 둔다.
 
 ### ③ 모듈 이름과 함수 이름이 같으면 모듈이 가려진다 — 🟡 `weigh.py` 한정
 
