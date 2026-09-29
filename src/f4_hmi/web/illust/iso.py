@@ -246,29 +246,29 @@ class Scene:
         return lo[:-1] + up[:-1]
 
     def standing_bowl(self, cx, cy, zb, r1=55, r0=44, depth=40, alpha=1, mat=REUSE, flange=7):
-        """세운 그릇 — 입구가 +x(오른쪽 아래)를 본다. zb = 그릇 아래 끝 높이(날개 포함)"""
+        """세운 그릇 — 팔레트에 적재된 방향: 바닥이 +x(오른쪽 아래 · 보는 쪽)를 보고 입구는 −x(뒤)를 본다. zb = 그릇 아래 끝 높이(날개 포함)"""
         zc = zb + r1 + flange
-        foot = self.circle3((cx - depth / 2, cy, zc), (0, 1, 0), (0, 0, 1), r0)
-        rim = self.circle3((cx + depth / 2, cy, zc), (0, 1, 0), (0, 0, 1), r1)
-        rim_in = self.circle3((cx + depth / 2, cy, zc), (0, 1, 0), (0, 0, 1), r1 - 3.5)
-        H = self.hull([self.P(*p) for p in foot + rim])
+        xm, xb = cx - depth / 2, cx + depth / 2                                # 입구(뒤) · 바닥(앞)
+        U, V = (0, 1, 0), (0, 0, 1)
         a = f' fill-opacity="{alpha}" stroke-opacity="{alpha}"' if alpha != 1 else ''
-        g = self.lgrad([(0, shade(mat, .92), 1), (.45, shade(mat, .72), 1), (1, shade(mat, .45), 1)], 0, 0, 1, 1)
-        self.raw(f'<polygon points="{" ".join("%.1f,%.1f" % p for p in H)}" fill="{g}" stroke="{shade(mat, .3)}" stroke-width="1" stroke-opacity=".5"{a}/>')
-        if flange:                                                             # 테두리 날개
-            fl = self.circle3((cx + depth / 2, cy, zc), (0, 1, 0), (0, 0, 1), r1 + flange)
-            fl2 = self.circle3((cx + depth / 2 - 3, cy, zc), (0, 1, 0), (0, 0, 1), r1 + flange)
+        if flange:                                                             # 테두리 날개 — 몸통보다 넓어 뒤에서 둘레로 보인다
+            fl = self.circle3((xm, cy, zc), U, V, r1 + flange)
+            fl2 = self.circle3((xm + 3, cy, zc), U, V, r1 + flange)
             FH = self.hull([self.P(*p) for p in fl + fl2])
             self.raw(f'<polygon points="{" ".join("%.1f,%.1f" % p for p in FH)}" fill="{shade(mat, .6)}"{a}/>')
-            self.raw(f'<polygon points="{self.pts(fl)}" fill="{shade(mat, .95)}" stroke="{shade(mat, .45)}" stroke-width=".8" stroke-opacity=".6"{a}/>')
-        self.raw(f'<polygon points="{self.pts(rim)}" fill="{shade(mat, .99)}"{a}/>')
-        gi = self.lgrad([(0, shade(mat, .66), 1), (.5, shade(mat, .48), 1), (1, shade(mat, .34), 1)], 1, 0, 0, 1)
-        self.raw(f'<polygon points="{self.pts(rim_in)}" fill="{gi}" stroke="{shade(mat, .5)}" stroke-width="1"{a}/>')
-        fin = self.circle3((cx - depth / 2 + 4, cy, zc), (0, 1, 0), (0, 0, 1), r0 - 4)
-        self.raw(f'<polygon points="{self.pts(fin)}" fill="{shade(mat, .9)}" fill-opacity="{.9 * alpha}"/>')
-        # 반짝임
-        hi = self.circle3((cx + depth / 2, cy, zc), (0, 1, 0), (0, 0, 1), r1 - 9)[26:36]
-        self.raw(f'<polyline points="{self.pts(hi)}" fill="none" stroke="#fff" stroke-opacity="{.7 * alpha}" stroke-width="2.5" stroke-linecap="round"/>')
+            self.raw(f'<polygon points="{self.pts(fl2)}" fill="{shade(mat, .8)}" stroke="{shade(mat, .45)}" stroke-width=".8" stroke-opacity=".6"{a}/>')
+        rim = self.circle3((xm + 3, cy, zc), U, V, r1)                         # 몸통(바깥 벽) — 입구에서 바닥으로 좁아진다
+        bottom = self.circle3((xb, cy, zc), U, V, r0)
+        H = self.hull([self.P(*p) for p in rim + bottom])
+        g = self.lgrad([(0, shade(mat, .95), 1), (.45, shade(mat, .74), 1), (1, shade(mat, .45), 1)], 0, 0, 1, 1)
+        self.raw(f'<polygon points="{" ".join("%.1f,%.1f" % p for p in H)}" fill="{g}" stroke="{shade(mat, .3)}" stroke-width="1" stroke-opacity=".5"{a}/>')
+        gb = self.lgrad([(0, shade(mat, .78), 1), (1, shade(mat, .52), 1)], 0, 0, 1, 1)   # 바닥 면 — 평평하다
+        self.raw(f'<polygon points="{self.pts(bottom)}" fill="{gb}" stroke="{shade(mat, .4)}" stroke-width="1" stroke-opacity=".7"{a}/>')
+        ring = self.circle3((xb, cy, zc), U, V, r0 - 9)                        # 굽(바닥의 둥근 턱)
+        self.raw(f'<polygon points="{self.pts(ring)}" fill="{shade(mat, .6)}" stroke="{shade(mat, .88)}" stroke-width="2.5" stroke-opacity="{.9 * alpha}"{a}/>')
+        # 반짝임 — 몸통 왼쪽 위
+        hi = self.circle3(((xm + xb) / 2, cy, zc), U, V, (r1 + r0) / 2 + 1)[14:22]
+        self.raw(f'<polyline points="{self.pts(hi)}" fill="none" stroke="#fff" stroke-opacity="{.6 * alpha}" stroke-width="2.5" stroke-linecap="round"/>')
 
     # ── 화면 위에 얹는 표시(화살표 등) — 어두운 테두리로 밝은/어두운 바탕 모두에서 보이게
     def arrow(self, pts, color=ACC, w=4, head=8):
