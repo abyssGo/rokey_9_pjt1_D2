@@ -24,5 +24,6 @@ setup(
     entry_points={'console_scripts': [
         'hmi_bridge = f4_hmi.hmi_bridge:main',
         'fake_state_pub = f4_hmi.fake_state_pub:main',
+        'hmi_db = f4_hmi.dbtool:main',
     ]},
 )

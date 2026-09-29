@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""hmi_bridge — 실행 입구. ROS 쪽 귀(RosLink) + 웹 쪽 입(FastAPI/uvicorn)을 한 프로그램에서 띄운다. 담당 황인재 (F4-01)
+"""hmi_bridge — 실행 입구. ROS 쪽 귀(RosLink) + 웹 쪽 입(FastAPI/uvicorn)을 한 프로그램에서 띄운다. 담당 황인재
 
     ros2 run f4_hmi hmi_bridge      →  http://localhost:8000  (포트는 params.yaml 의 hmi.port)
 
 웹 서버 부품(fastapi · uvicorn)은 HMI 전용 상자(venv, params.yaml 의 hmi.venv_dir)에 있다. `ros2 run` 은 시스템 파이썬으로 돌기 때문에
-상자를 열지(activate) 않았으면 **상자의 site-packages 를 직접 찾아 붙인다** → 상자를 여는 것을 잊어도 그대로 뜬다.
+상자를 열지(activate) 않았으면 상자의 site-packages 를 직접 찾아 붙인다 → 상자를 여는 것을 잊어도 그대로 뜬다.
 """
 import site
 import sys
@@ -31,12 +31,16 @@ def _ensure_web_parts(venv_dir):
 
 
 def main():
+    """설정을 읽고 StateStore → RosLink → 기록(HmiDb·Recorder) → FastAPI 순으로 띄운 뒤, uvicorn 이 끝날 때까지 여기서 돈다."""
     cfg = config.load()
     hmi = cfg['hmi']
     _ensure_web_parts(hmi.get('venv_dir', '~/venvs/hmi'))
 
     import uvicorn
     from .app import create_app
+    from .db import HmiDb
+    from .paths import ws_path
+    from .recorder import Recorder
     from .ros_link import RosLink
     from .state_store import StateStore
 
@@ -50,7 +54,14 @@ def main():
     log.info(f'HMI 서버를 연다 → http://localhost:{port}  ('
              + ('이 PC 에서만 접속된다 — 태블릿에서 보려면 params.yaml 의 hmi.host 를 0.0.0.0 으로' if local_only
                 else f'🚨 같은 망의 누구나 접속·버튼 조작이 된다(hmi.host={host}) → http://<이 PC 의 IP>:{port}') + ')')
-    app = create_app(store, cfg, link.call)
+    # SQLite 기록 + 잔반통 한도 — 파일은 hmi.db_path(워크스페이스 루트 기준 · paths.ws_path). 지난 이력 50건을 화면에 미리 채운다
+    db = HmiDb(ws_path(hmi.get('db_path', 'prewash.db')), leftover_threshold_g=float((cfg.get('f2') or {}).get('leftover_threshold_g', 50)),
+               rack_slots=rack_slots)
+    recorder = Recorder(db, command=link.call, waste_limit_g=float(hmi.get('waste_bin_limit_g', 50000)), log=log)
+    store.preload_events(db.recent_events(50))
+    store.subscribe(recorder.on_store)
+    log.info(f'  기록: {db.path} (events {len(db.recent_events(1))}건 이상 · 잔반통 한도 {recorder.waste_limit_g:.0f} g)')
+    app = create_app(store, cfg, link.call, recorder=recorder)
     if app.state.web:
         log.info('  / = 운영 화면(web/out) · /test = 시험 페이지')
     else:

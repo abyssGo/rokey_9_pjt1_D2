@@ -188,6 +188,25 @@ class Scene:
                  f'stroke="#fff" stroke-opacity="{.3 if mat == REUSE else .55}" stroke-width="3" fill="none" stroke-linecap="round"/>')
         return (X1, Y1, rx1, ry1)
 
+    def inverted_cup(self, cx, cy, z0, r0, h, r1, mat='ceramic', alpha=1, band=.3):
+        """뒤집힌 컵(🆕 9/27 황인재: 팔레트에는 컵을 뒤집어 얹는다) — 입구(r1)가 바닥에, 바닥(r0)이 위.
+           아래 = 매끈한 띠(입구 쪽) · 위 = 세로 주름 몸통 · 맨 위는 막힌 바닥면(굽 테두리)."""
+        lip = 1.2
+        zb = z0 + h * band
+        rb = r1 + (r0 - r1) * band
+        self.cyl(cx, cy, z0, r1 + lip, zb, rb + .8, mat, top=None, alpha=alpha)                     # 아래 띠(입구 쪽)
+        Xs, Ys, rxs, rys = self.ell(cx, cy, zb, rb + .8)
+        self.raw(f'<path d="M{Xs - rxs:.1f} {Ys:.1f} A{rxs:.1f} {rys:.1f} 0 0 0 {Xs + rxs:.1f} {Ys:.1f}" fill="none" stroke="{shade(mat, .3)}" stroke-width="1.2" stroke-opacity=".6"/>')
+        X1, Y1, rx1, ry1 = self.cyl(cx, cy, zb, rb - 1.5, z0 + h, r0, mat, top='solid', alpha=alpha, top_fill=shade(mat, .96))   # 위 주름 몸통 + 막힌 바닥
+        self._ribs(cx, cy, zb, rb - 1.5, z0 + h, r0, mat)
+        Xt, Yt, rxt, ryt = self.ell(cx, cy, z0 + h, r0 - 4)                                        # 바닥 굽 테두리
+        self.raw(f'<ellipse cx="{Xt:.1f}" cy="{Yt:.1f}" rx="{rxt:.1f}" ry="{ryt:.1f}" fill="none" stroke="{shade(mat, .6)}" stroke-width="1" stroke-opacity=".5"/>')
+        Xa, Ya, rxa, rya = self.ell(cx, cy, z0 + h, r0)                                            # 겉면 반짝임
+        hx, Y0 = Xa - rxa * .62, self.ell(cx, cy, z0, r1)[1]
+        self.raw(f'<path d="M{hx:.1f} {Ya + rya * .75:.1f} Q{hx - 3:.1f} {(Ya + Y0) / 2 + 4:.1f} {hx + 2:.1f} {Y0 + 2:.1f}" '
+                 f'stroke="#fff" stroke-opacity="{.3 if mat == REUSE else .55}" stroke-width="3" fill="none" stroke-linecap="round"/>')
+        return (X1, Y1, rx1, ry1)
+
     def _ribs(self, cx, cy, za, ra, zb, rb, mat, n=22):
         """컵 아랫부분 세로 주름 — 보이는 앞쪽 반에만 골을 긋는다"""
         for i in range(n):
@@ -279,7 +298,11 @@ def pedestal(s, r=100):
 BOWL = dict(r0=44, h=44, r1=55, flange=7, ears=9, foot=30)
 CUP = dict(r0=29, h=98, r1=40, band=.3)
 
-def container(s, kind, cx, cy, z0, alpha=1):
+def container(s, kind, cx, cy, z0, alpha=1, upside_down=False):
+    """upside_down: 컵을 뒤집어 그린다(팔레트 적재 — 입구가 아래). 그릇에는 쓰지 않는다."""
+    if kind == 'CUP' and upside_down:
+        d = CUP
+        return s.inverted_cup(cx, cy, z0, d['r0'], d['h'], d['r1'], mat=REUSE, alpha=alpha, band=d['band'])
     if kind == 'BOWL':
         d = BOWL
         return s.vessel(cx, cy, z0, d['r0'], d['h'], d['r1'], mat=REUSE, alpha=alpha, flange=d['flange'], ears=d['ears'], foot=d['foot'])

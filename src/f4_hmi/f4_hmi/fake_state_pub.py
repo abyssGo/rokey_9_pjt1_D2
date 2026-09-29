@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""fake_state_pub — **가짜 flow**. 대본대로 실제 flow_node 와 똑같은 토픽을 방송하고, 버튼(서비스)에도 반응한다. 담당 황인재 (F4-01·02)
+"""fake_state_pub — 가짜 flow. 대본대로 실제 flow_node 와 똑같은 토픽을 방송하고, 버튼(서비스)에도 반응한다. 담당 황인재
 
-왜: 실제 flow 는 아직 만드는 중이고, 전부 mock 으로 돌리면 단계가 0 초에 끝나 화면에 안 잡힌다(F4-00 실측)
+왜: flow 를 전부 mock 으로 돌리면 단계가 0 초에 끝나 화면에 안 잡힌다(실측)
     → HMI 화면·브리지를 혼자 개발·시험할 때 이 노드를 flow 자리에 세운다(로봇·브링업 불필요).
 
 방송 (IRD §6 그대로)
@@ -10,14 +10,14 @@
 버튼 (std_srvs/Trigger — 대답의 뜻은 IRD §6)
     /flow/start   IDLE 에서만(--wait-start 로 기다리는 중일 때). 아니면 거절
     /flow/stop    즉시 일시정지 — 대본의 시계를 세우고 step 을 PAUSED 로 방송한다
-    /flow/resume  PAUSED 에서만. 하던 단계를 **이어서**(대본이 실패로 멈춘 PAUSED 면 그 멈춤을 끝낸다)
-    /flow/abort   PAUSED 에서만. 지금 용기를 접는다: ISOLATED 이벤트 + 격리 수 +1 → 다음 용기부터. ROBOT_ERROR 로 멈췄으면 **거절**
+    /flow/resume  PAUSED 에서만. 하던 단계를 이어서(대본이 실패로 멈춘 PAUSED 면 그 멈춤을 끝낸다)
+    /flow/abort   PAUSED 에서만. 지금 용기를 접는다: ISOLATED 이벤트 + 격리 수 +1 → 다음 용기부터. ROBOT_ERROR 로 멈췄으면 거절
 
 실행
     ros2 run f4_hmi fake_state_pub                          # 대본 normal 을 혼자 계속 돈다
     ros2 run f4_hmi fake_state_pub normal --wait-start      # IDLE 에서 /flow/start(화면의 시작 버튼)를 기다린다 — 버튼 시험용
-    ros2 run f4_hmi fake_state_pub error --speed 2 --once   # 대본: normal · isolate · error · paused · empty_zone (scenarios/*.yaml)
-🚨 실제 flow_node 와 **동시에 띄우지 않는다**(같은 토픽·서비스를 두 곳이 맡게 된다).
+    ros2 run f4_hmi fake_state_pub error --speed 2 --once   # 대본 이름 = scenarios/*.yaml 파일 이름(normal · isolate · error · paused · empty_zone · tool_lost · leftover_remain · cable · tool_fail)
+주의: 실제 flow_node 와 동시에 띄우지 않는다(같은 토픽·서비스를 두 곳이 맡게 된다).
 """
 import argparse
 import sys
@@ -37,7 +37,10 @@ ROBOT_ERROR = 'ROBOT_ERROR'
 
 
 class FakeFlow(Node):
+    """대본(scenes)을 시계(t)로 돌리며 지금 장면의 값을 방송하고, 버튼 서비스로 시계를 세우거나 장면을 건너뛴다."""
+
     def __init__(self, scn, speed, once, wait_start):
+        """scn: scenario.load() 결과 · speed: 빨리 감기 배수 · once: 한 바퀴만 · wait_start: IDLE 에서 /flow/start 를 기다린다."""
         super().__init__('fake_state_pub')
         self.scn, self.speed, self.once, self.wait_start = scn, float(speed), once, wait_start
         self.scenes = sc.build(scn)
@@ -69,9 +72,13 @@ class FakeFlow(Node):
     # ------------------------------------------------------------------ 지금 방송할 값
     @property
     def scene(self):
+        """지금 장면."""
         return self.scenes[self.index]
 
     def state_now(self) -> dict:
+        """지금 방송할 FlowState 필드 — 장면의 state 에 이번 바퀴의 보정을 얹는다.
+        격리 수는 중단(abort)으로 늘어난 만큼(isolated_extra) 더하고, 완료 수는 중단으로 못 끝낸 만큼(done_minus) 뺀다(0 아래로는 안 간다).
+        운영자가 세웠으면(paused) step 을 PAUSED 로, message 를 '일시 정지 — 운영자 요청' 으로 바꾼다."""
         st = dict(self.scene.state)
         kind_key = {'BOWL': 'done_bowl', 'CUP': 'done_cup'}
         st['isolated'] += self.isolated_extra
@@ -82,6 +89,7 @@ class FakeFlow(Node):
         return st
 
     def _announce(self):
+        """지금 장면을 한 줄 로그로."""
         st = self.state_now()
         self.get_logger().info(f"[{st['step']:<7}] {st['kind'] or '-':<4} {st['zone_id'] or '-':<5} 그릇 {st['done_bowl']}/{st['target_bowl']} "
                                f"컵 {st['done_cup']}/{st['target_cup']} 격리 {st['isolated']} · {self.scene.duration_s / self.speed:.1f} s"
@@ -89,6 +97,8 @@ class FakeFlow(Node):
 
     # ------------------------------------------------------------------ 대본 시계
     def _on_tick(self):
+        """대본 시계(TICK_HZ) — 지난 실제 시간 × speed 만큼 t 를 밀고, 장면 끝을 지났으면 그 장면의 이벤트를 내고 다음 장면으로.
+        시작 대기·일시정지·완료 중에는 시계가 서 있다. 마지막 장면이 끝나면 --once 면 끝내고 아니면 처음부터 다시."""
         now = self.get_clock().now()
         dt, self._last = (now - self._last).nanoseconds / 1e9, now
         if self.waiting or self.paused or self.finished:
@@ -106,6 +116,7 @@ class FakeFlow(Node):
             self._announce()
 
     def _restart(self):
+        """한 바퀴 끝 — 시계·장면·보정값을 0 으로 되돌린다(--wait-start 면 다시 IDLE 에서 기다린다)."""
         self.t, self.index, self.isolated_extra = 0.0, 0, 0
         self.done_minus = {'BOWL': 0, 'CUP': 0}
         self.waiting = self.wait_start
@@ -113,11 +124,13 @@ class FakeFlow(Node):
         self._announce()
 
     def _jump(self, index):
+        """index 번 장면으로 건너뛴다(시계도 그 장면의 시작 시각으로)."""
         self.index = index
         self.t = sc.start_of(self.scenes, index)
         self._announce()
 
     def _emit(self, event):
+        """FlowEvent 1건 발행 — duration_s 는 speed 로 나눠 실제 걸린 시간처럼 보이게."""
         if event is None:
             return
         m = FlowEvent()
@@ -130,9 +143,11 @@ class FakeFlow(Node):
 
     # ------------------------------------------------------------------ 버튼(서비스) — 대답 문구는 실제 flow_node 와 같게
     def _step(self):
+        """지금 방송 중인 step."""
         return self.state_now()['step']
 
     def _on_start(self, req, res):
+        """/flow/start — IDLE 에서 기다리는 중(--wait-start)일 때만 수락 → 첫 용기 장면으로."""
         if self.waiting:
             self.waiting = False
             self._jump(1)                                   # 기다리던 IDLE 장면을 건너뛰고 첫 용기로 (실제 flow 도 바로 PICK 으로 간다)
@@ -142,6 +157,7 @@ class FakeFlow(Node):
         return self._answered('start', res)
 
     def _on_stop(self, req, res):
+        """/flow/stop — 운전 중(IDLE·DONE·PAUSED 가 아닐 때)에만 수락 → 시계를 세우고 PAUSED 로 방송."""
         if self.paused or self._step() in ('IDLE', 'DONE', 'PAUSED'):
             res.success, res.message = False, f'멈출 동작이 없습니다 (현재 {self._step()})'
         else:
@@ -150,6 +166,7 @@ class FakeFlow(Node):
         return self._answered('stop', res)
 
     def _on_resume(self, req, res):
+        """/flow/resume — 운영자가 세운 것이면 이어서, 대본이 실패로 세운 PAUSED 면 그 멈춤 장면을 끝내고 다음 장면으로. 그 밖엔 거절."""
         if self.paused:                                     # 운영자가 세운 것 → 하던 단계를 이어서
             self.paused = False
             res.success, res.message = True, '재개합니다'
@@ -161,10 +178,12 @@ class FakeFlow(Node):
         return self._answered('resume', res)
 
     def _on_abort(self, req, res):
+        """/flow/abort — 거절 조건: PAUSED 가 아니다 · ROBOT_ERROR 로 멈췄다(케이블 이상 멈춤은 예외) · 접을 용기가 없다(item < 0).
+        수락하면 ISOLATED 이벤트를 내고 격리 수 +1, 대본에서는 끝났을 용기면 완료 수 −1 로 보정한 뒤 다음 용기의 첫 장면으로 건너뛴다."""
         st = self.state_now()
         if st['step'] != 'PAUSED':
             res.success, res.message = False, f"PAUSED 가 아닙니다 (현재 {st['step']})"
-        elif st['last_code'] == ROBOT_ERROR:
+        elif st['last_code'] == ROBOT_ERROR and '케이블' not in (st.get('message') or ''):   # 케이블 이상 멈춤은 코드가 ROBOT_ERROR 라도 중단을 받는다(flow.handle_cable_tight)
             res.success, res.message = False, '로봇 오류로 멈춘 상태에서는 중단할 수 없습니다 — 사람이 복구해야 합니다'
         elif self.scene.item < 0:
             res.success, res.message = False, '접을 용기가 없습니다'
@@ -182,11 +201,13 @@ class FakeFlow(Node):
         return self._answered('abort', res)
 
     def _answered(self, name, res):
+        """서비스 대답을 로그에 남기고 그대로 돌려준다."""
         self.get_logger().info(f"  ⇦ /flow/{name} → {'수락' if res.success else '거절'}: {res.message}")
         return res
 
     # ------------------------------------------------------------------ 타이머 (방송)
     def _on_state(self):
+        """state_hz 마다 FlowState 발행 · gripping 이 바뀌면 1번 발행 · --once 로 끝났으면 여기서 종료."""
         st = self.state_now()
         m = FlowState()
         for k, v in st.items():
@@ -201,15 +222,18 @@ class FakeFlow(Node):
             raise SystemExit(0)
 
     def _on_gripping(self):
+        """gripping_hz 마다 마지막 gripping 값을 다시 발행."""
         if self.gripping is not None:
             self.grip_pub.publish(Bool(data=self.gripping))
 
     def _on_force(self):
+        """force_hz 마다 — 닦는 장면(wiping)이고 멈추지 않았을 때만 /cell/force 발행."""
         if self.scene.wiping and not self.paused and not self.waiting:
             self.force_pub.publish(Float32(data=sc.force_at(self.scn, self.t / self.speed)))
 
 
 def main(argv=None):
+    """명령행 → 대본 읽기 → FakeFlow 를 spin."""
     args = remove_ros_args(sys.argv if argv is None else argv)[1:]
     parser = argparse.ArgumentParser(prog='fake_state_pub', description='가짜 flow — 대본대로 /flow/state 등을 방송하고 버튼(서비스)에 반응한다')
     parser.add_argument('scenario', nargs='?', default='normal', help=f'대본 이름 또는 yaml 경로 (기본 normal) — {sc.names()}')

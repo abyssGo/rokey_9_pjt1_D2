@@ -63,7 +63,7 @@ class FakeCC:
         return self.up.get((station, point), 0.0)
 
     def move_rel(self, dx, dy, dz, frame, **kw):
-        self._note('move_rel', dx, dy, dz, frame); self.z += dz
+        self._note('move_rel', dx, dy, dz, frame, *([kw] if kw else [])); self.z += dz   # 🆕 9/24 kw(vel_mm_s 완충 구간)도 적는다
 
     def release(self): self._note('release')
     def set_grip_preset(self, name): self._note('set_grip_preset', name)
@@ -368,3 +368,53 @@ def test_rack_place_with_zero_insert_watch_descends_straight_and_releases(cc):
     down = [c for c in rel if c[3] < 0]
     assert down[0][3] == pytest.approx(-85.0) and down[1][3] == -15.0                # 100 = 칸 위 높이 → 85 빠르게 + 15 완충
     assert cc.names().index('release') > cc.calls.index(down[1])
+
+
+# ------------------------------------------------------------------ 🆕 9/24 황인재: 컵 재파지 감시 하강 0 = 곧게 내려가 바로 잡기
+def _cup_bed_with_approach(cc):
+    cc.conf['cell']['beds']['SPONGE_BED_C'] = {
+        'regrip': {'approach_posx': [364.72, 138.56, 152.18, 71.66, 116.03, 87.31], 'posx': [364.72, 138.56, 52.18, 71.66, 116.03, 87.31]},
+        'regrip_preset': 'CUP_SIDE'}
+    cc.conf['cell']['presets']['CUP_SIDE'] = {'grip_target_mm': 70.0, 'grip_zero_mm': 10.58, 'grip_force_n': 10}
+    cc.up[('SPONGE_BED_C', 'regrip')] = 100.0
+
+
+def test_regrip_with_zero_watch_descends_straight_and_grips(cc):
+    _cup_bed_with_approach(cc)
+    cc.conf['f1']['regrip_watch_mm'] = 0
+    cc.grip_widths = [70.3]
+    r = handling.pick('SPONGE_BED_C', 'CUP')
+    assert r.ok and r.width_mm == 70.3
+    assert 'contact_down' not in cc.names() and 'force_off' not in cc.names()          # 순응·힘 감시 없음
+    assert ('move_rel', 0.0, 0.0, -100.0, 'BASE') in cc.calls                          # 접근점에서 끝점까지 한 번에(완충 설정 없음)
+    assert cc.names().index('grip') > cc.calls.index(('move_rel', 0.0, 0.0, -100.0, 'BASE'))
+
+
+def test_regrip_with_zero_watch_uses_soft_landing_when_set(cc):
+    _cup_bed_with_approach(cc)
+    cc.conf['f1']['regrip_watch_mm'] = 0
+    cc.conf['f1']['land_slow_mm'] = 15
+    cc.conf['f1']['land_vel_mm_s'] = 30
+    cc.grip_widths = [70.3]
+    assert handling.pick('SPONGE_BED_C', 'CUP').ok
+    down = [c for c in cc.calls if c[0] == 'move_rel' and c[3] < 0]
+    assert down[0][3] == pytest.approx(-85.0) and down[1][3] == -15.0 and down[1][5] == {'vel_mm_s': 30.0}
+
+
+def test_regrip_zero_watch_grip_fail_returns_to_the_approach_point(cc):
+    _cup_bed_with_approach(cc)
+    cc.conf['f1']['regrip_watch_mm'] = 0
+    cc.grip_widths = [11.0]                                                            # 헛잡음
+    cc.conf['cell']['presets']['CUP_SIDE'] = {'grip_width_mm': 59.42, 'grip_zero_mm': 10.58, 'grip_force_n': 10, 'width_tol_mm': 3}
+    r = handling.pick('SPONGE_BED_C', 'CUP')
+    assert not r.ok and r.code == 'GRIP_FAIL'
+    assert ('move_rel', 0.0, 0.0, 100.0, 'BASE') in cc.calls                            # 내려간 만큼 되올라온다
+
+
+def test_regrip_positive_watch_still_uses_the_contact_descent(cc):
+    _cup_bed_with_approach(cc)
+    cc.conf['f1']['regrip_watch_mm'] = 45
+    cc.contact = (45.0, 2.0)
+    cc.grip_widths = [70.3]
+    assert handling.pick('SPONGE_BED_C', 'CUP').ok
+    assert ('contact_down', 45.0, 15) in cc.calls                                       # 예전 방식(45 mm 감시)도 그대로 된다

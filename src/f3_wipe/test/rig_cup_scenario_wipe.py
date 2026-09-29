@@ -78,7 +78,7 @@ def _with_nudge_retry(step_name, fn, *args):
     d = dsr()
     r = fn(*args)
     while not r.ok and r.code == TOOL_LOST:
-        print(f"\n[TOOL_LOST] {step_name} 도중 놓쳤다 — 솔을 홀더에 다시 놓고 로봇을 살짝 밀거나 톡 쳐주세요")
+        print(f"\n[TOOL_LOST] {step_name} 도중 놓쳤다 — 솔을 홀더에 다시 놓고 로봇팔을 가볍게 밀어 주세요")
         lim = cc.cfg()["cell"]["limits"]
         time.sleep(float(lim["nudge_settle_s"]))
         force_n = float(lim["nudge_force_n"])

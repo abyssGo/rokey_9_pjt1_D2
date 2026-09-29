@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""케이블 이상 감지 및 넛지(톡톡) 재개 기능 테스트 — 민범진 (F2)
+"""케이블 이상 감지 및 넛지(로봇팔 가볍게 밀기) 재개 기능 테스트 — 민범진 (F2)
 
 검증 시나리오:
 1. 정상 상태: jitter_g <= max_weigh_spread_g -> 정상 진행
 2. 케이블 이상: jitter_g > max_weigh_spread_g -> CableTightError -> PAUSED 전환 및 대시보드 안내 메시지
-3. 톡톡 후 정상: 톡톡 감지 -> 재검증(jitter 정상) -> 작업 재개(RETRY_STEP)
-4. 톡톡 후 이상 지속: 톡톡 감지 -> 재검증(jitter 초과) -> PAUSED 유지
-5. HMI 신호: resume 신호 시 재검증 후 재개 / abort 신호 시 안전 중단
+3. 넛지·화면 재개: 제자리 재측정 없이 바로 작업 재개(RETRY_STEP) — 무게 단계를 다시 하며 그 무게가 케이블을 다시 본다
+4. 아직 떨리면: 다시 잰 무게가 CableTightError → 같은 케이블 멈춤이 다시 걸린다
+5. abort 신호 시 안전 중단
 """
 import pytest
 import types
@@ -64,25 +64,43 @@ def test_sense_weigh_raises_cable_tight_error_when_jitter_exceeds_limit(monkeypa
     assert '케이블 장력 이상' in str(exc_info.value)
 
 
-def test_wait_for_nudge_detects_force_spike(monkeypatch):
-    """톡톡 감지: 정지 상태에서 외력 변화량이 threshold 를 초과하면 'nudge' 반환."""
+def _limits(monkeypatch, cc, **over):
+    lim = {'nudge_force_n': 15.0, 'nudge_hold_s': 0.15, 'nudge_taps': 2, 'nudge_tap_window_s': 2.0, 'nudge_poll_s': 0.001}
+    lim.update(over)
+    monkeypatch.setattr(cc, 'cfg', lambda: {'cell': {'limits': lim}})
+
+
+def test_wait_for_nudge_uses_the_shared_two_tap_detector(monkeypatch):
+    """🔄 9/24 E48: 넛지 감지는 툴 놓침 넛지와 같은 cc.check_nudge(15 N · 2번 밀기) — 두 번째 밀기가 잡히면 'nudge'."""
     import cobot_common as cc
     import f2_sense_flow.sense as sense
-
-    # 초기 외력 0 -> 2번째 호출에서 외력 7N (임계 5N 초과)
-    force_values = [
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 7.0, 0.0, 0.0, 0.0],
-    ]
-    monkeypatch.setattr(cc, 'read_force', lambda: force_values.pop(0) if force_values else [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-
-    conf = {
-        'nudge': {'force_threshold_n': 5.0, 'poll_gap_s': 0.001}
-    }
-    sig = Signals()
-    ev = sense.wait_for_nudge(conf=conf, sig=sig, timeout_s=1.0)
+    _limits(monkeypatch, cc)
+    calls = []
+    monkeypatch.setattr(cc, 'start_nudge_watch', lambda: calls.append('start'))
+    monkeypatch.setattr(cc, 'check_nudge', lambda th, hold, taps, win: (calls.append((th, hold, taps, win)), len(calls) >= 3)[1])
+    sense._nudge_armed = False
+    conf = {'nudge': {'force_threshold_n': 15.0, 'poll_gap_s': 0.05}}
+    ev = sense.wait_for_nudge(conf=conf, sig=Signals(), timeout_s=1.0)
     assert ev == 'nudge'
+    assert calls[0] == 'start' and calls[1] == (15.0, 0.15, 2, 2.0)      # 기준 한 번 잡고 · 15 N · hold 0.15 · 2번 · 창 2 s
+    assert sense._nudge_armed is False                                   # 끝나면 다음 정지 때 기준을 새로 잡게 푼다
+
+
+def test_wait_for_nudge_keeps_the_baseline_across_short_calls(monkeypatch):
+    """handle_cable_tight 가 0.2 s 씩 반복해서 불러도 밀기 횟수가 이어지도록 기준은 처음 한 번만 잡는다 · 시간 초과는 None."""
+    import cobot_common as cc
+    import f2_sense_flow.sense as sense
+    _limits(monkeypatch, cc)
+    starts = []
+    monkeypatch.setattr(cc, 'start_nudge_watch', lambda: starts.append(1))
+    monkeypatch.setattr(cc, 'check_nudge', lambda *a: False)
+    sense._nudge_armed = False
+    conf = {'nudge': {'force_threshold_n': 15.0}}
+    assert sense.wait_for_nudge(conf=conf, sig=Signals(), timeout_s=0.01) is None
+    assert sense.wait_for_nudge(conf=conf, sig=Signals(), timeout_s=0.01) is None
+    assert len(starts) == 1 and sense._nudge_armed is True
+    sig = Signals(); sig.raise_('resume')
+    assert sense.wait_for_nudge(conf=conf, sig=sig, timeout_s=0.5) == 'resume' and sense._nudge_armed is False
 
 
 def test_recheck_cable_judges_ok_and_tight(monkeypatch):
@@ -111,7 +129,7 @@ def test_recheck_cable_judges_ok_and_tight(monkeypatch):
 
 
 def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
-    """Flow 통합: 케이블 이상 발생 -> PAUSED -> 톡톡 감지 -> 재검증 통과 -> 작업 재개(RETRY_STEP)."""
+    """Flow 통합: 케이블 이상 발생 -> PAUSED -> 넛지 감지 -> 재검증 통과 -> 작업 재개(RETRY_STEP)."""
     log = MockLogger()
     cfg = {
         'flow': {
@@ -120,10 +138,13 @@ def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
         }
     }
 
+    def no_recheck(conf):
+        raise AssertionError('밀면 바로 재개한다 — 제자리 재측정을 하지 않는다')
+
     # f2 모듈 모의
     mock_f2 = types.SimpleNamespace(
         wait_for_nudge=lambda conf, sig, timeout_s: 'nudge',
-        recheck_cable=lambda conf: (True, 15.0, 50.0)  # 정상 재검증
+        recheck_cable=no_recheck,
     )
 
     flow = Flow(cfg, log, features={'f2': mock_f2})
@@ -134,46 +155,81 @@ def test_flow_handle_cable_tight_resume_after_nudge(monkeypatch):
     outcome = flow.handle_cable_tight(sig)
     assert outcome == RETRY_STEP
     assert flow.step == 'WEIGH'
-    assert '케이블 정상 확인' in flow.message
+    assert '재개' in flow.message
     assert flow.last_code == OK
 
 
-def test_flow_handle_cable_tight_maintains_paused_when_tight_persists(monkeypatch):
-    """Flow 통합: 케이블 이상 지속 시 PAUSED 유지 및 메시지 갱신."""
-    log = MockLogger()
-    cfg = {
-        'flow': {
-            'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}],
-            'policy': {}
-        }
-    }
+def test_cable_still_tight_after_nudge_pauses_again_with_the_same_alert(monkeypatch):
+    """밀어서 재개 → 무게 단계를 다시 한다 → 아직 떨리면(CableTightError) **같은 케이블 멈춤·같은 안내**가 다시 걸린다 →
+    다시 밀면 재개 → 이번엔 정상 → 다음 단계로. 사람 신호 없이 스스로 다시 재지 않는다(멈춤마다 밀기 1번)."""
+    from f2_sense_flow import mock
+    from f2_sense_flow.flow import load_features
 
-    attempts = [0]
-    def mock_wait(conf, sig, timeout_s):
-        attempts[0] += 1
-        if attempts[0] == 1:
-            return 'nudge'
-        # 2번째에서는 abort 로 빠져나오도록 유도하여 무한루프 방지
-        return 'abort'
+    mods = load_features(['f1', 'f2', 'f3'])
+    weighs, pauses, nudges = [], [], []
 
-    def mock_recheck(conf):
-        return (False, 75.0, 50.0)  # 이상 지속
+    def leftover_loop(kind, n=2):
+        weighs.append(kind)
+        if len(weighs) <= 2:
+            raise CableTightError('케이블 장력 이상 감지 (떨림 103 g > 상한 80 g)')
+        return mods['f2'].leftover_loop(kind, n)
 
-    mock_f2 = types.SimpleNamespace(
-        wait_for_nudge=mock_wait,
-        recheck_cable=mock_recheck
-    )
+    def wait_for_nudge(conf, sig, timeout_s):
+        nudges.append(1)
+        return 'nudge'
 
-    flow = Flow(cfg, log, features={'f2': mock_f2})
-    flow.step = 'WEIGH'
-    flow._prev_step = 'WEIGH'
-    sig = Signals()
+    f2 = types.SimpleNamespace(**{n: getattr(mods['f2'], n) for n in dir(mods['f2']) if not n.startswith('_')})
+    f2.leftover_loop, f2.wait_for_nudge = leftover_loop, wait_for_nudge
+    cfg = {'flow': {'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}], 'policy': {}}}
+    flow = Flow(cfg, MockLogger(), features={'f1': mods['f1'], 'f2': f2, 'f3': mods['f3']})
+    to_paused = flow.to_paused
 
-    # abort_container 가 호출되면 ABORTED 관련 종료
-    outcome = flow.handle_cable_tight(sig)
-    # 1번째 톡톡 후 재검증 실패로 메시지가 '케이블 이상 지속'으로 갱신되었는지 확인
-    # (최종적으로 abort 되어 격리 완료됨)
-    assert outcome == 'go_on'  # abort_container 반환값
+    def watch_pause(why, sig=None):
+        to_paused(why, sig)
+        pauses.append(why)
+    flow.to_paused = watch_pause
+    try:
+        flow.run_plan(Signals())
+    finally:
+        mock.reset()
+
+    assert len(weighs) == 3, f'무게를 다시 잰 횟수 {len(weighs)}'
+    assert pauses == ['케이블 장력 이상 — 케이블 상태 확인 및 넛지 재개 대기'] * 2, pauses
+    assert len(nudges) == 2, '멈춤마다 밀기 1번으로 재개'
+    assert flow.done_bowl == 1 and flow.isolated == 0
+
+
+def test_cable_nudge_waits_for_hands_off_then_recovers_before_moving(monkeypatch):
+    """밀기를 알아챈 순간엔 손이 아직 팔에 있다 — settle(f2.nudge.settle_s) 만큼 기다리고, 보호정지 복구·STANDBY 확인을 한 **뒤에**
+    모션을 푼다(실기: 감지 3 ms 뒤 이동을 보내 제어기가 외력으로 붙잡아 2 분 멈춤)."""
+    import f2_sense_flow.flow as flow_module
+    order = []
+    monkeypatch.setattr(flow_module.time, 'sleep', lambda s: order.append(('sleep', s)))
+    cfg = {'flow': {'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}], 'policy': {}}}
+    flow = Flow(cfg, MockLogger(), resume=lambda: order.append(('resume',)),
+                features={'f2': types.SimpleNamespace(wait_for_nudge=lambda conf, sig, timeout_s: 'nudge')})
+    monkeypatch.setattr(flow, '_recover_robot', lambda: order.append(('recover',)))
+    flow.step = flow._prev_step = 'WEIGH'
+    assert flow.handle_cable_tight(Signals()) == RETRY_STEP
+    i_sleep = next(i for i, o in enumerate(order) if o[0] == 'sleep' and o[1] >= 1.0)
+    assert order.index(('recover',)) > i_sleep and order.index(('resume',)) > order.index(('recover',)), order
+
+
+@pytest.mark.parametrize('state,extra_wait', [(5, True), (1, False)])
+def test_recover_robot_waits_after_releasing_a_protective_stop(monkeypatch, state, extra_wait):
+    """넛지 재개 때 보호정지(5)를 풀었으면 이동 전에 nudge_after_reset_s 만큼 더 기다린다 — 풀린 직후 보낸 이동은 제어기가 곧 세웠다(실기).
+    이미 STANDBY(1)면 더 기다리지 않는다."""
+    import f2_sense_flow.flow as flow_module
+    sleeps = []
+    monkeypatch.setattr(flow_module.time, 'sleep', lambda s: sleeps.append(s))
+    monkeypatch.setattr(flow_module.cc, 'robot_state', lambda: state, raising=False)
+    monkeypatch.setattr(flow_module.cc, 'recover_robot_if_needed', lambda timeout_s: True, raising=False)
+    monkeypatch.setattr(flow_module.cc, 'wait_robot_ready', lambda timeout_s: True, raising=False)
+    monkeypatch.setattr(flow_module.cc, 'cfg', lambda: {'cell': {'limits': {'nudge_resume_settle_s': 3.0,
+                                                                           'nudge_after_reset_s': 2.0}}})
+    flow = Flow({'flow': {'plan': [], 'policy': {}}}, MockLogger())
+    flow._recover_robot()
+    assert (2.0 in sleeps) is extra_wait, sleeps
 
 
 def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
@@ -225,3 +281,29 @@ def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
     assert outcome == RETRY_STEP
 
 
+def test_cable_screen_resume_restarts_at_once_and_consumes_the_signal(monkeypatch):
+    """화면 재개로 풀면 제자리 재측정 없이 바로 RETRY_STEP — 쓴 재개 깃발은 남기지 않는다(남으면 다음 멈춤이 사람 없이 풀린다)."""
+    log = MockLogger()
+    cfg = {'flow': {'plan': [{'zone': 'RET_B', 'kind': 'BOWL', 'count': 1}], 'policy': {}}}
+    polls = [0]
+
+    def wait_like_real(conf, sig, timeout_s):
+        """실제 sense.wait_for_nudge 처럼 resume 깃발은 peek(안 내림)으로만 본다. 3번째 폴에서 화면 재개."""
+        polls[0] += 1
+        if polls[0] > 50:
+            raise AssertionError('끝나지 않는다')
+        if polls[0] == 3:
+            sig.raise_('resume')
+        return 'resume' if sig.peek('resume') else None
+
+    def no_recheck(conf):
+        raise AssertionError('제자리 재측정을 하지 않는다')
+
+    flow = Flow(cfg, log, features={'f2': types.SimpleNamespace(wait_for_nudge=wait_like_real, recheck_cable=no_recheck)})
+    flow.step = 'WEIGH'
+    flow._prev_step = 'WEIGH'
+    sig = Signals()
+    outcome = flow.handle_cable_tight(sig)
+    assert outcome == RETRY_STEP
+    assert polls[0] == 3
+    assert not sig.peek('resume'), '쓴 재개 신호가 남아 있다'

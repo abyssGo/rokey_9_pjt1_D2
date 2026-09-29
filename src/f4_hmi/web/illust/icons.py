@@ -63,6 +63,19 @@ def tank(pid):
         s.raw(f'<ellipse cx="{X:.1f}" cy="{Y:.1f}" rx="{rx * m:.1f}" ry="{ry * m:.1f}" fill="none" stroke="#fff" stroke-opacity="{op}" stroke-width="1.4"/>')
     return s.svg('헹굼 담금')
 
+def bin_icon(pid):
+    """잔반통 — 털기 장면(scenes.SHAKE)과 같은 통(재질 'bin') 안에 잔반이 쌓여 있다. 소모품 칸의 잔반통 줄과 잔반통 알림창에 쓴다"""
+    from scenes import food
+    s = _s(pid, 74, .62)
+    s.shadow(0, 0, 0, 50, op=.45)
+    rim = s.vessel(0, 0, 0, 40, 56, 48, mat='bin', wall=4)
+    X, Y, rx, ry = rim
+    s.raw(f'<g {s.clip_open(rim)}>')
+    food(s, [(X - 20, Y + 8, 4.5), (X - 6, Y + 12, 5), (X + 10, Y + 10, 4.5), (X + 24, Y + 6, 3.5), (X - 12, Y + 2, 3.5),
+             (X + 2, Y + 4, 4), (X + 16, Y + 1, 3), (X - 26, Y + 1, 3), (X + 5, Y + 16, 3.5), (X - 1, Y - 2, 3)])
+    s.raw('</g>')
+    return s.svg('잔반통')
+
 def timer(pid):
     g1, g2 = f'{pid}-a', f'{pid}-b'
     return (f'<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="사이클 타임"><defs>'
@@ -88,4 +101,4 @@ def pallet_icon(pid):
     s.box(-180, 99, 12, 360, 6, 30, 'rack'); s.box(174, -105, 12, 6, 210, 30, 'rack')
     return s.svg('팔레트')
 
-ALL = {'bowl': bowl, 'cup': cup, 'crate': crate, 'sponge': sponge, 'soap': soap, 'tank': tank, 'timer': timer, 'pallet': pallet_icon}
+ALL = {'bowl': bowl, 'cup': cup, 'crate': crate, 'sponge': sponge, 'soap': soap, 'tank': tank, 'bin': bin_icon, 'timer': timer, 'pallet': pallet_icon}

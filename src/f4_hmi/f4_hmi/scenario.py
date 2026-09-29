@@ -2,17 +2,13 @@
 """가짜 flow 의 대본(scenario yaml) → 시간 순서의 '장면' 목록. ROS 를 쓰지 않는다(그래서 로봇·ROS 없이 시험할 수 있다).
 
 대본 = scenarios/_defaults.yaml(공통 값) 위에 scenarios/<이름>.yaml 을 덮어쓴 것. 시간·횟수·힘 같은 숫자는 전부 yaml 에 있다.
-장면(Scene) 1개 = "이 상태를 몇 초 동안 방송한다" + 끝날 때 낼 이벤트(있으면).
-    state    : FlowState 메시지의 필드(stamp 제외) — 실제 flow 의 snapshot() 과 같은 키
-    gripping : /cell/gripping 값
-    wiping   : True 면 그동안 /cell/force 를 낸다(닦는 동안만 — IRD §6)
-    event    : 장면이 끝날 때 내는 FlowEvent 필드 (용기 1개 완료·격리·건너뜀마다 1건 — IRD §7)
-    item     : 몇 번째 용기의 장면인가(0 부터). 용기와 무관한 장면(IDLE·DONE)은 -1 — 중단(abort) 때 '다음 용기'를 찾는 데 쓴다
+장면(Scene) 1개 = "이 상태를 몇 초 동안 방송한다" + 끝날 때 낼 이벤트(있으면) — 필드 설명은 Scene 클래스.
 
 실제 flow(f2_sense_flow/flow.py)를 흉내 낸 규칙
     단계 순서 PICK → WEIGH → SHAKE → SEAT → SOAP → WIPE → RINSE → RACK, 용기마다 이벤트 1건, 전부 끝나면 DONE 을 잠깐 유지한 뒤 IDLE.
     실패는 정책대로: isolate(격리) → ISOLATE 단계 + ISOLATED 이벤트 / next_zone(빈 구역) → SKIPPED 이벤트 / pause → PAUSED(last_code 에 실패 코드).
     수량·소모품 값은 IDLE 로 돌아가도 남는다(다음 시작 때 0 으로).
+표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -20,13 +16,19 @@ from pathlib import Path
 import yaml
 
 STEPS = ('PICK', 'WEIGH', 'SHAKE', 'SEAT', 'SOAP', 'WIPE', 'RINSE', 'RACK')
-ACTIONS = ('isolate', 'next_zone', 'pause')
+ACTIONS = ('isolate', 'next_zone', 'pause', 'pause_retry')   # pause_retry = 멈춘 뒤 그 단계부터 다시 이어 완료(TOOL_LOST·LEFTOVER_REMAIN·케이블 이상 · 실제 flow 의 RETRY_STEP)
 DEFAULTS_FILE = '_defaults.yaml'
 OK = 'OK'
 
 
 @dataclass
 class Scene:
+    """장면 1개 = "state 를 duration_s 초 동안 방송한다" + 끝날 때 낼 이벤트(있으면).
+        state    : FlowState 메시지의 필드(stamp 제외) — 실제 flow 의 snapshot() 과 같은 키
+        gripping : /cell/gripping 값
+        wiping   : True 면 그동안 /cell/force 를 낸다(닦는 동안만 — IRD §6)
+        event    : 장면이 끝날 때 내는 FlowEvent 필드 (용기 1개 완료·격리·건너뜀마다 1건 — IRD §7) · 없으면 None
+        item     : 몇 번째 용기의 장면인가(0 부터). 용기와 무관한 장면(IDLE·DONE)은 -1 — 중단(abort) 때 '다음 용기'를 찾는 데 쓴다"""
     duration_s: float
     state: dict
     gripping: bool = False
@@ -48,6 +50,7 @@ def scenario_dir() -> Path:
 
 
 def names(directory=None) -> list:
+    """쓸 수 있는 대본 이름 목록(_ 로 시작하는 공통 파일은 뺀다)."""
     d = Path(directory) if directory else scenario_dir()
     return sorted(p.stem for p in d.glob('*.yaml') if not p.name.startswith('_'))
 
@@ -75,6 +78,7 @@ def load(name_or_path, directory=None) -> dict:
 
 
 def _validate(scn, path):
+    """items 의 kind · fail(at/code/action) · pause(at) 가 규칙에 맞는지 — 아니면 ValueError."""
     if not scn.get('items'):
         raise ValueError(f'{path}: items 가 비어 있다')
     for i, item in enumerate(scn['items'], start=1):
@@ -141,12 +145,26 @@ def build(scn: dict) -> list:
                     st.update(step='ISOLATE', isolated=st['isolated'] + 1)
                     spent += float(step_s['ISOLATE'])
                     add(step_s['ISOLATE'], event=event('ISOLATED', fail['code']))
+                elif fail['action'] == 'pause_retry':               # 멈춤 → (사람이 손을 쓴 뒤) 그 단계부터 다시 → 완료(E42·E37·케이블)
+                    was_gripping = scenes[-1].gripping
+                    st.update(step='PAUSED')
+                    add(fail.get('hold_s', scn['pause_hold_s']), gripping=was_gripping)
+                    spent += float(fail.get('hold_s', scn['pause_hold_s']))
+                    if fail.get('resume_message'):                  # 재개 직후 flow 가 잠깐 보내는 문구(케이블: '재개 요청 감지 …' → HMI 비프)
+                        st.update(step=step, last_code=OK, message=fail['resume_message'])
+                        add(float(fail.get('resume_s', 1.5)), wiping=wiping)
+                        spent += float(fail.get('resume_s', 1.5))
+                    st.update(step=step, last_code=OK, message='')
+                    add(full, wiping=wiping)                        # 그 단계부터 다시
+                    spent += full
+                    fail = None                                     # 이 용기는 정상 완료로 이어 간다(다시 실패하지 않음)
                 else:                                               # pause — 사람이 볼 때까지 멈춘다(ROBOT_ERROR · RACK_FULL)
                     was_gripping = scenes[-1].gripping
                     st.update(step='PAUSED')
                     add(fail.get('hold_s', scn['pause_hold_s']), gripping=was_gripping)
                     halted = True
-                break
+                if fail is not None:
+                    break
             if step == 'SOAP':
                 st['soap_dips'] += int(counts['soap_dips'])
             elif step == 'WIPE':
@@ -154,8 +172,8 @@ def build(scn: dict) -> list:
             elif step == 'RINSE':
                 st['rinse_dips'] += int(counts['rinse_dips'])
         else:                                                       # 끝까지 갔다 → 완료
-            # 진짜 flow(flow.py process_one)처럼 적재(RACK)까지 **다 끝난 뒤에** 센다 — 늘어난 수는 다음 장면부터 보인다.
-            # 9/21 황인재: 적재 장면에서 먼저 세었더니 화면이 '다음 칸'을 적재 중으로 보였다가 비워 버렸다.
+            # 진짜 flow(flow.py process_one)처럼 적재(RACK)까지 다 끝난 뒤에 센다 — 늘어난 수는 다음 장면부터 보인다.
+            # 적재 장면에서 먼저 세면 화면이 '다음 칸'을 적재 중으로 보였다가 비워 버린다.
             st['done_bowl' if kind == 'BOWL' else 'done_cup'] += 1
             scenes[-1].event = event('DONE', OK, item.get('rack_slot', ''))
         if halted:
@@ -170,6 +188,7 @@ def build(scn: dict) -> list:
 
 
 def total_s(scenes) -> float:
+    """한 바퀴 전체 시간(s)."""
     return sum(s.duration_s for s in scenes)
 
 
@@ -179,7 +198,7 @@ def start_of(scenes, index) -> float:
 
 
 def after_item(scenes, index) -> int:
-    """index 번 장면의 용기가 끝난 **다음** 장면 번호(다음 용기의 첫 장면, 없으면 DONE·IDLE). 중단(abort)이 건너뛸 곳."""
+    """index 번 장면의 용기가 끝난 다음 장면 번호(다음 용기의 첫 장면, 없으면 DONE·IDLE). 중단(abort)이 건너뛸 곳."""
     item = scenes[index].item
     for k in range(index + 1, len(scenes)):
         if scenes[k].item != item:

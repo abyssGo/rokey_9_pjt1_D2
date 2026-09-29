@@ -15,7 +15,7 @@ def new(pid):
 def dims(kind):
     return BOWL if kind == 'BOWL' else CUP
 
-def hold(s, kind, cx, cy, z0, draw_container=True, alpha=1, between=None, arm=200):
+def hold(s, kind, cx, cy, z0, draw_container=True, alpha=1, between=None, arm=200, upside_down=False):
     """용기를 잡은 그리퍼 + 용기 — 그릇은 오른쪽 벽을 세로로, 컵은 몸통을 통째로"""
     d = dims(kind)
     top = z0 + d['h']
@@ -31,7 +31,7 @@ def hold(s, kind, cx, cy, z0, draw_container=True, alpha=1, between=None, arm=20
         zt = z0 + 30
         rr = d['r0'] + (d['r1'] - d['r0']) * .45 + 3.4
         gripper(s, cx, cy, zt, rr, finger=d['h'] - 30 + 14, ang=AX, part='back')
-        rim = container(s, kind, cx, cy, z0, alpha) if draw_container else None
+        rim = container(s, kind, cx, cy, z0, alpha, upside_down=upside_down) if draw_container else None
         if between: between()
         gripper(s, cx, cy, zt, rr, finger=d['h'] - 30 + 14, ang=AX, part='front')
         gripper(s, cx, cy, zt, rr, finger=d['h'] - 30 + 14, ang=AX, part='top', arm=arm)
@@ -326,7 +326,7 @@ def RACK(kind, pid):
         s.raw(f'<ellipse cx="{X:.1f}" cy="{Y:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="none" stroke="{ACC}" stroke-width="2" stroke-dasharray="5 5"/>')
         z0 = 6 + 26
         s.shadow(0, 0, 6, 36, op=.35)
-        hold(s, kind, 0, 0, z0)
+        hold(s, kind, 0, 0, z0, upside_down=True)                     # 🆕 9/27 황인재: 컵은 뒤집어 핀 위에 얹는다
         for a in (45, 135, 225, 315):
             px, py = 48 * math.cos(math.radians(a)), 48 * math.sin(math.radians(a))
             if px + py >= 0:

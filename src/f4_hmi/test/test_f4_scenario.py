@@ -4,7 +4,7 @@ import pytest
 
 from f4_hmi import scenario as sc
 
-ALL = ('normal', 'isolate', 'error', 'paused', 'empty_zone')
+ALL = ['normal', 'isolate', 'error', 'paused', 'empty_zone', 'tool_lost', 'leftover_remain', 'cable', 'tool_fail']   # 🆕 9/25 예외 3종(E37·E42·#93) · 9/26 tool_fail(E52)
 
 
 def _contract_steps():
@@ -16,7 +16,7 @@ def _contract_steps():
         return sc.STEPS + ('IDLE', 'ISOLATE', 'DONE', 'ERROR', 'PAUSED')
 
 
-def test_all_five_scenarios_exist_and_build():
+def test_all_scenarios_exist_and_build():
     assert set(ALL) <= set(sc.names())
     for name in ALL:
         scenes = sc.build(sc.load(name))
@@ -125,3 +125,31 @@ def test_rack_scene_has_not_counted_its_own_container_yet():
     racks = [s.state for s in scenes if s.state['step'] == 'RACK']
     assert [(r['kind'], r['done_bowl'], r['done_cup']) for r in racks] == [
         ('BOWL', 0, 0), ('BOWL', 1, 0), ('CUP', 2, 0), ('CUP', 2, 1)]
+
+
+# ------------------------------------------------------------------ 🆕 9/25 pause_retry — 멈춘 뒤 그 단계부터 다시 이어 완료(TOOL_LOST · LEFTOVER_REMAIN · 케이블)
+def test_pause_retry_pauses_with_the_code_then_finishes_the_item():
+    scenes = sc.build(sc.load('tool_lost'))
+    paused = [s for s in scenes if s.state['step'] == 'PAUSED']
+    assert len(paused) == 1 and paused[0].state['last_code'] == 'TOOL_LOST' and paused[0].state['message'] == ''   # 실제 flow 처럼 문구는 비어 있다
+    i = scenes.index(paused[0])
+    assert scenes[i + 1].state['step'] == 'WIPE' and scenes[i + 1].state['last_code'] == 'OK'                   # 그 단계부터 다시
+    assert paused[0].gripping is True                                                                            # 멈춰도 쥔 것은 그대로
+    dones = [s.event for s in scenes if s.event and s.event['result'] == 'DONE']
+    assert len(dones) == 4 and dones[0]['kind'] == 'BOWL' and dones[0]['rack_slot'] == 'RACK_B1'                  # 이 용기도 완료로 끝난다
+    assert scenes[-2].state['step'] == 'DONE'
+
+
+def test_cable_scenario_sends_the_resume_notice_before_continuing():
+    scenes = sc.build(sc.load('cable'))
+    paused = [s for s in scenes if s.state['step'] == 'PAUSED']
+    assert paused[0].state['last_code'] == 'ROBOT_ERROR' and '케이블' in paused[0].state['message']
+    i = scenes.index(paused[0])
+    assert scenes[i + 1].state['step'] == 'WEIGH' and '재개 요청 감지' in scenes[i + 1].state['message']         # → HMI 비프
+    assert scenes[i + 2].state['step'] == 'WEIGH' and scenes[i + 2].state['message'] == ''
+
+
+def test_leftover_remain_scenario_pauses_at_shake_holding_the_bowl():
+    scenes = sc.build(sc.load('leftover_remain'))
+    paused = [s for s in scenes if s.state['step'] == 'PAUSED']
+    assert len(paused) == 1 and paused[0].state['last_code'] == 'LEFTOVER_REMAIN' and paused[0].state['kind'] == 'BOWL' and paused[0].gripping

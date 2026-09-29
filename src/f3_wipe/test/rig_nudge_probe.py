@@ -21,7 +21,7 @@ def main():
         hold_s = float(cc.cfg()["cell"]["limits"]["nudge_hold_s"])
         print("=" * 74)
         print(f"넛지 감지 — 임계 {force_n:.1f} N · 유지 {hold_s:.2f} s")
-        print("로봇을 살짝 밀거나 톡 치면 된다. Ctrl+C 로 종료.")
+        print("로봇팔을 가볍게 밀면 된다. Ctrl+C 로 종료.")
         print("=" * 74)
 
         cc.start_nudge_watch()

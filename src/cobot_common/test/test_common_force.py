@@ -422,9 +422,13 @@ def test_exports():
 def _reset_nudge():
     force._nudge_baseline = None
     force._nudge_above_since = None
+    force._nudge_counted = False
+    force._nudge_taps = []
     yield
     force._nudge_baseline = None
     force._nudge_above_since = None
+    force._nudge_counted = False
+    force._nudge_taps = []
 
 
 def test_check_nudge_requires_start_first(_reset_nudge):
@@ -523,3 +527,43 @@ def test_recover_robot_if_needed_handles_mock_gracefully(robot):
     d = robot()
     d.get_robot_state = lambda: 5      # SAFE_STOP
     assert force.recover_robot_if_needed(timeout_s=0.05) is False
+
+
+# ------------------------------------------------------------------ 🆕 9/24 E48 — 2번 치기(taps · window_s)
+def _push_sequence(monkeypatch, samples):
+    """(시각, Fz) 목록을 차례로 돌려준다 — 한 check_nudge 호출이 read_force 1번 · monotonic 1번."""
+    times = iter([t for t, _ in samples]); forces = iter([f for _, f in samples])
+    monkeypatch.setattr(force.time, 'monotonic', lambda: next(times))
+    monkeypatch.setattr(force, 'read_force', lambda: [0.0, 0.0, next(forces), 0, 0, 0])
+
+
+def test_check_nudge_two_taps_within_window(_reset_nudge, monkeypatch):
+    """두 번 치기: 누름(hold 채움) → 뗌 → 다시 누름(hold 채움) = True. 첫 누름만으론 False."""
+    monkeypatch.setattr(force, 'read_force', lambda: [0.0, 0.0, 0.0, 0, 0, 0])
+    force.start_nudge_watch()
+    _push_sequence(monkeypatch, [(0.0, 20.0), (0.2, 20.0), (0.4, 0.0), (0.6, 20.0), (0.8, 20.0)])
+    r = [force.check_nudge(15.0, 0.15, 2, 2.0) for _ in range(5)]
+    assert r == [False, False, False, False, True]
+
+
+def test_check_nudge_one_long_push_counts_once(_reset_nudge, monkeypatch):
+    """한 번 꾹 누르고 있는 것은 아무리 길어도 1번 — 손을 떼야 2번째."""
+    monkeypatch.setattr(force, 'read_force', lambda: [0.0, 0.0, 0.0, 0, 0, 0])
+    force.start_nudge_watch()
+    _push_sequence(monkeypatch, [(0.0, 20.0), (0.2, 20.0), (0.5, 20.0), (1.0, 20.0), (1.5, 20.0)])
+    assert all(force.check_nudge(15.0, 0.15, 2, 2.0) is False for _ in range(5))
+
+
+def test_check_nudge_second_tap_after_window_restarts_count(_reset_nudge, monkeypatch):
+    """첫 밀기 뒤 2 s 가 지나서 온 두 번째는 '첫 번째'로 다시 센다 → 아직 False."""
+    monkeypatch.setattr(force, 'read_force', lambda: [0.0, 0.0, 0.0, 0, 0, 0])
+    force.start_nudge_watch()
+    _push_sequence(monkeypatch, [(0.0, 20.0), (0.2, 20.0), (0.4, 0.0), (3.0, 20.0), (3.2, 20.0)])
+    assert [force.check_nudge(15.0, 0.15, 2, 2.0) for _ in range(5)] == [False] * 5
+
+
+def test_check_nudge_default_taps_is_one_like_before(_reset_nudge, monkeypatch):
+    monkeypatch.setattr(force, 'read_force', lambda: [0.0, 0.0, 0.0, 0, 0, 0])
+    force.start_nudge_watch()
+    _push_sequence(monkeypatch, [(0.0, 20.0), (0.2, 20.0)])
+    assert force.check_nudge(15.0, 0.15) is False and force.check_nudge(15.0, 0.15) is True

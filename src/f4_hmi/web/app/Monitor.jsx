@@ -1,14 +1,15 @@
 'use client';
-// 운영 화면 1장 — F4-00 §3. HMI 는 **보여 주고 전달만** 한다(흐름·복구 판단·로봇 동작은 하지 않는다).
+// 운영 화면 1장 — HMI 설계초안 §3. HMI 는 보여 주고 전달만 한다(흐름·복구 판단·로봇 동작은 하지 않는다).
 import { useEffect, useRef, useState } from 'react';
 import { useHmi } from './lib/useHmi';
 import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
-  buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables,
+  buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk,
 } from './lib/derive';
 
-// 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트(황인재 9/21 · Claude 디자인 시안 승인). public/illust/ 에 있다
+// 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
 const stepArt = (step, kind) => `/illust/steps/${step}-${kind}.svg`;
 const iconArt = (name) => `/illust/icons/${name}.svg`;
 const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
@@ -19,6 +20,8 @@ function recall() { try { return sessionStorage.getItem(KEY) || ''; } catch { re
 function remember(v) { try { sessionStorage.setItem(KEY, v); } catch { /* 없어도 된다 */ } }
 
 let audioCtx = null;
+// 짧은 비프 1번 — Web Audio 로 freq Hz 사각파를 duration 초 울린다(기본 1000 Hz · 0.18 s · 음량 0.7). 오디오가 없거나 막힌 브라우저면 조용히 넘어간다
+//   끝 0.02 s 는 음량을 0 으로 내려 '딱' 하는 클릭음을 막는다 · audioCtx 는 브라우저 정책상 사용자가 버튼을 누른 뒤에만 켜진다
 function playBeep(freq = 1000, duration = 0.18, type = 'square', vol = 0.7) {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -42,56 +45,176 @@ function playBeep(freq = 1000, duration = 0.18, type = 'square', vol = 0.7) {
   }
 }
 
-function playDoubleBeep() {
-  playBeep(1200, 0.09, 'square', 0.7);
-  setTimeout(() => playBeep(1600, 0.11, 'square', 0.7), 120);
+// 짧은 두 음(1200 Hz 0.09 s → 120 ms 뒤 1600 Hz 0.11 s) — 멈춤이 풀렸다는 신호
+// 숫자 움직임 — 글 속 숫자만 이전 값에서 새 값으로 0.6 s 동안 움직인다(올라가든 내려가든). 숫자 개수가 다르거나 '움직임 줄이기' 설정이면 바로 새 값
+const NUM_RE = /-?\d+(?:\.\d+)?/g;
+const reduceMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+function useAnimatedText(text, ms = 600) {
+  const [shown, setShown] = useState(text);
+  const prev = useRef(text);
+  useEffect(() => {
+    const from = prev.current; prev.current = text;
+    if (from === text) return undefined;
+    const a = String(from).match(NUM_RE) || [], b = String(text).match(NUM_RE) || [];
+    if (!a.length || a.length !== b.length || reduceMotion()) { setShown(text); return undefined; }
+    const dec = b.map((s) => (s.split('.')[1] || '').length);
+    let t0 = null;                                                     // 시계는 rAF 가 주는 시각 하나만 쓴다(performance.now 와 섞으면 헤드리스 캡처에서 멈춘 값이 찍힌다)
+    let raf = 0;
+    const tick = (now) => {
+      if (t0 === null) t0 = now;
+      const p = Math.min(1, (now - t0) / ms), e = 1 - (1 - p) ** 3;
+      let i = 0;
+      setShown(String(text).replace(NUM_RE, () => { const v = +a[i] + (+b[i] - +a[i]) * e; return v.toFixed(dec[i++]); }));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    const settle = setTimeout(() => { cancelAnimationFrame(raf); setShown(text); }, ms + 200);   // 숨은 탭·캡처처럼 rAF 가 안 도는 곳에서도 끝값은 반드시 보인다
+    return () => { cancelAnimationFrame(raf); clearTimeout(settle); };
+  }, [text, ms]);
+  return shown;
 }
+function Anim({ v }) { return useAnimatedText(String(v)); }
+
+// 소리는 한 가지 음으로 두 경우만(황인재 9/28): 로봇이 멈추면 1번 · 다시 움직이면 2번
+const TONE = 1000;
+function playStopBeep() { playBeep(TONE, 0.18, 'square', 0.75); }
+function playResumeBeep() { playBeep(TONE, 0.18, 'square', 0.75); setTimeout(() => playBeep(TONE, 0.18, 'square', 0.75), 260); }
 
 export default function Monitor() {
-  const { d, mode, press } = useHmi();
+  const { d, mode, press, replace, period, setPeriod } = useHmi();
   const [reply, setReply] = useState(null);
   // 일시 정지됐을 때 "어느 단계에서" 를 보여 주려고 기억한다 — flow 가 보내는 값(FlowState)에는 그 칸이 없다.
-  // 같은 탭에서 새로고침해도 잊지 않게 탭 저장소(sessionStorage)에도 둔다. 멈춘 **뒤에** 새 탭으로 열면 모른다.
+  // 같은 탭에서 새로고침해도 잊지 않게 탭 저장소(sessionStorage)에도 둔다. 멈춘 뒤에 새 탭으로 열면 모른다.
   const lastRunning = useRef(null);
-  const lastSoundMsg = useRef('');
   const s = d.state;
   if (lastRunning.current === null) lastRunning.current = recall();
+  // 멈춘 뒤에 연 화면(새 탭·태블릿)은 멈춘 단계를 못 봤다 → 브리지가 기억한 직전 단계(paused_from)를 쓴다
+  if (s && (s.step === 'PAUSED' || s.step === 'ERROR') && !lastRunning.current && d.paused_from) { lastRunning.current = d.paused_from; remember(d.paused_from); }
   if (s && RUNNING.includes(s.step) && lastRunning.current !== s.step) { lastRunning.current = s.step; remember(s.step); }
   if (s && (s.step === 'IDLE' || s.step === 'DONE') && lastRunning.current) { lastRunning.current = ''; remember(''); }
 
-  // 🆕 톡톡(Nudge) 재개 감지 시 브라우저 비프음 재생 (1500Hz 기계음)
+  // 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
+  const wasPaused = useRef(false);
+  // 멈추면 알림창(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 넛지로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
+  const [modal, setModal] = useState(null);
+  const [toast, setToast] = useState(null);
+  const pauseSeq = useRef(0);
+  const pausedCode = useRef(null);                                     // 마지막 멈춤의 원인 코드 — 노란 띠 '재개해 진행 중' 판단
+  const againMsg = useRef('');                                         // 케이블 재검증 실패로 다시 띄운 문구(같은 문구로 두 번 띄우지 않게)
+  const lastResumePress = useRef(0);
+  const toastTimer = useRef(null);
+  const dRef = useRef(d);
+  dRef.current = d;
+  const showToast = (t) => { setToast(t); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 6000); };
+  useEffect(() => {
+    const step = s?.step;
+    if (step === 'IDLE' || step === 'DONE') pausedCode.current = null;
+    if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다) + 한 번 울림
+      pauseSeq.current += 1;
+      pausedCode.current = s.last_code || null;
+      againMsg.current = '';
+      setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
+      playStopBeep();
+    }
+    if (wasPaused.current && step && step !== 'PAUSED') {              // 멈춤이 풀렸다(버튼·넛지·중단)
+      setModal(null);
+      showToast(resumeToast(Date.now() - lastResumePress.current < 15000, lastRunning.current || '', step));
+      if (RUNNING.includes(step)) playResumeBeep();
+    }
+    wasPaused.current = step === 'PAUSED';
+  }, [s?.step]);
+
+  // 물결 효과 — 버튼을 누른 자리에서 원이 퍼진다(.btn · 탭). 움직임 줄이기 설정이면 없음
+  useEffect(() => {
+    const on = (e) => {
+      const b = e.target && e.target.closest ? e.target.closest('.btn, .tabs button') : null;
+      if (!b || b.disabled || reduceMotion()) return;
+      const r = b.getBoundingClientRect(), dia = Math.max(r.width, r.height) * 2;
+      const s = document.createElement('span');
+      s.className = 'ripple';
+      s.style.cssText = `width:${dia}px;height:${dia}px;left:${e.clientX - r.left - dia / 2}px;top:${e.clientY - r.top - dia / 2}px`;
+      b.appendChild(s);
+      s.addEventListener('animationend', () => s.remove());
+      setTimeout(() => s.remove(), 800);                                // 애니메이션 끝 이벤트가 안 와도(숨은 탭 등) 치운다
+    };
+    document.addEventListener('pointerdown', on);
+    return () => document.removeEventListener('pointerdown', on);
+  }, []);
+  const [panel, setPanel] = useState(() => {                           // 'kpi' | 'history' — 누적 KPI 와 이력은 버튼을 누르면 창으로(황인재: 한 화면에 다 보이게)
+    try { const q = new URLSearchParams(window.location.search).get('panel'); return q === 'kpi' || q === 'history' ? q : null; } catch { return null; }   // ?panel=kpi 로 열면 창이 열린 채 시작(캡처·태블릿용)
+  });
+
+  // 빈 구역 — 새 이벤트가 '건너뜀' 이면 주황 알림 + 짧은 음(로봇은 멈추지 않는다 · 황인재 9/28). 켤 때 이미 있던 이벤트는 알리지 않는다
+  const lastEvent = useRef(undefined);
+  useEffect(() => {
+    const e = (d.events || [])[0];
+    const key = e ? `${e.stamp}-${e.result}-${e.zone_id}` : null;
+    if (lastEvent.current === undefined) { lastEvent.current = key; return; }
+    if (key === lastEvent.current) return;
+    lastEvent.current = key;
+    const t = skipToast(e);
+    if (t) showToast(t);                                                  // 로봇이 멈추지 않으니 소리는 없다
+  }, [d.events]);
+
+  // 케이블 재검증에서 또 떨리면 flow 는 멈춘 채 문구만 '케이블 이상 지속 …' 으로 바꾼다 — 처음 멈췄을 때처럼 알림창을 다시 띄우고 한 번 울린다
   useEffect(() => {
     const msg = s?.message || '';
-    if (msg.includes('재개 요청 감지') && lastSoundMsg.current !== msg) {
-      playBeep(1500, 0.16, 'square', 0.75);
+    if (!msg.includes('이상 지속')) againMsg.current = '';                  // 재확인 중 문구가 오면 비운다 — 같은 떨림 값으로 또 실패해도 다시 띄운다
+    if (s?.step === 'PAUSED' && pauseKind(s) === 'cable' && msg.includes('이상 지속') && msg !== againMsg.current) {
+      againMsg.current = msg;
+      pauseSeq.current += 1;
+      setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
+      playStopBeep();
     }
-    lastSoundMsg.current = msg;
-  }, [s?.message]);
+  }, [s?.message, s?.step]);
 
   const can = buttons(d);
-  async function onPress(name) {
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    } catch {}
-    if (name === 'abort' && !window.confirm('이 용기를 격리 구역으로 보내고 다음 용기로 넘어갑니다.\n중단할까요?')) return;
+  const ITEM_KO = { sponge: '수세미', brush: '솔', soap: '세제', waste_bin: '잔반통' };
+  // 확인창(교체 완료 · 중단) — 브라우저 기본 창(window.confirm) 대신 알림창과 같은 모양. c = { icon, title, body, ok, tone, onOk }
+  const [confirm, setConfirm] = useState(null);
+  function onReplace(item) {
+    setConfirm({ icon: item === 'waste_bin' ? 'bin' : item, title: `${ITEM_KO[item]} 교체 완료?`, body: '새것으로 바꿨으면 확인 — 사용량을 0부터 다시 셉니다.', ok: '확인', tone: 'go',
+      onOk: async () => { const r = await replace(item); setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${r.message || ''}` }); } });
+  }
+  async function send(name) {
+    if (name === 'resume') lastResumePress.current = Date.now();      // 토스트에 '재개 버튼'/'넛지' 를 가르는 근거
     setReply({ pending: true, text: `${BTN_KO[name]} 보내는 중…` });
     const r = await press(name);
     setReply({ ok: r.ok, text: `${r.ok ? '✔' : '✖'} ${BTN_KO[name]}: ${r.message}${r.latency_ms != null ? ` (${r.latency_ms} ms)` : ''}` });
   }
+  function onPress(name) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    } catch {}
+    if (name === 'abort') { setConfirm({ icon: 'crate', title: '이 용기를 중단할까요?', body: '격리 구역으로 보내고 다음 용기로 넘어갑니다.', ok: '중단', tone: 'warn', onOk: () => send('abort') }); return; }
+    send(name);
+  }
 
   return (
     <div className="page">
+      {modal && alarm(d)?.level === 'pause' && <AlertModal m={modal} a={alarm(d)} onClose={() => setModal(null)} />}
+      {confirm && <ConfirmModal c={confirm} onClose={() => setConfirm(null)} />}
+      {toast && <div className={`toast ${toast.tone || ''}`} role="status">{toast.tone === 'warn' ? '⚠' : '✔'} {toast.text}{toast.sub && <div className="toast-sub">{toast.sub}</div>}</div>}
       <TopBar d={d} can={can} onPress={onPress} />
-      <Alarm d={d} step={lastRunning.current || null} />
+      <Alarm d={d} step={lastRunning.current || null} resumedCode={pausedCode.current} />
       <Controls can={can} onPress={onPress} reply={reply} />
       <StepBar d={d} paused={s && s.step === 'PAUSED' ? lastRunning.current || null : null} />
       <div className="grid">
         <Now d={d} last={lastRunning.current || null} />
         <Pallet d={d} />
-        <Stats d={d} />
+        <Stats d={d} onReplace={onReplace} />
       </div>
-      <History d={d} />
+      <section className="morebar">
+        <button className="btn plain" onClick={() => setPanel('kpi')}>누적 KPI{d.kpi ? <span className="badge"><Anim v={`${d.kpi.done_bowl + d.kpi.done_cup}개`} /></span> : null}</button>
+        <button className="btn plain" onClick={() => setPanel('history')}>이력<span className="badge">{(d.events || []).length}</span></button>
+        <span className="dim small">누르면 창으로 열립니다 · 닫아도 기록은 계속 쌓입니다</span>
+      </section>
+      {panel && (
+        <PanelModal title={panel === 'kpi' ? '누적 KPI' : '이력'} onClose={() => setPanel(null)}>
+          {panel === 'kpi' ? <Kpi d={d} period={period} setPeriod={setPeriod} /> : <History d={d} />}
+        </PanelModal>
+      )}
       <footer className="dim small">
         받는 방식: {mode} · 받은 상태 메시지 {d.received}건 · 점검용 <a href="/test">시험 페이지</a>
       </footer>
@@ -99,6 +222,7 @@ export default function Monitor() {
   );
 }
 
+// 맨 위 줄 — 제품 이름 · 연결 상태 알약(서버 → flow 순으로 판정) · 일시 정지 버튼(운전 중에만 활성)
 function TopBar({ d, can, onPress }) {
   const conn = !d.server ? { cls: 'bad', text: 'HMI 서버에 닿지 않는다' }
     : d.connected ? { cls: 'ok', text: 'flow 연결됨' }
@@ -117,47 +241,111 @@ function TopBar({ d, can, onPress }) {
   );
 }
 
-function Alarm({ d, step }) {
+// 알람 상자 — 멈춤이면 원인별 제목·할 일(derive.alarm → GUIDE_KO), 운전 중이면 최근 원인 경고. 없으면 그리지 않는다
+function Alarm({ d, step, resumedCode }) {
   const a = alarm(d);
   if (!a) return null;
   const label = CODE_KO[a.code] || a.code;
-  if (a.level === 'error') {
+  if (a.level === 'error' || a.level === 'pause') {           // 멈춤 — 원인 갈래별 제목·설명·할 일(derive.GUIDE_KO)
+    const g = a.guide;
+    const where = step ? ` — ${STEP_KO[step]} 단계에서` : '';
     return (
-      <section className="alarm error">
-        <div className="alarm-title">🚨 운영자 복구 필요 — {label}</div>
-        {a.message && <div className="alarm-msg">{a.message}</div>}
-        <ol className="alarm-steps">
-          <li>로봇과 주변을 확인한다(용기·툴이 걸려 있지 않은지)</li>
-          <li>필요하면 <code>release_force.py</code> 로 힘제어를 푼다</li>
-          <li><b>재개</b> 를 누른다 — 1초 안에 대답이 없으면 flow_node 를 다시 띄운다</li>
-        </ol>
-      </section>
-    );
-  }
-  if (a.level === 'pause') {
-    return (
-      <section className="alarm pause">
-        <div className="alarm-title">일시 정지됨{step ? ` — ${STEP_KO[step]} 단계` : ''}</div>
-        <div className="alarm-msg">
-          {a.message || '운영자 요청'} · 확인한 뒤 <b>재개</b>(하던 동작을 이어서) 또는 <b>중단</b>(이 용기를 격리)
-          {a.code && a.code !== 'OK' ? ` · 원인: ${label}` : ''}
-        </div>
+      <section className={`alarm ${a.level}`}>
+        <div className="alarm-title">{a.level === 'error' ? '🚨 ' : ''}{g.title}{where}</div>
+        {(g.what || (a.message && a.kind !== 'operator' && !HIDE_FLOW_MSG.includes(a.kind))) && <div className="alarm-msg">{g.what || ''}{a.message && a.kind !== 'operator' && !HIDE_FLOW_MSG.includes(a.kind) ? ` ${a.message}` : ''}</div>}
+        <ol className="alarm-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
+        {a.code && a.code !== 'OK' && a.kind !== 'cable' ? <div className="dim small">코드 {a.code} · {label}</div> : null}
       </section>
     );
   }
   return (
     <section className="alarm warn">
-      <div className="alarm-title">⚠ {label}</div>
+      <div className="alarm-title">⚠ 최근 원인: {label}</div>
       {a.message && <div className="alarm-msg">{a.message}</div>}
+      <div className="dim small">{runningNote(d.state, d.plan, resumedCode)}</div>
     </section>
   );
 }
 
+// 예외 알림창 — 멈춤 원인 아이콘 + 멈춘 단계 그림 + 할 일 · 확인을 누르면 닫히고(안내 띠는 남는다) 재개 버튼(또는 넛지)으로 이어 간다
+function AlertModal({ m, a, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const g = a.guide;
+  const where = m.step && STEP_KO[m.step] ? `${STEP_KO[m.step]} 단계에서 멈춤` : '멈춤';
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={g.title} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <img src={iconArt(causeIcon(a.kind, m.kind))} alt="" />
+          <div><div className="modal-title">{g.title}</div><div className="dim">{where}{a.code && a.code !== 'OK' && a.kind !== 'cable' ? ` · 코드 ${a.code}` : ''}</div></div>
+        </div>
+        <div className="modal-body">
+          {m.step && STEP_KO[m.step] ? <img className="modal-art" src={stepArt(m.step, m.kind)} alt="" /> : <div className="modal-art" />}
+          <ol className="modal-steps">{g.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
+        </div>
+        <div className="modal-foot">
+          <div className="dim small">{nudgeOk(a)
+            ? <>처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼 또는 로봇팔 가볍게 밀기({NUDGE.word}). 밀어서 풀리면 이 창은 저절로 닫힙니다.</>
+            : <>처리한 뒤 <b>확인</b> → 화면의 <b>재개</b> 버튼(이 멈춤은 로봇팔을 밀어도 풀리지 않습니다).</>}</div>
+          <button className="btn go" onClick={onClose} autoFocus>확인</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 확인창 — 교체 완료 · 중단. 확인/취소 두 버튼 · Esc 나 바깥 클릭은 취소
+function ConfirmModal({ c, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const ok = () => { onClose(); c.onOk(); };
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className={`modal ask ${c.tone === 'warn' ? 'warn' : ''}`} role="dialog" aria-modal="true" aria-label={c.title} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <img src={iconArt(c.icon)} alt="" />
+          <div className="modal-title">{c.title}</div>
+        </div>
+        <div className="modal-text">{c.body}</div>
+        <div className="modal-foot right">
+          <button className="btn plain" onClick={onClose}>취소</button>
+          <button className={`btn ${c.tone === 'warn' ? 'warn' : 'go'}`} onClick={ok} autoFocus>{c.ok}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 창 — 누적 KPI · 이력을 화면 위에 띄운다. 닫기 · Esc · 바깥 클릭
+function PanelModal({ title, onClose, children }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="modal-bg panel-bg" onClick={onClose}>
+      <div className="modal panel" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="panel-head"><div className="modal-title">{title}</div><button className="btn plain" onClick={onClose}>닫기</button></div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// 버튼 줄 — 시작 · 재개 · 중단과 flow 의 대답(reply)
 function Controls({ can, onPress, reply }) {
   return (
     <section className="controls">
       <button className="btn go" disabled={!can.start} onClick={() => onPress('start')}>시작</button>
-      <button className="btn go" disabled={!can.resume} onClick={() => onPress('resume')}>재개</button>
+      <button className={`btn go ${can.resume ? 'attn' : ''}`} disabled={!can.resume} onClick={() => onPress('resume')}>재개</button>
       <button className="btn warn" disabled={!can.abort} onClick={() => onPress('abort')}>중단</button>
       <div className={`reply ${reply ? (reply.pending ? 'dim' : reply.ok ? 'ok' : 'bad') : 'dim'}`}>
         {reply ? reply.text : '버튼을 누르면 flow 의 대답이 여기에 나온다'}
@@ -175,7 +363,7 @@ function StepBar({ d, paused }) {
   const at = paused || step;                         // 일시 정지 중이면 멈춘 단계를 가리킨다
   const idx = FLOW.indexOf(at);
   const finished = step === 'DONE';
-  const broken = !!s && s.last_code === 'ROBOT_ERROR';
+  const broken = false;                                         // 로봇 오류를 별도 예외로 보이지 않는다 — 붉은 단계 카드 없음(멈춤 카드는 주황 하나)
   // 좁은 화면(태블릿)에서는 단계 줄이 옆으로 밀린다 — 지금 단계 카드가 가운데 오게 줄만 민다(화면 전체는 움직이지 않는다)
   const bar = useRef(null);
   useEffect(() => {
@@ -246,8 +434,8 @@ function Now({ d, last }) {
   if (!s) { pill = '연결 대기'; tone = 'idle'; title = '대기'; art = 'PICK'; desc = 'flow 의 방송을 기다린다'; }
   else if (step === 'IDLE') { pill = '대기'; tone = 'idle'; title = '대기'; art = 'PICK'; desc = '시작을 누르면 반납 구역부터 차례로 처리한다'; num = 0; }
   else if (step === 'DONE') { pill = '완료'; tone = 'idle'; title = '완료'; art = 'RACK'; desc = '계획한 용기를 모두 처리했다 — 팔레트를 확인한다'; num = 0; }
-  else if (step === 'PAUSED' && s.last_code === 'ROBOT_ERROR') { pill = '로봇 오류 — 복구 필요'; tone = 'error'; }   // flow 는 로봇 오류에서 멈춰(PAUSED) 사람을 기다린다
-  else if (step === 'PAUSED') { pill = '일시 정지'; tone = 'paused'; }
+  else if (step === 'PAUSED' && pauseKind(s) === 'robot_error') { pill = '멈춤 — 로봇 확인'; tone = 'paused'; }   // 일반 멈춤과 같은 색
+  else if (step === 'PAUSED') { pill = { cable: '멈춤 — 케이블 확인', tool_lost: '멈춤 — 툴 놓침', tool_fail: '멈춤 — 툴 집기 실패', leftover: '멈춤 — 잔반 남음', grip: '멈춤 — 집기 실패', rack_full: '멈춤 — 팔레트 가득' }[pauseKind(s)] || '일시 정지'; tone = 'paused'; }
   else if (step === 'ERROR') { pill = '오류'; tone = 'error'; }
   else if (step === 'ISOLATE') { pill = '격리 중'; tone = 'isolate'; num = '!'; }
   if (!art) { art = 'PICK'; title = STEP_KO[step] || '-'; }
@@ -284,7 +472,7 @@ function Now({ d, last }) {
   );
 }
 
-// 팔레트 — 실제 배치를 비스듬히 위에서 본 입체 그림(황인재 9/21 배치 그림 · Claude 디자인 시안)
+// 팔레트 — 실제 배치를 비스듬히 위에서 본 입체 그림
 //   넣는 순서 그릇 1 → 그릇 2 → 컵 1 → 컵 2 = params.yaml flow.rack_order. 칸 상태마다 그림 조각(palletArt.js)을 골라 뒤 → 앞으로 겹친다.
 //   적재됨 = 흰 그릇·컵 + ✓ · 넣는 중 = 파란 반투명 + ↓ · 비어 있음 = 점선 자리 + 넣는 순서 번호
 function Pallet({ d }) {
@@ -296,7 +484,7 @@ function Pallet({ d }) {
   const filled = cells.filter((c) => c.filled).length;
   const full = cells.length > 0 && filled >= cells.length;       // 이번 회차가 칸을 다 채웠다 → 사람이 팔레트를 바꾼다
   const loading = cells.some((c) => c.loading);
-  const t = d.totals || {};
+  const t = lifetime(d);                                          // 누적은 DB 전체 기록(없으면 메모리)
   return (
     <section className={`card pallet-card ${full ? 'full' : ''}`}>
       <h2>이번 팔레트</h2>
@@ -316,12 +504,14 @@ function Pallet({ d }) {
       <div className="segs">{cells.map((c) => <i key={c.slot} className={c.filled ? 'done' : c.loading ? 'now' : ''} />)}</div>
       <svg viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`} className="rack-art" role="img" aria-label="팔레트 적재 상태"
         dangerouslySetInnerHTML={{ __html: art }} />
-      <div className="rack-totals">
-        <img src={iconArt('pallet')} alt="" width="40" height="40" />
-        <div><span className="dim">처리한 팔레트</span> <b>{t.pallets ?? 0}</b> 장</div>
-        <div className="dim">누적 그릇 <b>{t.bowls ?? 0}</b> · 컵 <b>{t.cups ?? 0}</b> · 격리 <b className="warn">{t.isolated ?? 0}</b></div>
+      <h2 className="gap">지금까지 처리 — 전체</h2>
+      <div className="tiles four">
+        <div><span>팔레트</span><b><Anim v={t.pallets} /><small> 장</small></b></div>
+        <div><span>그릇</span><b><Anim v={t.bowls} /></b></div>
+        <div><span>컵</span><b><Anim v={t.cups} /></b></div>
+        <div><span>격리</span><b className={t.isolated ? 'warn' : ''}><Anim v={t.isolated} /></b></div>
       </div>
-      <div className="dim tiny">누적은 HMI 를 켠 뒤부터 · 끝난 회차 {t.runs ?? 0}번 · 팔레트는 칸을 다 채우고 끝난 회차만 센다</div>
+      <div className="dim tiny">{t.fromDb ? '전체 기록(SQLite) · 껐다 켜도 이어진다' : 'HMI 를 켠 뒤부터(기록 없음)'} · 실행 {t.runs}회 · 팔레트 = 칸 {cells.length || 4}개를 다 채우고 끝난 실행</div>
     </section>
   );
 }
@@ -340,16 +530,18 @@ function Row({ icon, title, value, sub, children, tone = '' }) {
   );
 }
 
+// 큰 숫자 — v 뒤에 '/of' 와 단위를 붙인다
 function Big({ v, of, unit, cls = '' }) {
-  return <span className={`big ${cls}`}>{v}{of != null && <span className="of">/{of}</span>}{unit && <span className="unit"> {unit}</span>}</span>;
+  return <span className={`big ${cls}`}><Anim v={v} />{of != null && <span className="of">/{of}</span>}{unit && <span className="unit"> {unit}</span>}</span>;
 }
 
+// 가로 막대 — value/max 비율(%)만큼 채운다. max 가 없으면 0
 function Bar({ value, max, cls = '' }) {
   const pct = max ? Math.min(100, (value / max) * 100) : 0;
   return <div className="bar"><i style={{ width: `${pct}%` }} className={cls} /></div>;
 }
 
-function Stats({ d }) {
+function Stats({ d, onReplace }) {
   const s = d.state || {};
   const zs = zones(d);
   const cy = cycle(d);
@@ -369,13 +561,14 @@ function Stats({ d }) {
       </Row>
     );
   };
-  const spare = (c, name, icon, every) => {
+  const replaceBtn = (item) => (cs.fromDb && onReplace ? <button className="btn mini" onClick={() => onReplace(item)}>교체 완료</button> : null);
+  const spare = (c, name, icon, every, item) => {
     if (!c) return <Row icon={icon} title={name} value={<Big v="-" />} />;
     if (c.max == null) return <Row icon={icon} title={name} value={<Big v={c.used} unit="회" />} sub="교체 한도 설정 없음" />;
     const blocks = c.max <= 30;
     return (
-      <Row icon={icon} tone={c.level} title={<>{name}{c.level !== 'ok' && <span className="tag">{c.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}</>}
-        value={<Big v={c.left} unit="회 남음" cls={c.level} />} sub={blocks ? null : `${every} ${c.max}회마다 간다`}>
+      <Row icon={icon} tone={c.level} title={<>{name}{c.level !== 'ok' && <span className="tag">{c.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}{replaceBtn(item)}</>}
+        value={<Big v={c.left} unit="회 남음" cls={c.level} />} sub={blocks ? null : `${every} ${c.max}회마다 간다 · 지금까지 ${c.used}회`}>
         {blocks
           ? <div className="blocks">{Array.from({ length: c.max }, (_, i) => <i key={i} className={i < c.left ? c.level : ''} />)}</div>
           : <Bar value={c.left} max={c.max} cls={c.level === 'ok' ? '' : c.level} />}
@@ -394,34 +587,88 @@ function Stats({ d }) {
         {cy && <div className="minibars">{cy.recent.map((v, i) => <i key={i} style={{ height: `${Math.max(12, (v / top) * 100)}%` }} className={i === cy.recent.length - 1 ? 'last' : ''} />)}</div>}
       </Row>
       <h2 className="gap">소모품 — 교체까지</h2>
-      {spare(cs.sponge, '수세미', 'sponge', '')}
-      {spare(cs.soap, '세제', 'soap', '비눗물은')}
-      <Row icon="tank" title="헹굼 담금" value={<Big v={cs.rinse ?? '-'} unit="회" />} sub="교체 기준 없음 — 센 횟수만" />
+      {spare(cs.sponge, '수세미', 'sponge', '그릇', 'sponge')}
+      {spare(cs.brush, '솔', 'brush', '컵', 'brush')}
+      {spare(cs.soap, '세제', 'soap', '용기', 'soap')}
+      {cs.waste && (
+        <Row icon="bin" tone={cs.waste.level} title={<>잔반통{cs.waste.level !== 'ok' && <span className="tag">{cs.waste.level === 'bad' ? '교체 필요' : '곧 교체'}</span>}{replaceBtn('waste_bin')}</>}
+          value={<Big v={(cs.waste.used_g / 1000).toFixed(1)} unit={cs.waste.max_g ? `/ ${cs.waste.max_g >= 10000 ? Math.round(cs.waste.max_g / 1000) : (cs.waste.max_g / 1000).toFixed(1)} kg` : 'kg'} cls={cs.waste.level} />}
+          sub={cs.waste.max_g ? '버린 잔반 무게 합 · 한도에 닿으면 일시 정지' : '한도 설정 없음'}>
+          {cs.waste.max_g ? <Bar value={cs.waste.used_g} max={cs.waste.max_g} cls={cs.waste.level === 'ok' ? '' : cs.waste.level} /> : null}
+        </Row>
+      )}
+      <div className="dim tiny gap-top">{cs.fromDb ? '마지막 교체 완료 뒤부터 센다 · 껐다 켜도 이어진다(SQLite)' : '이번 실행에서 센 값(서버 기록 없음)'}</div>
+    </section>
+  );
+}
+
+// 누적 KPI — DB(/api/kpi) 값 · 기간 전환(이번 실행 · 오늘 · 전체)
+function Kpi({ d, period, setPeriod }) {
+  const cards = kpiCards(d.kpi);
+  const [help, setHelp] = useState(null);                              // 마우스를 올린(또는 누른) 칸의 뜻을 아래 한 줄에
+  return (
+    <section className="card">
+      <div className="history-head">
+        <h2>누적 <span className="dim tiny">{d.kpi ? `${PERIOD_KO[d.kpi.period] || ''} · 용기 ${d.kpi.total}개 · 실행 ${d.kpi.runs}회` : '기록 없음(서버가 DB 없이 떠 있음)'}</span></h2>
+        <div className="tabs">{Object.keys(PERIOD_KO).map((p) => <button key={p} className={period === p ? 'on' : ''} onClick={() => setPeriod(p)}>{PERIOD_KO[p]}</button>)}</div>
+      </div>
+      {!cards.length ? <div className="dim">아직 값이 없다</div> : (
+        <div className="kpi-grid">
+          {cards.map((c, i) => (
+            <div key={c.label} className={`kpi ${c.tone || ''} ${help === i ? 'on' : ''}`} tabIndex={0}
+              onMouseEnter={() => setHelp(i)} onMouseLeave={() => setHelp((h) => (h === i ? null : h))} onFocus={() => setHelp(i)} onClick={() => setHelp(i)}>
+              <div className="dim small">{c.label}<span className="q" aria-hidden="true">?</span></div>
+              <div className="kpi-v"><Anim v={c.value} /></div>
+              <div className="dim tiny">{c.sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="kpi-helpline dim small">{help != null && cards[help] ? <><b>{cards[help].label}</b> — {cards[help].help}</> : '칸에 마우스를 올리거나 누르면 뜻이 여기에 나옵니다'}</div>
     </section>
   );
 }
 
 // 이력 — 끝난 용기 1개 = /flow/event 1건. 최근 것부터 20건.
-//   지금은 브리지가 메모리에 들고 있는 최근 50건(HMI 를 켠 뒤부터) — 껐다 켜도 남게 하는 저장은 F4-04(SQLite).
+//   브리지가 들고 있는 최근 50건(켤 때 SQLite 에서 미리 채운다) — 전체는 터미널 hmi_db dump events.
 //   [전체 / 문제만] — 문제만 = 완료가 아닌 것(격리 · 오류 · 건너뜀).
 const HISTORY_ROWS = 20;
 
+// 이력 창 — [전체 / 문제만 / 멈춤 기록]. 문제만 = 완료가 아닌 것 + 집기를 다시 시도한 것. 멈춤 기록 = DB pauses 표(FR-14 "오류 로그" · 황인재 9/28)
 function History({ d }) {
-  const [onlyProblems, setOnlyProblems] = useState(false);
+  const [tab, setTab] = useState('all');                              // 'all' | 'problems' | 'pauses'
   const all = d.events || [];
-  const rows = (onlyProblems ? problems({ events: all, state: d.state }) : all).slice(0, HISTORY_ROWS);
-  const nProblems = all.filter((e) => e.result && e.result !== 'DONE').length;
+  const probs = problems({ events: all, state: d.state });
+  const nProblems = all.filter((e) => (e.result && e.result !== 'DONE') || (e.attempts || 0) > 1).length;
+  const pauses = pauseRows(d.pauses);
+  const rows = (tab === 'problems' ? probs : all).slice(0, HISTORY_ROWS);
   return (
     <section className="card">
       <div className="history-head">
-        <h2>이력 <span className="dim tiny">끝난 용기마다 한 줄 · 최근 것부터</span></h2>
+        <h2>이력 <span className="dim tiny">{tab === 'pauses' ? '멈춘 적마다 한 줄 · 최근 것부터' : '끝난 용기마다 한 줄 · 최근 것부터'}</span></h2>
         <div className="tabs">
-          <button className={onlyProblems ? '' : 'on'} onClick={() => setOnlyProblems(false)}>전체 {all.length}</button>
-          <button className={onlyProblems ? 'on' : ''} onClick={() => setOnlyProblems(true)}>문제만 {nProblems}</button>
+          <button className={tab === 'all' ? 'on' : ''} onClick={() => setTab('all')}>전체 {all.length}</button>
+          <button className={tab === 'problems' ? 'on' : ''} onClick={() => setTab('problems')}>문제만 {nProblems}</button>
+          <button className={tab === 'pauses' ? 'on' : ''} onClick={() => setTab('pauses')}>멈춤 기록 {d.pauses ? pauses.length : '-'}</button>
         </div>
       </div>
-      {!rows.length ? (
-        <div className="dim">{onlyProblems ? '문제 있던 용기가 없다' : '아직 끝난 용기가 없다'}</div>
+      {tab === 'pauses' ? (
+        !d.pauses ? <div className="dim">기록 없음(서버가 DB 없이 떠 있음)</div>
+        : !pauses.length ? <div className="dim">멈춘 적이 없다</div>
+        : (
+          <div className="scroll-x"><table className="list history">
+            <thead><tr><th>시각</th><th>단계</th><th>원인</th><th>코드</th><th>풀림</th><th>걸린 시간</th></tr></thead>
+            <tbody>
+              {pauses.map((r) => (
+                <tr key={r.id} className={r.open ? 'warn' : ''}>
+                  <td>{r.time}</td><td>{r.step}</td><td>{r.cause}</td><td className="num">{r.code || '-'}</td><td>{r.resolved}</td><td className="num">{r.duration}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )
+      ) : !rows.length ? (
+        <div className="dim">{tab === 'problems' ? '문제 있던 용기가 없다' : '아직 끝난 용기가 없다'}</div>
       ) : (
         <div className="scroll-x"><table className="list history">
           <thead>
@@ -435,15 +682,15 @@ function History({ d }) {
                 <td>{e.zone_id || '-'} → {e.rack_slot ? e.rack_slot.replace('RACK_', '') : e.result === 'ISOLATED' ? '격리' : '-'}</td>
                 <td className="num">{e.weight_before_g || e.weight_after_g ? `${Math.round(e.weight_before_g)} → ${Math.round(e.weight_after_g)} g` : '-'}</td>
                 <td>{RESULT_KO[e.result] || e.result}</td>
-                <td>{e.result === 'DONE' ? '-' : why(e)}</td>
+                <td>{e.result === 'DONE' ? ((e.attempts || 0) > 1 ? <span className="warn">집기 다시 시도</span> : '-') : why(e)}</td>
                 <td className="num">{e.duration_s ? `${e.duration_s.toFixed(1)} s` : '-'}</td>
-                <td className="num">{e.attempts || '-'}</td>
+                <td className="num">{(e.attempts || 0) > 1 ? <b className="warn">{e.attempts}회</b> : e.attempts || '-'}</td>
               </tr>
             ))}
           </tbody>
         </table></div>
       )}
-      <div className="dim tiny gap-top">HMI 를 켠 뒤 받은 것만 보인다 — 껐다 켜도 남게 하는 저장은 다음 작업(F4-04)</div>
+      <div className="dim tiny gap-top">{tab === 'pauses' ? '최근 50건 · 전체는 SQLite 기록(터미널 `ros2 run f4_hmi hmi_db dump pauses`)' : '최근 50건 · 전체는 SQLite 기록(터미널 `ros2 run f4_hmi hmi_db dump events`)'}</div>
     </section>
   );
 }

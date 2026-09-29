@@ -75,7 +75,7 @@ STAGES = [   # flow.process_one 의 steps 순서 그대로 (번호 = 황인재 �
     (5, 'SOAP',  'f3.soap',          '세제 묻히기(홀더 안 비틀기·왕복)'),
     (6, 'WIPE',  'f3.wipe_*',        '닦기(그릇 나선 / 컵 위아래+회전)'),
     (7, 'WIPE',  'f1.tool RETURN',   '툴 반납(집은 자리로 곧게 · 감시 없음 · 마지막 15 mm 살짝 느리게)'),
-    (8, 'RINSE', 'f1.pick(홈)',      '재파지(그릇 벽 / 컵 옆면 · 마지막 45 mm 감시)'),
+    (8, 'RINSE', 'f1.pick(홈)',      '재파지(그릇 벽 / 컵 옆면 · 곧게 내려 잡기 · 감시 0)'),
     (9, 'RINSE', 'f2.dip',           '헹굼 담금(2회)'),
     (10, 'RINSE', 'f2.shake',        '물 털기(RINSE_SHAKE 자세 · J4 3회)'),
     (11, 'RACK',  'f1.rack_place',   '팔레트 적재(수조 위 → 경유점 → 칸 → 곧게 내려 놓기 → 빠져나오기)'),
@@ -121,7 +121,7 @@ def main():
                     help='🆕 9/23 튜닝용: 단계마다 번호·이름을 찍고 Enter 를 기다린다(q = 그만) — 없앨 동작·빨리 할 동작을 번호로 고르기')
     ap.add_argument('--list', action='store_true', help='단계 번호표만 찍고 끝낸다(로봇 안 움직임)')
     ap.add_argument('--nudge', action='store_true',
-                     help='PAUSED 에서 키보드로 안 묻는다 — 넛지(로봇을 밀거나 톡 치기)·HMI 로만 재개(E37 실기용)')
+                     help='PAUSED 에서 키보드로 안 묻는다 — 넛지(로봇팔 가볍게 밀기)·HMI 로만 재개(E37 실기용)')
     a = ap.parse_args()
     use_mock = [m for m in parse_use_mock(a.mock) if m in FEATURES] if a.mock else []
     robot = not (a.no_robot or set(FEATURES) <= set(use_mock))
@@ -173,7 +173,7 @@ def main():
             _install_step_gate(f, log)
         sig = Signals() if a.nudge else HumanSignals(log)
         if a.nudge:
-            log.info('--nudge — PAUSED 에서 키보드로 안 묻는다. 넛지(로봇을 밀거나 톡 치기)로 재개한다')
+            log.info('--nudge — PAUSED 에서 키보드로 안 묻는다. 넛지(로봇팔 가볍게 밀기)로 재개한다')
         f.zone_id, f.kind = zone, a.kind
         for i in range(1, a.n + 1):
             log.info(f'━━ 용기 {i}/{a.n} · {a.kind} · {zone} · 팔레트 {f._next_slot()} ━━')

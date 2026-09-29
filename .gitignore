@@ -103,3 +103,7 @@ _upload/
 # 실행하면서 생기는 기록 (FLOW-02 · SDD §4.2) — 저장소에 넣지 않는다
 records.csv
 force_*.csv
+
+# F4-04 hmi_db export 결과(CSV) — 저장소에 안 올린다
+records/
+records_*/

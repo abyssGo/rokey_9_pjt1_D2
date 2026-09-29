@@ -15,6 +15,21 @@ class Clock:
         return self.t
 
 
+def test_store_remembers_step_before_pause():
+    # 🆕 9/28 멈춘 뒤에 연 화면도 "어느 단계에서 멈췄나"를 알도록 브리지가 직전 단계를 든다. 운전으로 돌아가면 지운다
+    store = StateStore(2.0, Clock())
+    assert store.snapshot()['paused_from'] is None
+    store.put_state({'step': 'WIPE'})
+    store.put_state({'step': 'PAUSED'})
+    assert store.snapshot()['paused_from'] == 'WIPE'
+    store.put_state({'step': 'PAUSED'})                      # 멈춤이 이어져도 그대로
+    assert store.live()['paused_from'] == 'WIPE'
+    store.put_state({'step': 'WIPE'})
+    assert store.snapshot()['paused_from'] is None
+    store.put_state({'step': 'IDLE'}); store.put_state({'step': 'PAUSED'})   # 운전 중이 아니었으면 모른다
+    assert store.snapshot()['paused_from'] is None
+
+
 def test_store_is_disconnected_until_first_state():
     snap = StateStore(2.0, Clock()).snapshot()
     assert snap['connected'] is False and snap['state'] is None and snap['age_s'] is None and snap['events'] == []
