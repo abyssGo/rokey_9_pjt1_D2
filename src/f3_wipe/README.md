@@ -19,6 +19,7 @@
 
 ## 시험
 ```bash
-soc && python3 src/f3_wipe/test/rig_f3.py bowl -n 3     # 실기 시험대 — soap | bowl | cup 을 같은 함수로 연속 3회 이상
+# 최상위 README 5-3 의 '로봇용 터미널 준비' 줄을 먼저 친 터미널에서
+python3 src/f3_wipe/test/rig_f3.py bowl -n 3            # 실기 시험대 — soap | bowl | cup 을 같은 함수로 연속 3회 이상
 python3 -m pytest -q src/f3_wipe                          # 자동 시험(로봇 없이)
 ```
