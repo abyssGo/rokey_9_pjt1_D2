@@ -328,7 +328,6 @@ ros2 topic hz /flow/state                          # 또는 ros2 topic echo /flo
 | `ros2: command not found` · `colcon: command not found` | 그 터미널에서 `source` 줄을 치지 않았다 · 5-1 ① 을 건너뛰었다 | 그 절의 "터미널 준비" 줄부터 다시 친다 |
 | `Package 'prewash_bringup' not found` | `source install/setup.bash` 를 빼먹었거나 빌드 전이다 | `cd ~/rokey_pjt01_ws` 뒤 5-1 ② 의 빌드 · source |
 | 화면 주소에 시험 페이지만 나온다 | 화면을 빌드하지 않았다 | 5-1 ③ 의 `npm install && npm run build` |
-| 화면 서버가 `cannot import name … from 'pydantic…'` 로 죽는다 | 시스템에 옛 pydantic(apt `python3-pydantic` 1.x)이 깔려 있어 HMI 상자(`~/venvs/hmi`)의 새 판보다 먼저 잡힌다 | 그 터미널에서 `export PYTHONPATH=~/venvs/hmi/lib/python3.12/site-packages:$PYTHONPATH` 를 친 뒤 다시 켠다 |
 | 브링업이 바로 죽는다(포트 12345) | 앞서 켠 브링업 · 에뮬레이터가 남아 있다 | `ss -tlnp \| grep 12345` 로 확인하고 남은 브링업을 끈 뒤 다시 |
 | PC 1대로 돌리는데 화면이 '연결 끊김'이다 | 5-6 의 환경변수 줄(Discovery Server)을 넣은 터미널에서 화면 서버를 켰다 — 서버가 없어 같은 PC 의 브링업도 못 찾는다 | 화면 서버를 끄고, **새 터미널**에서 5-3 의 '로봇용 터미널 준비' 줄만 친 뒤 5-5 대로 다시 켠다 |
 | 브링업을 켰더니 10초쯤 뒤 꺼진다 · 먼저 켠 브링업 로그에 `can not be configured from active state` | 브링업이 이미 켜져 있는데 하나 더 켰다 | 나중 것을 끄고 먼저 켠 브링업을 그대로 쓴다. 로봇이 이상하면 모두 끈 뒤 하나만 다시 켠다 |
