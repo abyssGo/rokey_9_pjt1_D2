@@ -30,7 +30,7 @@
 | 반납 구역 `zone_id` | `RET_B` `RET_C` | 공정 입구. **구역마다 고정 슬롯 2개**(트레이에 자리 표시) — 용기는 슬롯에 겹치지 않게 하나씩 놓는다(9/19 결정: 구역 + 탐색 파지 → 고정 슬롯). ID·함수 서명은 그대로 ✅ **9/20 변경(결정기록 E9)**: 반납 구역은 **내리막 공급 구조** — 용기를 꺼내면 뒤 용기가 같은 자리로 내려온다 → 구역마다 집는 자리는 **1개**이고 같은 자리에서 차례로 집는다(슬롯 2개 안은 폐기). 🔄 **E41 로 시연은 다시 자리 2개** — 슬롯 1부터 집고 비면 슬롯 2(E9 대체) |
 | 팔레트 칸 `rack_slot` | `RACK_B1` `RACK_B2` / `RACK_C1` `RACK_C2` | 공정 출구. 그릇 2칸·컵 2칸 (✅ 황인재 9/20: 컵 칸 4 → 2 — `RACK_C3`·`RACK_C4` 삭제. 코드(`cobot_api.RACK_SLOTS`·`cell.yaml`·`params.yaml`)도 2칸으로 맞췄다) |
 | 스테이션 `station` | `HOME` `WEIGH` `WASTE` `SPONGE_BED_B` `SPONGE_BED_C` `TOOL_SPONGE` `TOOL_BRUSH` `SOAP` `RINSE` `ISOLATE` | 작업대 위 고정 위치 |
-| 실패 코드 `code` | `OK` `GRIP_FAIL` `EMPTY_ZONE` `LEFTOVER` `LEFTOVER_REMAIN` `SEAT_FAIL` `TOOL_FAIL` `TOOL_LOST`(🆕 9/23 E37 · 닦는 중 툴 놓침) `FORCE_LIMIT` `TIMEOUT` `RACK_JAM` `RACK_FULL` `ROBOT_ERROR` `STOPPED` | |
+| 실패 코드 `code` | `OK` `GRIP_FAIL` `EMPTY_ZONE` `LEFTOVER` `LEFTOVER_REMAIN` `SEAT_FAIL` `TOOL_FAIL` `TOOL_LOST`(🆕 9/23 E37 · 닦는 중 툴 놓침) `FORCE_LIMIT` `TIMEOUT` `RACK_JAM` `RACK_FULL` `ROBOT_ERROR` `STOPPED` `OPERATOR_ABORT`(E68 · 관리자가 중단해 격리 — 실패 원인이 아니라 사람의 결정 · 화면 '관리자 격리') | |
 | 흐름 상태 `step` | `IDLE` `PICK` `WEIGH` `SHAKE` `SEAT` `SOAP` `WIPE` `RINSE` `RACK` `ISOLATE` `DONE` `ERROR` `PAUSED` | `PICK` 안에 탐색 포함 |
 
 ## 3. F1 파지·이송·적재 (IR-01) · 한석형 · 모듈 `f1_handling.handling`
