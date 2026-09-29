@@ -292,6 +292,26 @@ export function weightText(e) {
   return `${g(b)} → ${g(a)} g`;
 }
 
+// 무게 재는 중 — 표본을 읽는 대로 한 칸씩 채우고, 다 재면 중앙값을 보여 준다(/flow/weigh → d.weigh)
+//   보이는 동안: 재는 중(마지막 표본 뒤 WEIGH_STALE_MS 안) · 다 잰 뒤 WEIGH_HOLD_MS 동안. 그 밖에는 null(칸을 그리지 않는다)
+//   숫자는 이력의 '무게 전 → 후' 와 같은 규칙 — 0 g 아래(센서 오차)는 0 으로
+export const WEIGH_STALE_MS = 5000;
+export const WEIGH_HOLD_MS = 10000;
+export function weighView(d, now = Date.now()) {
+  const w = d && d.weigh;
+  if (!w || !Array.isArray(w.samples_g)) return null;
+  const age = now - (w.at || 0);
+  if (age > (w.done ? WEIGH_HOLD_MS : WEIGH_STALE_MS)) return null;
+  const g = (v) => Math.max(0, Math.round(v || 0));
+  const n = Math.max(w.target_n || 0, w.samples_g.length);
+  if (!n) return null;
+  const cells = Array.from({ length: n }, (_, i) => (i < w.samples_g.length ? g(w.samples_g[i]) : null));
+  const limit = Number(d.plan && d.plan.leftover_threshold_g) || null;
+  const median = w.done ? g(w.median_g) : null;
+  return { kind: w.kind || '', n, count: w.samples_g.length, cells, done: !!w.done, median, limit,
+           leftover: w.done && limit != null ? (w.median_g || 0) >= limit : null };
+}
+
 // stamp(epoch 초) → 'HH:MM:SS' 현지 시각. 없으면 '-'
 export function clock(stamp) {
   if (!stamp) return '-';

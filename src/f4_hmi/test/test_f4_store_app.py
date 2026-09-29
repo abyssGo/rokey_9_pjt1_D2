@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from f4_hmi.state_store import FORCE_FRESH_S, RECENT_EVENTS, StateStore
+from f4_hmi.state_store import FORCE_FRESH_S, RECENT_EVENTS, WEIGH_FRESH_S, StateStore
 
 
 class Clock:
@@ -53,6 +53,26 @@ def test_store_force_is_none_when_not_wiping():
     assert store.snapshot()['force_n'] == 5.25
     clock.t += FORCE_FRESH_S + 0.01                                         # 닦는 동안만 온다 → 끊기면 '닦는 중 아님'
     assert store.snapshot()['force_n'] is None
+
+
+def test_store_weigh_keeps_samples_and_median_only_when_done():
+    # 무게를 재는 동안: 표본을 읽는 대로 목록이 길어지고, 다 재면 중앙값이 붙는다. 값은 0.1 g 으로 반올림
+    clock = Clock()
+    store = StateStore(2.0, clock)
+    assert store.snapshot()['weigh'] is None
+    heard = []
+    store.subscribe(lambda kind, payload: heard.append((kind, payload)))
+    store.put_weigh({'kind': 'BOWL', 'target_n': 15, 'samples_g': [79.79657745361328, -3.04], 'done': False, 'median_g': 0.0, 'stamp': 1.0})
+    w = store.snapshot()['weigh']
+    assert w['samples_g'] == [79.8, -3.0] and w['target_n'] == 15 and w['done'] is False and w['median_g'] is None and w['age_s'] == 0.0
+    assert heard[-1][0] == 'weigh' and heard[-1][1]['weigh']['samples_g'] == [79.8, -3.0]
+    store.put_weigh({'kind': 'BOWL', 'target_n': 15, 'samples_g': [79.8, -3.0, 81.2], 'done': True, 'median_g': 79.84, 'stamp': 2.0})
+    w = store.live()['weigh']
+    assert w['done'] is True and w['median_g'] == 79.8 and len(w['samples_g']) == 3
+    w['samples_g'].append(1.0)                                              # 사본이다
+    assert len(store.snapshot()['weigh']['samples_g']) == 3
+    clock.t += WEIGH_FRESH_S + 0.1                                          # 지난 측정은 내보내지 않는다
+    assert store.snapshot()['weigh'] is None
 
 
 def test_store_keeps_recent_events_newest_first_and_copies():

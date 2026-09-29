@@ -6,7 +6,7 @@ import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
   buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk, weightText,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk, weightText, weighView,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -445,12 +445,38 @@ function Now({ d, last }) {
         {s && s.kind ? <span className="kind-chip">{KIND_KO[s.kind]}</span> : null}
       </div>
       <div className="now-desc">{desc}</div>
+      <WeighLive v={weighView(d)} />
       <div className="tiles">
         <div title="끝난 용기 수가 바뀐 때부터 — 화면을 도중에 열면 그때부터 잰다"><span>이번 용기</span><b>{elapsed != null ? `${elapsed.toFixed(0)} s` : '-'}</b></div>
         <div><span>몇 번째</span><b>{nth}</b></div>
         <div><span>다음</span><b className="text">{s ? nextStep(step, p) : '-'}</b></div>
       </div>
     </section>
+  );
+}
+
+// 무게 측정 — 재는 동안 표본을 읽는 대로 한 칸씩 채우고(방금 읽은 칸은 강조), 다 재면 중앙값과 잔반 판정을 보여 준다. 잴 때가 아니면 그리지 않는다
+function WeighLive({ v }) {
+  if (!v) return null;
+  return (
+    <div className={`weigh ${v.done ? 'done' : ''}`} role="status" aria-label="무게 측정">
+      <div className="weigh-head">
+        <b>무게 측정</b>
+        <span className="dim small">{v.done ? `${v.count}번 측정 완료` : `${v.count} / ${v.n}번째 측정 중`}</span>
+      </div>
+      <div className="weigh-cells">
+        {v.cells.map((g, i) => (
+          <span key={i} className={`weigh-cell ${g == null ? 'empty' : ''} ${!v.done && i === v.count - 1 ? 'latest' : ''}`}>
+            <small>{i + 1}</small>{g == null ? '·' : g}
+          </span>
+        ))}
+      </div>
+      <div className="weigh-result">
+        <span>중앙값</span>
+        <b>{v.done ? `${v.median} g` : '측정 중…'}</b>
+        {v.done && v.leftover != null ? <span className={`weigh-tag ${v.leftover ? 'warn' : 'ok'}`}>{v.leftover ? `잔반 있음 (기준 ${v.limit} g 이상)` : `잔반 없음 (기준 ${v.limit} g 미만)`}</span> : null}
+      </div>
+    </div>
   );
 }
 

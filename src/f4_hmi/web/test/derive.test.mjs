@@ -169,3 +169,22 @@ test('이력 무게 — 0 g 아래(센서 오차)는 0 g 로 · 둘 다 없으�
   assert.equal(D.weightText({ weight_before_g: 70.6, weight_after_g: -3.2 }), '71 → 0 g');
   assert.equal(D.weightText({ weight_before_g: 0, weight_after_g: 0 }), '-');
 });
+
+test('무게 측정 칸 — 읽는 대로 채우고 다 재면 중앙값 · 0 g 아래는 0 · 잴 때가 아니면 그리지 않는다', () => {
+  const now = 1_000_000;
+  const base = { connected: true, state: st({ step: 'WEIGH', kind: 'BOWL' }), events: [], plan: { leftover_threshold_g: 50 } };
+  assert.equal(D.weighView(base, now), null);                                                   // 아직 받은 값이 없다
+  const ing = { ...base, weigh: { kind: 'BOWL', target_n: 15, samples_g: [79.8, -3.2, 81.4], done: false, median_g: null, at: now - 300 } };
+  const v = D.weighView(ing, now);
+  assert.equal(v.n, 15); assert.equal(v.count, 3); assert.equal(v.done, false); assert.equal(v.median, null); assert.equal(v.leftover, null);
+  assert.deepEqual(v.cells.slice(0, 4), [80, 0, 81, null]);                                     // 0 g 아래(센서 오차)는 0 · 아직 안 읽은 칸은 null
+  assert.equal(v.cells.length, 15);
+  assert.equal(D.weighView({ ...ing, weigh: { ...ing.weigh, at: now - D.WEIGH_STALE_MS - 1 } }, now), null);   // 재다가 끊겼다 → 치운다
+  const done = { ...base, weigh: { kind: 'BOWL', target_n: 3, samples_g: [79.8, 85.3, 81.4], done: true, median_g: 81.4, at: now - 2000 } };
+  const r = D.weighView(done, now);
+  assert.equal(r.median, 81); assert.equal(r.leftover, true); assert.equal(r.limit, 50); assert.equal(r.count, 3);
+  assert.equal(D.weighView({ ...done, weigh: { ...done.weigh, median_g: -26.1 } }, now).median, 0);
+  assert.equal(D.weighView({ ...done, weigh: { ...done.weigh, median_g: -26.1 } }, now).leftover, false);
+  assert.equal(D.weighView({ ...done, plan: {} }, now).leftover, null);                           // 기준을 모르면 판정을 적지 않는다
+  assert.equal(D.weighView({ ...done, weigh: { ...done.weigh, at: now - D.WEIGH_HOLD_MS - 1 } }, now), null);   // 다 잰 뒤 일정 시간만 보여 준다
+});

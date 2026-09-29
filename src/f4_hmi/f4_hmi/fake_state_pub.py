@@ -7,6 +7,7 @@
 방송 (IRD §6 그대로)
     /flow/state     cobot_msgs/FlowState  2 Hz              /cell/force     std_msgs/Float32  닦는 동안만 10 Hz
     /flow/event     cobot_msgs/FlowEvent  용기마다 1건       /cell/gripping  std_msgs/Bool     값이 바뀔 때 1번 + 2 Hz
+    /flow/weigh     cobot_msgs/WeighLive  무게 단계 동안 표본마다 1건 + 다 재면 중앙값 1건
 버튼 (std_srvs/Trigger — 대답의 뜻은 IRD §6)
     /flow/start   IDLE 에서만(--wait-start 로 기다리는 중일 때). 아니면 거절
     /flow/stop    즉시 일시정지 — 대본의 시계를 세우고 step 을 PAUSED 로 방송한다
@@ -28,7 +29,7 @@ from rclpy.utilities import remove_ros_args
 from std_msgs.msg import Bool, Float32
 from std_srvs.srv import Trigger
 
-from cobot_msgs.msg import FlowEvent, FlowState
+from cobot_msgs.msg import FlowEvent, FlowState, WeighLive
 
 from . import scenario as sc
 
@@ -58,6 +59,8 @@ class FakeFlow(Node):
         self.event_pub = self.create_publisher(FlowEvent, '/flow/event', 10)
         self.force_pub = self.create_publisher(Float32, '/cell/force', 10)
         self.grip_pub = self.create_publisher(Bool, '/cell/gripping', 10)
+        self.weigh_pub = self.create_publisher(WeighLive, '/flow/weigh', 10)
+        self._weigh_scene, self._weigh_sent, self._weigh_done = None, 0, False     # 무게 장면마다 보낸 표본 수 · 중앙값을 보냈는가
         for name in ('start', 'stop', 'resume', 'abort'):
             self.create_service(Trigger, f'/flow/{name}', getattr(self, f'_on_{name}'))
         self._last = self.get_clock().now()
@@ -65,6 +68,7 @@ class FakeFlow(Node):
         self.create_timer(1.0 / float(rates['state_hz']), self._on_state)
         self.create_timer(1.0 / float(rates['gripping_hz']), self._on_gripping)
         self.create_timer(1.0 / float(rates['force_hz']), self._on_force)
+        self.create_timer(1.0 / TICK_HZ, self._on_weigh)
         self.get_logger().info(f"대본 '{scn['name']}' — {scn.get('title', '')} · 한 바퀴 {self.lap_s / self.speed:.0f} s"
                                f"{' · 한 바퀴만' if once else ' · 반복'}{' · /flow/start 를 기다린다' if wait_start else ''}")
         self._announce()
@@ -230,6 +234,34 @@ class FakeFlow(Node):
         """force_hz 마다 — 닦는 장면(wiping)이고 멈추지 않았을 때만 /cell/force 발행."""
         if self.scene.wiping and not self.paused and not self.waiting:
             self.force_pub.publish(Float32(data=sc.force_at(self.scn, self.t / self.speed)))
+
+
+    def _on_weigh(self):
+        """무게 장면(WEIGH)이고 멈추지 않았을 때만 — 장면 시간의 앞부분(weigh.span)에 표본을 하나씩, 그 뒤 중앙값(done)을 /flow/weigh 로 발행."""
+        st = self.scene.state
+        if st.get('step') != 'WEIGH' or self.paused or self.waiting or self.finished:
+            return
+        if self._weigh_scene != self.index:                 # 새 무게 장면
+            self._weigh_scene, self._weigh_sent, self._weigh_done = self.index, 0, False
+        w = self.scn.get('weigh') or {}
+        n, span = int(w.get('samples', 15)), float(w.get('span', 0.7))
+        frac = (self.t - sc.start_of(self.scenes, self.index)) / max(self.scene.duration_s, 1e-6)
+        due = min(n, int(frac / span * n) + 1) if span > 0 else n
+        values = sc.weigh_samples(self.scn, st.get('kind') or '', n)
+        if due > self._weigh_sent:
+            self._weigh_sent = due
+            self._publish_weigh(st, n, values[:due], done=False)
+        elif self._weigh_sent >= n and frac >= span and not self._weigh_done:
+            self._weigh_done = True
+            self._publish_weigh(st, n, values, done=True)
+
+    def _publish_weigh(self, st, n, values, done):
+        """WeighLive 1건 발행."""
+        m = WeighLive()
+        m.kind, m.target_n, m.samples_g, m.done = st.get('kind') or '', n, [float(v) for v in values], done
+        m.median_g = float(sc.median(values)) if done else 0.0
+        m.stamp = self.get_clock().now().to_msg()
+        self.weigh_pub.publish(m)
 
 
 def main(argv=None):

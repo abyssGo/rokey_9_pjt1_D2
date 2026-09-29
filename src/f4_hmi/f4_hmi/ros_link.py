@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""hmi_bridge 의 ROS 쪽 귀 — 토픽 4개를 듣고 StateStore 에 넣는다. 별도 스레드에서 spin 한다(웹 서버와 섞지 않는다).
+"""hmi_bridge 의 ROS 쪽 귀 — 토픽 5개를 듣고 StateStore 에 넣는다. 별도 스레드에서 spin 한다(웹 서버와 섞지 않는다).
 
 콜백은 값 저장만 한다(SDD §3.2 규칙 ③과 같은 원칙). 두산 API 를 쓰지 않으므로 cobot_common.init() 을 부르지 않는다.
 버튼: call('start'|'stop'|'resume'|'abort') → flow 의 /flow/<이름>(std_srvs/Trigger)을 부르고 {ok, message, latency_ms} 를 돌려준다.
@@ -14,15 +14,19 @@ from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import Bool, Float32
 from std_srvs.srv import Trigger
 
-from cobot_msgs.msg import FlowEvent, FlowState
+from cobot_msgs.msg import FlowEvent, FlowState, WeighLive
 
 
 def to_dict(msg) -> dict:
-    """메시지 → dict. stamp 는 초(float)로 바꾼다 — 나머지 필드는 이름·값 그대로(IRD §7)."""
+    """메시지 → dict. stamp 는 초(float)로, 숫자 배열(float32[])은 파이썬 목록으로 바꾼다 — 나머지 필드는 이름·값 그대로(IRD §7)."""
     out = {}
     for name in msg.get_fields_and_field_types():
         value = getattr(msg, name)
-        out[name] = round(value.sec + value.nanosec / 1e9, 3) if name == 'stamp' else value
+        if name == 'stamp':
+            value = round(value.sec + value.nanosec / 1e9, 3)
+        elif hasattr(value, 'tolist'):                       # array.array · numpy 배열 — 그대로는 JSON 으로 못 보낸다
+            value = value.tolist()
+        out[name] = value
     return out
 
 
@@ -30,7 +34,7 @@ COMMANDS = ('start', 'stop', 'resume', 'abort')         # /flow/<이름> — IRD
 
 
 class RosLink:
-    """ROS 노드 'hmi_bridge' — 구독 4개(/flow/state · /flow/event · /cell/force · /cell/gripping)와
+    """ROS 노드 'hmi_bridge' — 구독 5개(/flow/state · /flow/event · /flow/weigh · /cell/force · /cell/gripping)와
     서비스 클라이언트 4개(/flow/start·stop·resume·abort)를 들고 별도 스레드에서 spin 한다."""
 
     def __init__(self, store, service_timeout_s=1.0):
@@ -50,6 +54,7 @@ class RosLink:
         n, s = self.node, self.store
         n.create_subscription(FlowState, '/flow/state', lambda m: s.put_state(to_dict(m)), 10)
         n.create_subscription(FlowEvent, '/flow/event', lambda m: s.put_event(to_dict(m)), 50)
+        n.create_subscription(WeighLive, '/flow/weigh', lambda m: s.put_weigh(to_dict(m)), 50)
         n.create_subscription(Float32, '/cell/force', lambda m: s.put_force(m.data), 10)
         n.create_subscription(Bool, '/cell/gripping', lambda m: s.put_gripping(m.data), 10)
         for name in COMMANDS:
