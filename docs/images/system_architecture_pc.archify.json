@@ -276,9 +276,10 @@
       "id": "browser-hmi",
       "from": "browser",
       "to": "hmi",
-      "label": "HTTP · WebSocket",
+      "label": "버튼 HTTP · 상태 WebSocket",
       "variant": "emphasis",
-      "labelDy": 24
+      "labelDy": 24,
+      "labelDx": -16
     },
     {
       "id": "hmi-db",
@@ -430,6 +431,17 @@
       "to": "rg2",
       "label": "Modbus/TCP :502",
       "labelDy": 24
+    },
+    {
+      "id": "dds-hmi",
+      "from": "dds",
+      "to": "hmi",
+      "label": "state · event 구독",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelSegment": 1,
+      "labelDy": 12
     }
   ],
   "cards": [

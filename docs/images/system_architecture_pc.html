@@ -5163,7 +5163,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="2" data-composition-frame-label="로봇 셀" x="492" y="856" width="461" height="108" rx="12" class="c-region" stroke-width="1"/>
 
         <!-- Connection paths (before components for correct z-order) -->
-        <path data-edge-from="browser" data-edge-to="hmi" data-edge-label="HTTP · WebSocket" data-edge-key="0" data-edge-id="browser-hmi" data-composition-points="128,124;128,224" d="M 128 124 L 128 224" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="browser" data-edge-to="hmi" data-edge-label="버튼 HTTP · 상태 WebSocket" data-edge-key="0" data-edge-id="browser-hmi" data-composition-points="128,124;128,224" d="M 128 124 L 128 224" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <path data-edge-from="hmi" data-edge-to="db" data-edge-label="이벤트 저장" data-edge-key="1" data-edge-id="hmi-db" data-composition-points="135,288;135,388" d="M 135 288 L 135 388" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="hmi" data-edge-to="dds" data-edge-label="start/stop/resume/abort" data-edge-key="2" data-edge-id="hmi-dds" data-composition-points="142,224;142,174;356,174;356,124" d="M 142 224 L 142 182 Q 142 174 150 174 L 348 174 Q 356 174 356 166 L 356 124" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <path data-edge-from="dds" data-edge-to="flow" data-edge-label="Trigger 서비스" data-edge-key="3" data-edge-id="dds-flow" data-composition-points="370,124;370,148;386,148;386,200;363,200;363,224" d="M 370 124 L 370 140 Q 370 148 378 148 L 378 148 Q 386 148 386 156 L 386 192 Q 386 200 378 200 L 371 200 Q 363 200 363 208 L 363 224" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
@@ -5180,6 +5180,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <path data-edge-from="common" data-edge-to="gripdrv" data-edge-label="grip 명령 · 폭·힘 읽기" data-edge-key="14" data-edge-id="common-grip" data-composition-points="667,616;667,666;840,666;840,716" d="M 667 616 L 667 658 Q 667 666 675 666 L 832 666 Q 840 666 840 674 L 840 716" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="dsr" data-edge-to="ctrl" data-edge-label="두산 TCP :12345" data-edge-key="15" data-edge-id="dsr-ctrl" data-composition-points="605,780;605,880" d="M 605 780 L 605 880" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="gripdrv" data-edge-to="rg2" data-edge-label="Modbus/TCP :502" data-edge-key="16" data-edge-id="grip-rg2" data-composition-points="840,780;840,880" d="M 840 780 L 840 880" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="dds" data-edge-to="hmi" data-edge-label="state · event 구독" data-edge-key="17" data-edge-id="dds-hmi" data-composition-points="332,124;332,186;154,186;154,224" d="M 332 124 L 332 178 Q 332 186 324 186 L 162 186 Q 154 186 154 194 L 154 224" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
 
         <!-- Components -->
         <g id="node-browser" data-node-id="browser" data-node-label="브라우저 화면" tabindex="0" role="button" aria-label="Focus 브라우저 화면, 버튼 4 · 단계 카드 · 멈춤 안내 · KPI · 이력, 화면 PC" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="버튼 4 · 단계 카드 · 멈춤 안내 · KPI · 이력" data-node-context="화면 PC">
@@ -5361,9 +5362,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </g>
 
         <!-- Connection labels -->
-        <g data-detail="context" data-edge-from="browser" data-edge-to="hmi" data-edge-label="HTTP · WebSocket" data-edge-key="0" data-edge-id="browser-hmi">
-          <rect x="84.6" y="128" width="86.8" height="14" rx="3" class="c-mask"/>
-          <text x="128" y="138" class="t-backend" font-size="8" text-anchor="middle">HTTP · WebSocket</text>
+        <g data-detail="context" data-edge-from="browser" data-edge-to="hmi" data-edge-label="버튼 HTTP · 상태 WebSocket" data-edge-key="0" data-edge-id="browser-hmi">
+          <rect x="44.6" y="128" width="134.8" height="14" rx="3" class="c-mask"/>
+          <text x="112" y="138" class="t-backend" font-size="8" text-anchor="middle">버튼 HTTP · 상태 WebSocket</text>
         </g>
         <g data-detail="context" data-edge-from="hmi" data-edge-to="db" data-edge-label="이벤트 저장" data-edge-key="1" data-edge-id="hmi-db">
           <rect x="103.6" y="292" width="62.8" height="14" rx="3" class="c-mask"/>
@@ -5428,6 +5429,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g data-detail="context" data-edge-from="gripdrv" data-edge-to="rg2" data-edge-label="Modbus/TCP :502" data-edge-key="16" data-edge-id="grip-rg2">
           <rect x="799" y="784" width="82" height="14" rx="3" class="c-mask"/>
           <text x="840" y="794" class="t-muted" font-size="8" text-anchor="middle">Modbus/TCP :502</text>
+        </g>
+        <g data-detail="context" data-edge-from="dds" data-edge-to="hmi" data-edge-label="state · event 구독" data-edge-key="17" data-edge-id="dds-hmi">
+          <rect x="194.8" y="179" width="96.4" height="14" rx="3" class="c-mask"/>
+          <text x="243" y="189" class="t-messagebus" font-size="8" text-anchor="middle">state · event 구독</text>
         </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
