@@ -43,8 +43,9 @@ RACK_JAM = 'RACK_JAM'
 RACK_FULL = 'RACK_FULL'
 ROBOT_ERROR = 'ROBOT_ERROR'
 STOPPED = 'STOPPED'
+OPERATOR_ABORT = 'OPERATOR_ABORT'                           # 관리자가 중단(/flow/abort)해 격리했다 — 실패 원인이 아니라 사람의 결정
 CODES = (OK, GRIP_FAIL, EMPTY_ZONE, LEFTOVER, LEFTOVER_REMAIN, SEAT_FAIL, TOOL_FAIL, TOOL_LOST,
-         FORCE_LIMIT, TIMEOUT, RACK_JAM, RACK_FULL, ROBOT_ERROR, STOPPED)
+         FORCE_LIMIT, TIMEOUT, RACK_JAM, RACK_FULL, ROBOT_ERROR, STOPPED, OPERATOR_ABORT)
 
 
 # ------------------------------------------------------------------ 반환 타입

@@ -16,6 +16,7 @@ export const CODE_KO = {                             // cobot_api CODES (IRD §2
   SEAT_FAIL: '안착 실패', TOOL_FAIL: '툴 집기 실패', FORCE_LIMIT: '힘 상한 초과', TIMEOUT: '시간 초과',
   RACK_JAM: '적재 걸림', RACK_FULL: '팔레트 가득 참', ROBOT_ERROR: '로봇 오류', STOPPED: '멈춤',
   TOOL_LOST: '툴 놓침',                              // E37 — 닦는 중 수세미·솔이 그리퍼에서 빠짐
+  OPERATOR_ABORT: '관리자 격리',                     // 관리자가 중단(/flow/abort)해 격리 — flow.abort_container
 };
 
 // 멈춤(PAUSED)의 원인 갈래 — flow 가 보내는 last_code 와 message 로 가른다(시연 예외 6개에 맞춤).
@@ -275,10 +276,10 @@ export function clockIso(iso) {          // DB 의 시각 문자열(YYYY-MM-DDTH
   return m ? m[1] : (iso || '-');
 }
 
-// 이벤트의 원인 — 운영자가 중단(/flow/abort)하면 flow 는 ISOLATED 에 그때의 last_code 를 붙인다.
-// 일시 정지 → 중단이면 그 값이 OK 라서 "격리 · 정상" 으로 보인다 → "운영자 중단" 으로 풀어 쓴다(flow.py abort_container)
+// 이벤트의 원인 — 관리자가 중단(/flow/abort)하면 flow 는 ISOLATED 에 코드 OPERATOR_ABORT 를 붙인다(flow.abort_container).
+// 예전 기록(코드 OK·STOPPED)도 같은 뜻이라 '관리자 격리' 로 보인다.
 export function why(e) {
-  if (e.result === 'ISOLATED' && (!e.code || e.code === 'OK' || e.code === 'STOPPED')) return '운영자 중단';
+  if (e.result === 'ISOLATED' && (!e.code || e.code === 'OK' || e.code === 'STOPPED')) return '관리자 격리';
   return CODE_KO[e.code] || e.code || '-';
 }
 

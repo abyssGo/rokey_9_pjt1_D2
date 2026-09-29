@@ -58,8 +58,9 @@ test('알람 — 멈춤은 원인별 안내(제목·할 일) · 로봇 오류도
   assert.equal(D.alarm(d(st({ step: 'WIPE' }))), null);
 });
 
-test('이력 원인 — 운영자 중단은 코드 OK 라도 "운영자 중단" · SKIPPED 는 빈 구역', () => {
-  assert.equal(D.why({ result: 'ISOLATED', code: 'OK' }), '운영자 중단');
+test('이력 원인 — 관리자 중단은 "관리자 격리"(코드 OPERATOR_ABORT · 예전 기록 OK) · SKIPPED 는 빈 구역', () => {
+  assert.equal(D.why({ result: 'ISOLATED', code: 'OPERATOR_ABORT' }), '관리자 격리');
+  assert.equal(D.why({ result: 'ISOLATED', code: 'OK' }), '관리자 격리');
   assert.equal(D.why({ result: 'ISOLATED', code: 'LEFTOVER_REMAIN' }), '잔반이 남음');
   assert.equal(D.why({ result: 'SKIPPED', code: 'EMPTY_ZONE' }), '빈 구역');
   assert.equal(D.why({ result: 'ERROR', code: 'TOOL_LOST' }), '툴 놓침');
