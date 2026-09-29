@@ -121,6 +121,9 @@
 | 실제 로봇 — PC 1대 | + M0609 · RG2 · 워크셀 | 5-1 → 5-3 → 5-5 |
 | 실제 로봇 — 시연(PC 2대) | + 같은 망의 두 번째 PC | 5-1(두 PC) → 5-3(GPU PC) → 5-6 |
 
+🚨 **5-2 · 5-4 · 5-5 · 5-6 은 이어서 하는 순서가 아니라 갈래다 — 하나만 골라 그 절만 실행한다.** 특히 5-5(PC 1대)와 5-6(PC 2대)은 둘 중 하나다. 갈래를 바꿀 때는 켜 둔 프로그램을 모두 끈 뒤(Ctrl+C) 새 터미널에서 시작한다.
+🚨 **브링업은 한 번에 하나.** 이미 켜져 있으면 다시 켜지 않는다 — 두 번째 브링업이 로봇 제어권을 다투다 꺼지고, 먼저 켠 쪽도 흔들린다. 켜져 있는지는 `ss -tlnp | grep 12345`(가상) 나 `pgrep -af bringup.launch` 로 본다.
+
 ### 5-1. 설치 · 빌드 · 자동 시험 (처음 한 번)
 
 준비물은 Ubuntu 24.04 와 **ROS 2 Jazzy**(`ros-jazzy-desktop`)다. ROS 가 없으면 [ROS 2 Jazzy 공식 설치 안내](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)나 [환경 설정 문서 §4~5](docs/setup/M0609_환경설정.md)대로 먼저 설치한다.
@@ -210,6 +213,8 @@ python3 src/cobot_common/test/rig_coords.py --from 1
 
 ### 5-5. 실제 로봇 — PC 1대 · 담당자만 · 로봇 프로그램은 한 번에 하나
 
+PC 한 대에서 브링업 · 메인 프로그램 · 화면을 모두 돌린다. **이 절을 골랐으면 5-6 의 명령은 치지 않는다**(5-6 의 환경변수 줄을 넣은 터미널은 GPU PC 의 서버만 찾으므로, 같은 PC 의 브링업도 보지 못해 화면이 '연결 끊김'이 된다).
+
 🚨 `src/cobot_common/config/cell.yaml` 의 좌표는 **우리 워크셀 배치**(§1 그림) 기준이다. 배치가 다른 셀에서는 좌표를 다시 티칭하기 전에 돌리지 않는다. 처음 켜는 셀 · 다시 티칭한 뒤 첫 실행은 `vel_scale:=0.3` 으로 낮춘다.
 
 - 전제: PC 유선 주소를 `192.168.1.x/24` 로 고정(제어기 `192.168.1.100` · RG2 `192.168.1.1`) · 티치펜던트에 툴 무게와 TCP `GripperDA_v1` 등록([환경 설정 문서 10-4](docs/setup/M0609_환경설정.md)).
@@ -233,6 +238,8 @@ ros2 launch prewash_bringup prewash.launch.py hmi:=true     # 볼 것: 문지기
 - 단독 기능 시험대(`src/*/test/rig_*.py`)는 용기를 손으로 시작 자리에 놓고 기능 하나만 돌린다. 볼 것과 통과 기준은 각 파일 머리말에 있다.
 
 ### 5-6. 운영(시연) 실행 — PC 2대
+
+PC 두 대가 같은 망에 있을 때만 쓴다. **이 절을 골랐으면 5-5 의 명령은 치지 않는다.** 화면 PC 의 명령은 GPU PC 의 서버(터미널 A)가 켜져 있고 `ping` 이 될 때만 동작한다 — PC 한 대로 돌릴 때는 쓰지 않는다.
 
 | PC | 맡는 일 | 네트워크 |
 |---|---|---|
@@ -280,7 +287,7 @@ ros2 launch prewash_bringup prewash.launch.py      # 볼 것: 문지기 통과 �
 - GPU PC 워크스페이스는 `colcon build --symlink-install` 로 빌드한다(복사 빌드면 코드를 새로 받아도 옛 코드로 돈다).
 - 환경변수 줄을 `~/.bashrc` 에 넣어 두면 매번 치지 않아도 되지만, 그러면 서버(A)가 켜져 있어야만 ROS 가 동작한다.
 
-**화면 PC — 터미널 1개**
+**화면 PC — 터미널 1개**(GPU PC 의 A → B → C 가 모두 켜진 뒤 · 화면 PC 에서는 브링업과 launch 를 켜지 않는다)
 
 ```bash
 export GPU_IP=172.18.0.101
@@ -323,6 +330,8 @@ ros2 topic hz /flow/state                          # 또는 ros2 topic echo /flo
 | 화면 주소에 시험 페이지만 나온다 | 화면을 빌드하지 않았다 | 5-1 ③ 의 `npm install && npm run build` |
 | 화면 서버가 `cannot import name … from 'pydantic…'` 로 죽는다 | 시스템에 옛 pydantic(apt `python3-pydantic` 1.x)이 깔려 있어 HMI 상자(`~/venvs/hmi`)의 새 판보다 먼저 잡힌다 | 그 터미널에서 `export PYTHONPATH=~/venvs/hmi/lib/python3.12/site-packages:$PYTHONPATH` 를 친 뒤 다시 켠다 |
 | 브링업이 바로 죽는다(포트 12345) | 앞서 켠 브링업 · 에뮬레이터가 남아 있다 | `ss -tlnp \| grep 12345` 로 확인하고 남은 브링업을 끈 뒤 다시 |
+| PC 1대로 돌리는데 화면이 '연결 끊김'이다 | 5-6 의 환경변수 줄(Discovery Server)을 넣은 터미널에서 화면 서버를 켰다 — 서버가 없어 같은 PC 의 브링업도 못 찾는다 | 화면 서버를 끄고, **새 터미널**에서 5-3 의 '로봇용 터미널 준비' 줄만 친 뒤 5-5 대로 다시 켠다 |
+| 브링업을 켰더니 10초쯤 뒤 꺼진다 · 먼저 켠 브링업 로그에 `can not be configured from active state` | 브링업이 이미 켜져 있는데 하나 더 켰다 | 나중 것을 끄고 먼저 켠 브링업을 그대로 쓴다. 로봇이 이상하면 모두 끈 뒤 하나만 다시 켠다 |
 | ★ 화면이 '연결 끊김'인데 토픽은 보인다 | `hmi_bridge` 를 환경변수 없는 새 터미널에서 켰다 | Ctrl+C 뒤 환경변수 줄을 넣은 터미널에서 다시 켠다 |
 | ★ `ros2 topic list` 가 비어 있다 · 설정을 바꿨는데 그대로다 | 옛 ros2 데몬이 옛 설정으로 남아 있다 | `ros2 daemon stop && ros2 daemon start` · `ROS_SUPER_CLIENT=TRUE` 인지 확인 |
 | ★ PC 끼리 ping 이 안 된다 | 손님망(Rokey_Guest)에 붙어 있다 | 두 PC 모두 Rokey_B 로 |
