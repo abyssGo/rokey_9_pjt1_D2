@@ -7,7 +7,7 @@
 
 런치 인자 → 프로그램: 환경변수로 넘긴다 (cobot_common.config 가 읽어 cfg 에 얹는다)
     use_mock:="f1,f3"   → PREWASH_USE_MOCK  → cfg['flow']['use_mock']   (빈 값이면 전부 실제)
-    vel_scale:=0.3      → PREWASH_VEL_SCALE → cfg['run']['vel_scale']   (0 초과 1 이하)
+    vel_scale:=1.0      → PREWASH_VEL_SCALE → cfg['run']['vel_scale']   (0 초과 1 이하)
   ROS 파라미터로 주지 않는 이유: flow 는 init() 전에 use_mock 을 보고 init(robot=False) 를 정해야 한다.
 
 주의: flow_node 에 name=·namespace= 를 주지 않는다. 런치가 넣는 `-r __node:=…` 는 프로세스 안의 모든 노드에 걸려서,
@@ -59,7 +59,7 @@ def make_description(*, use_mock: str, vel_scale: str, hmi: str) -> LaunchDescri
         DeclareLaunchArgument('use_mock', default_value=use_mock,
                               description='가짜 모듈로 바꿀 기능. 예: "f1,f3" · 빈 값이면 전부 실제 · "f1,f2,f3" 이면 드라이버 없이 돈다'),
         DeclareLaunchArgument('vel_scale', default_value=vel_scale,
-                              description='속도 배율(0 초과 1 이하). 첫 실기는 0.2~0.3'),
+                              description='속도 배율(0 초과 1 이하). 실기 기본 1.0 · 처음 켜는 셀·재티칭 뒤에는 0.3 으로 낮춰 먼저 돈다'),
         DeclareLaunchArgument('hmi', default_value=hmi,
                               description='true 면 이 PC 에서 hmi_bridge 도 같이 띄운다 (PC 1대 실행)'),
         OpaqueFunction(function=_spawn),

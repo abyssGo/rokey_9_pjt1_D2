@@ -33,7 +33,7 @@ def _spawn(monkeypatch, installed, **cfg):
 
 def test_launch_defaults():
     real, ld = _defaults('prewash.launch.py')
-    assert real == {'use_mock': '', 'vel_scale': '0.3', 'hmi': 'false'}      # 실기 기본은 저속 · flow 만
+    assert real == {'use_mock': '', 'vel_scale': '1.0', 'hmi': 'false'}      # 실기 기본은 1.0(E67) · flow 만
     assert any(isinstance(e, OpaqueFunction) for e in ld.entities)
     mock, _ = _defaults('prewash_mock.launch.py')
     assert mock == {'use_mock': 'f1,f2,f3', 'vel_scale': '1.0', 'hmi': 'true'}
