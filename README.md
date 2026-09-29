@@ -15,7 +15,7 @@
 
 <p align="center">
   <img src="docs/images/system_architecture_pc.png" width="900" alt="시스템 아키텍처"><br>
-  <sub>시스템 아키텍처 — 대화형 판은 <a href="docs/images/system_architecture_pc.html">docs/images/system_architecture_pc.html</a></sub>
+  <sub>시스템 아키텍처 — 시연은 PC 2대: GPU PC(로봇 제어 · Discovery Server · 브링업 · flow) + 화면 PC(hmi_bridge · 브라우저 · 기록 DB) · 대화형 판은 <a href="docs/images/system_architecture_pc.html">docs/images/system_architecture_pc.html</a></sub>
 </p>
 
 ---
@@ -44,8 +44,10 @@
 
 | 어디 | 프로그램 | 하는 일 |
 |---|---|---|
-| **PC-A** (로봇 옆) | `flow_node` (`f2_sense_flow`) | 메인 프로그램. 상태 머신으로 기능 함수를 차례로 부르고 실패 정책 · 정지/재개/중단 · 용기별 기록(`records.csv`)을 맡는다 |
-| **PC-B** (화면) | `hmi_bridge` (`f4_hmi`) + 웹 화면 | 브라우저 운영 화면(시작·일시 정지·재개·중단 · 단계 카드 · 멈춤 원인별 안내 · 팔레트 · 소모품 · 누적 KPI · 이력) · 기록 DB(SQLite) |
+| **GPU PC** (로봇 제어 · 로봇과 유선) | `flow_node` (`f2_sense_flow`) | 메인 프로그램. 상태 머신으로 기능 함수를 차례로 부르고 실패 정책 · 정지/재개/중단 · 용기별 기록(`records.csv`)을 맡는다. 같은 PC 에서 두산 드라이버 브링업과 Fast DDS Discovery Server 도 돈다 |
+| **화면 PC** (강의실 무선) | `hmi_bridge` (`f4_hmi`) + 웹 화면 | 브라우저 운영 화면(시작·일시 정지·재개·중단 · 단계 카드 · 멈춤 원인별 안내 · 팔레트 · 소모품 · 누적 KPI · 이력) · 기록 DB(SQLite `prewash.db`) |
+
+로봇에 명령을 내는 PC 는 GPU PC 하나뿐이다. 두 PC 는 강의실 무선의 같은 망에 있는데, 이 무선이 ROS 2 기본 탐색(멀티캐스트)을 막아 GPU PC 의 **Fast DDS Discovery Server** 로 서로를 찾는다(실행 순서는 §5 운영(시연) 실행). PC 1대로 돌릴 수도 있다(`hmi:=true`).
 
 | 패키지 | 담당 | 함수 | 한 줄 |
 |---|---|---|---|
@@ -87,7 +89,7 @@
 | AC-4 힘 안정성 — 닦기 힘 유지 · 상한 초과 후퇴 · 힘 로그 | ✅ 그릇 평균 2.6 N · 최대 6.9 N(상한 10 N) · 컵 최대 3.4 N · CSV 힘 로그 · 상한 초과 때 남은 동작 즉시 정지 → 곧게 위로(E60)는 자동 시험만(실기 미실시) |
 | AC-5 적재 — 낙하 0 · 칸·각도 | ✅ 팔레트 12/12 · 낙하 0 · 컵은 뒤집어 적재 |
 | AC-6 지속성 — 실패 주입 뒤 정의대로 복구 | ✅ 9/29 실기(흐름 안 예외 6종 + 빈 시작 · 번호는 결과표 §7-1) — 2회차: ② 정지·재개 ✅(재개를 두 번 눌러야 했음 → 한 번이면 이어 가게 고침 → 11:44 닦기 중 정지 → 재개 한 번 → 다시 안 멈춤 ✅) · ④ 잔반 남음 → 사람 없이 자동 격리 ✅ · ① 케이블(떨림 103 g) → 멈춤 → 밀어 재개 → 무게 다시 통과 ✅(옛 방식) · 밀면 바로 재개하는 새 방식 E64 ✅(리허설 12:26 · 떨림 156 g → 밀기 1번 → 2 s 대기 → 무게 다시 −3.9 g 통과 · 멈춤 약 8 s) · ③ 툴 놓침(세제 중 솔 뽑기) → 밀기 → 곧게 위로 → 툴 집기부터 다시 → 닦기 ✅(E62) · ⑨ 툴 집기 실패 → 솔 꽂고 밀기 → 다시 집기 ✅ / ⑤ 중단(따로 확인): 닦기 중 → 솔 반납 → 홈의 컵을 위에서 다시 잡아 격리 ✅(E65) · 헹굼 중 → 쥔 채 격리 ✅ / 3회차 빈 시작 → 두 구역 건너뜀 ✅ / ⑩ 로봇 오류 2단은 시험·발표 제외(E55 · 코드는 안전망) |
-| AC-7 입출력 — 화면 표시 · 기록 누락 0 | ✅ 화면 · 용기별 기록 · 이벤트 4/4 · 실제 flow 연결·DB 기록(9/29 1회차 DB events) ✅ · 소리(멈춤 1번 · 재개 2번) ✅(9/29) |
+| AC-7 입출력 — 화면 표시 · 기록 누락 0 | ✅ 화면 · 용기별 기록 · 이벤트 4/4 · 실제 flow 연결·DB 기록(9/29 1회차 DB events) ✅ · 소리(멈춤 1번 · 재개 2번) ✅(9/29) · 두 PC(와이파이 경유) 버튼 응답 7~96 ms ✅ |
 
 | 용기별 사이클 타임(초) | 그릇 1 | 그릇 2 | 컵 1 | 컵 2 |
 |---|---|---|---|---|
@@ -102,6 +104,7 @@
 - 닦기 동작 중에 일시 정지를 누르면 그 동작이 끝난 뒤에 멈춘다(컵 주기 운동 ≈ 13 s · 그릇 나선 ≈ 3 s — 동작이 끝나기를 기다리는 동안 정지 신호를 보지 않는다).
 - 격리 구역은 그릇·컵 한 곳이다. 한 실행에서 격리가 두 번 생기면 두 번째가 첫 번째 위로 내려가므로, 시작 전에 격리 구역을 비우고 격리가 생기면 다음 격리 전에 사람이 치운다(E65).
 - 닦기 힘 상한·시간 초과 때 남은 동작을 즉시 멈추는 갈래(E60)는 자동 시험으로만 확인했다(실기 미실시).
+- 이동 중에 중단한 용기는 이력 코드가 로봇 오류(`ROBOT_ERROR`)로 표시된다(격리 동작은 정상).
 
 ### 향후 개선
 - 닦기 동작 중 일시 정지도 바로 멈추기 — 남은 동작을 즉시 멈추고(E60 과 같은 방식) 재개 때 닦기를 처음부터 한다.
@@ -112,6 +115,7 @@
 ### 요구 환경
 - Ubuntu 24.04 · ROS 2 Jazzy · Python 3.12 · Node.js 20(화면 빌드) · 두산 ROS 2 드라이버 워크스페이스(`~/ws_cobot_pjt/ws_dsr` · 교육 과정 배포본)
 - 실기: M0609 컨트롤러(192.168.1.100 · Dart Platform 2.12) · RG2(Modbus/TCP 192.168.1.1) · `ROS_DOMAIN_ID=60`
+- 시연(PC 2대): GPU PC = 로봇 유선 192.168.1.x + 강의실 무선 · 화면 PC = 같은 강의실 무선 · Fast DDS Discovery Server(`fastdds` · ROS Jazzy 에 포함)
 
 ### 설치 · 빌드 · 자동 시험
 ```bash
@@ -119,8 +123,8 @@ git clone https://github.com/hwang-injae/rokey_9_pjt1_D2.git rokey_pjt01_ws && c
 source ~/ws_cobot_pjt/ws_dsr/install/setup.bash        # 두산 드라이버(새 터미널마다 · 아래 명령 전부 이 뒤에)
 colcon build --symlink-install && source install/setup.bash   # 패키지 8개
 python3 -m pytest -q src                                # 자동 시험(로봇 없이)
-python3 -m venv --system-site-packages ~/venvs/hmi && ~/venvs/hmi/bin/pip install fastapi "uvicorn[standard]" websockets   # 운영 화면 서버 부품(PC-B 에서 한 번 · params.yaml hmi.venv_dir)
-cd src/f4_hmi/web && npm install && npm run build && cd -   # 운영 화면(PC-B 에서 한 번)
+python3 -m venv --system-site-packages ~/venvs/hmi && ~/venvs/hmi/bin/pip install fastapi "uvicorn[standard]" websockets   # 운영 화면 서버 부품(화면 PC 에서 한 번 · params.yaml hmi.venv_dir)
+cd src/f4_hmi/web && npm install && npm run build && cd -   # 운영 화면(화면 PC 에서 한 번)
 ```
 
 ### 로봇 없이 — 화면과 흐름
@@ -149,26 +153,95 @@ PREWASH_VEL_SCALE=0.3 python3 src/f2_sense_flow/test/rig_f2.py empty --kind BOWL
 ```
 단독 기능 시험대(`src/*/test/rig_*.py`)는 용기를 손으로 시작 자리에 놓고 기능 하나만 돌린다. 볼 것과 통과 기준은 각 파일 머리말에 있다.
 
-### 운영(시연) 실행
+### 운영(시연) 실행 — PC 2대
+
+| PC | 맡는 일 | 네트워크 |
+|---|---|---|
+| **GPU PC** | 로봇 제어 · Fast DDS Discovery Server · 두산 브링업 · `flow_node`(메인 프로그램) | 로봇 제어기와 유선(고정 192.168.1.60/24 → 제어기 192.168.1.100) + 강의실 무선(Rokey_B · 받은 주소 172.18.0.101 = Discovery Server 주소) |
+| **화면 PC** | `hmi_bridge` · 브라우저 · 기록 DB(`prewash.db`) | 같은 강의실 무선(Rokey_B · 172.18.0.x) · 로봇에는 붙지 않는다 |
+
+- **왜 Discovery Server**: 강의실 무선은 ROS 2 기본 탐색(멀티캐스트)을 막는다. 그래서 두 PC 가 GPU PC 에 띄운 Discovery Server 에 붙어 서로를 찾는다. 손님망(Rokey_Guest)은 PC 끼리 ping 도 되지 않아 두 PC 모두 Rokey_B 를 쓴다(9/29 · ping 약 6 ms).
+- **실기 제어 PC 는 GPU PC 하나뿐**이다. 화면 PC 에서 브링업·launch 를 하지 않는다.
+- 아래 `172.18.0.101` 은 9/29 에 GPU PC 가 무선에서 받은 주소다. 다르게 받았으면 모든 명령의 이 값을 그 주소로 바꾼다.
+- 먼저 GPU PC 에서 `ping -c 3 192.168.1.100`(로봇 제어기), 화면 PC 에서 `ping -c 3 172.18.0.101`(GPU PC)이 응답하는지 본다.
+
+**GPU PC — 터미널 3개 · 순서 A(서버) → B(브링업) → C(flow)**
+
 ```bash
-# PC-A
-ros2 launch prewash_bringup prewash.launch.py vel_scale:=1.0   # 메인 프로그램(문지기 통과 → IDLE) · PC 1대로 돌릴 때만 hmi:=true 추가
+# 터미널 A — Discovery Server (시연 끝까지 켜 둔다)
+source /opt/ros/jazzy/setup.bash && fastdds discovery --server-id 0 --udp-address 172.18.0.101 --udp-port 11811
+```
+`fastdds` 명령은 ROS Jazzy 에 들어 있다(`ros-jazzy-fastrtps`). 없을 때만 `sudo apt install fastdds-tools`.
+
+```bash
+# 터미널 B · C 에 먼저 — 브링업(B)에도 꼭 넣는다(flow 만 서버를 쓰면 같은 PC 안에서도 드라이버를 못 찾는다)
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=172.18.0.101:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS && ros2 daemon stop && ros2 daemon start
+```
+```bash
+# 터미널 B — 실기 브링업
+source ~/ws_cobot_pjt/ws_dsr/install/setup.bash
+ros2 launch m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 port:=12345 model:=m0609
+```
+```bash
+# 터미널 C — 메인 프로그램(clone 폴더 rokey_pjt01_ws 에서)
+source ~/ws_cobot_pjt/ws_dsr/install/setup.bash && source install/setup.bash
+ros2 launch prewash_bringup prewash.launch.py      # 볼 것: 문지기 통과 → 케이블 확인 ✅ → IDLE
+```
+- 실기 기본 배속은 1.0 이라(E67) `vel_scale:=1.0` 은 생략해도 된다. 처음 켜는 셀·좌표를 다시 티칭한 뒤 첫 실행은 `vel_scale:=0.3` 을 붙인다.
+- 두 PC 로 돌릴 때 GPU PC 에는 `hmi:=true` 를 붙이지 않는다 — 붙이면 웹 서버가 두 개, 기록 DB 가 두 곳이 된다. launch 첫 줄 `[prewash] … vel_scale=1 · hmi=False` 로 확인한다.
+- GPU PC 워크스페이스는 `colcon build --symlink-install` 로 빌드한다(복사 빌드면 코드를 새로 받아도 옛 코드로 돈다).
+- 환경변수 줄을 `~/.bashrc` 에 넣어 두면 매번 치지 않아도 되지만, 그러면 서버(A)가 켜져 있어야만 ROS 가 동작한다.
+
+**화면 PC — 터미널 1개**(clone 폴더 `rokey_pjt01_ws` 에서)
+
+```bash
+export ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=172.18.0.101:11811 ROS_SUPER_CLIENT=TRUE && unset ROS_STATIC_PEERS
+source ~/ws_cobot_pjt/ws_dsr/install/setup.bash && source install/setup.bash
+ros2 daemon stop && ros2 daemon start
+ros2 run f4_hmi hmi_bridge                         # 브라우저 http://localhost:8000 — 버튼이 아래 서비스를 부른다
+```
+- 기록 DB(`prewash.db`)는 화면 PC 에 쌓인다. 웹 부품(`~/venvs/hmi` · `npm run build`)은 화면 PC 에만 설치한다.
+- 이 설정은 그 터미널에만 적용된다. 새 터미널은 기본(격리 `LOCALHOST`)으로 돌아가므로, 화면 PC 의 ROS 명령은 위 첫 세 줄을 넣은 터미널에서 친다.
+
+화면 버튼과 같은 서비스(환경변수 줄을 넣은 터미널에서):
+```bash
 ros2 service call /flow/start  std_srvs/srv/Trigger      # 시작 — 계획대로 그릇 2 → 컵 2 · 끝나면 IDLE
 ros2 service call /flow/stop   std_srvs/srv/Trigger      # 즉시 일시 정지(이동 중에도 · 닦기 동작 중이면 그 동작이 끝난 뒤)
 ros2 service call /flow/resume std_srvs/srv/Trigger      # 재개 — 실패로 멈췄으면 그 단계부터
 ros2 service call /flow/abort  std_srvs/srv/Trigger      # 멈춤 중에만: 이 용기를 격리하고 다음 용기로(로봇 오류로 멈췄을 때는 거부)
-ros2 topic echo /flow/state --once                       # 지금 단계 · 용기 · 잔반 · 메시지(2 Hz)
 ```
-두 PC 로 나눠 돌릴 때는 양쪽 터미널에서 먼저(같은 스위치에 연결):
+
+**연결 확인 · 통과 기준**(화면 PC 에서 환경변수 줄을 넣은 터미널)
+
 ```bash
-export ROS_DOMAIN_ID=60
-export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET      # 기본은 LOCALHOST(내 PC 밖으로 안 나감) — 통합 때만 SUBNET, 끝나면 되돌린다
+ros2 topic list | grep -E '/flow/state|/flow/event|/dsr01/joint_states'
+ros2 node list  | grep -E 'flow_node|dsr_controller2|hmi_bridge'
+ros2 topic hz /flow/state                          # 또는 ros2 topic echo /flow/state --once
 ```
+- 토픽 `/flow/state` · `/flow/event` · `/dsr01/joint_states` 와 노드 `/flow_node` · `/dsr01/flow_node_dsr` · `/dsr01/dsr_controller2` 가 모두 보인다. `/hmi_bridge` 는 화면 PC 에서만 돈다(GPU PC 쪽에는 없어야 한다).
+- `/flow/state` 가 약 2 Hz 로 들어온다.
+- 브라우저의 연결 점이 초록 · 시작/정지/재개가 1 s 안에 응답 · 멈춤 비프 1번 / 재개 비프 2번이 화면 PC 에서 울린다(9/29 확인).
+
+**끝낼 때**: 화면 PC `hmi_bridge` Ctrl+C → GPU PC 터미널 C(flow · 로봇이 멈춘 뒤) Ctrl+C → B(브링업) Ctrl+C → A(서버) Ctrl+C. 급하면 E-Stop.
+
+**흔한 실패와 대처**(★ = 9/29 실제로 겪음)
+
+| 증상 | 원인 | 대처 |
+|---|---|---|
+| ★ 화면이 '연결 끊김'인데 토픽은 보인다 | `hmi_bridge` 를 환경변수 없는 새 터미널에서 켰다 | Ctrl+C 뒤 환경변수 줄을 넣은 터미널에서 다시 켠다 |
+| ★ `ros2 topic list` 가 비어 있다 · 설정을 바꿨는데 그대로다 | 옛 ros2 데몬이 옛 설정으로 남아 있다 | `ros2 daemon stop && ros2 daemon start` · `ROS_SUPER_CLIENT=TRUE` 인지 확인 |
+| ★ PC 끼리 ping 이 안 된다 | 손님망(Rokey_Guest)에 붙어 있다 | 두 PC 모두 Rokey_B 로 |
+| flow 가 '두산 드라이버가 안 보인다'고 한다 | 터미널 B·C 중 환경변수 줄이 빠졌거나 서버(A)가 꺼졌다 | 서버 → 브링업 → flow 순서로 다시 켠다 |
+| 새로 켠 노드끼리 서로 못 찾는다 | 서버 터미널(A)을 닫았다 | A 는 시연 끝까지 켜 둔다 · 닫았으면 서버 → 브링업 → flow 순서로 다시 |
+| 8000 포트가 이미 쓰이고 있다 | 먼저 켠 `hmi_bridge` 가 남아 있다 | 남은 `hmi_bridge` 를 끄고 다시 켠다 |
+| 웹 서버가 두 개 · 기록이 두 곳에 나뉜다 | GPU PC 의 flow 에 `hmi:=true` 를 붙였다 | GPU PC 에는 `hmi:=true` 를 붙이지 않는다 |
+| 화면만 끊기고 로봇은 계속 돈다 | 와이파이가 끊겼다(로봇은 GPU PC 에서 계속 돈다) | 멈춰야 하면 E-Stop 또는 GPU PC 터미널 C 에서 Ctrl+C |
+
+**PC 1대로 돌릴 때**(무선 · Discovery Server · 환경변수 줄 없이 기본 격리 그대로): 터미널 1 에서 위 B 의 실기 브링업, 터미널 2 에서 clone 폴더 안 `source ~/ws_cobot_pjt/ws_dsr/install/setup.bash && source install/setup.bash` 뒤
 ```bash
-# PC-B (화면 · 두 PC 가 같은 ROS 도메인)
-ros2 run f4_hmi hmi_bridge                               # http://<PC-B>:8000 — 버튼이 위 서비스를 부른다
+ros2 launch prewash_bringup prewash.launch.py hmi:=true     # 메인 프로그램 + 화면 → http://localhost:8000
 ```
-끝낼 때는 프로그램 Ctrl+C → 브링업 Ctrl+C → 랜선. 급하면 E-Stop.
+두 PC 가 같은 유선 스위치에 있어 멀티캐스트가 통하면 Discovery Server 없이 양쪽 터미널에서 `export ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET` 만으로도 된다([환경 설정 10-5](docs/setup/M0609_환경설정.md)).
 
 ## 6. 저장소 구조 · 문서 지도
 

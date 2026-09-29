@@ -47,7 +47,7 @@
           "db",
           "hmi"
         ],
-        "note": "숫자는 전부 YAML, 결과는 records.csv(PC-A)와 prewash.db(PC-B)에 남는다."
+        "note": "숫자는 전부 YAML, 결과는 records.csv(GPU PC)와 prewash.db(화면 PC)에 남는다."
       }
     ],
     "subtitle": ""
@@ -93,7 +93,7 @@
       "id": "dds",
       "type": "messagebus",
       "label": "ROS 2 DDS",
-      "sublabel": "DOMAIN 60 · /flow/*",
+      "sublabel": "DOMAIN 60 · Discovery 172.18.0.101:11811",
       "row": 0,
       "col": 1,
       "size": [
@@ -117,7 +117,7 @@
       "id": "records",
       "type": "database",
       "label": "records.csv",
-      "sublabel": "용기당 1행 (PC-A)",
+      "sublabel": "용기당 1행 (GPU PC)",
       "row": 0,
       "col": 2,
       "size": [
@@ -237,7 +237,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "PC-B 화면 PC",
+      "label": "화면 PC",
       "wraps": [
         "browser",
         "hmi",
@@ -247,7 +247,7 @@
     },
     {
       "kind": "region",
-      "label": "PC-A 로봇 제어 PC (Ubuntu 24.04 · ROS 2 Jazzy)",
+      "label": "GPU PC · 로봇 제어 · Discovery Server (Ubuntu 24.04 · ROS 2 Jazzy)",
       "wraps": [
         "flow",
         "records",
