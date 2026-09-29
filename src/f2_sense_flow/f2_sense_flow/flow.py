@@ -1023,6 +1023,10 @@ class Flow:
             timeout_s = float(cc.cfg()['cell']['limits']['nudge_resume_settle_s'])
         except Exception:                              # noqa: BLE001 — 설정이 없어도 셀은 선다
             timeout_s = 3.0                            # 기본 3 s
+        try:
+            stopped = callable(getattr(cc, 'robot_state', None)) and int(cc.robot_state()) != 1   # 1 = STANDBY
+        except Exception:                              # noqa: BLE001 — 상태를 못 읽는 환경(시험)은 그냥 지나간다
+            stopped = False
         if callable(getattr(cc, 'recover_robot_if_needed', None)):
             self._guard(cc.recover_robot_if_needed, timeout_s, what='recover_robot_if_needed')
         try:
@@ -1030,6 +1034,15 @@ class Flow:
                 self.log.warn(f'재개 뒤 로봇이 {timeout_s:g} s 안에 STANDBY 로 안 돌아왔다 — 그래도 이어간다')
         except Exception as e:                         # noqa: BLE001
             self.log.warn(f'로봇 상태를 읽을 수 없다({e!r}) — 그래도 이어간다')
+        if stopped:
+            # 🚨 보호정지를 푼 직후에는 STANDBY 로 읽혀도 곧바로 이동을 보내면 제어기가 곧 세웠다
+            #    (실기: 밀기 → 보호정지 → 복구 3 ms 뒤 HOME 이동 → 0.4 s 뒤 경고 7056 → 20° 남기고 MoveIncomplete).
+            try:
+                after_s = float(cc.cfg()['cell']['limits'].get('nudge_after_reset_s') or 2.0)
+            except Exception:                          # noqa: BLE001
+                after_s = 2.0
+            self.log.info(f'보호정지를 풀었다 — 이동 전 {after_s:g} s 더 기다린다')
+            time.sleep(after_s)
 
     def _go_home_or_wait(self, sig, max_tries=3):
         """곧게 위로 → HOME. 실패하면 멈춰 사람이 펜던트로 팔을 옮긴 뒤 넛지(또는 재개)할 때까지 기다리고 HOME 만 다시 해 본다.

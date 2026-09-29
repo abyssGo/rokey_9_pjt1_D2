@@ -215,6 +215,23 @@ def test_cable_nudge_waits_for_hands_off_then_recovers_before_moving(monkeypatch
     assert order.index(('recover',)) > i_sleep and order.index(('resume',)) > order.index(('recover',)), order
 
 
+@pytest.mark.parametrize('state,extra_wait', [(5, True), (1, False)])
+def test_recover_robot_waits_after_releasing_a_protective_stop(monkeypatch, state, extra_wait):
+    """넛지 재개 때 보호정지(5)를 풀었으면 이동 전에 nudge_after_reset_s 만큼 더 기다린다 — 풀린 직후 보낸 이동은 제어기가 곧 세웠다(실기).
+    이미 STANDBY(1)면 더 기다리지 않는다."""
+    import f2_sense_flow.flow as flow_module
+    sleeps = []
+    monkeypatch.setattr(flow_module.time, 'sleep', lambda s: sleeps.append(s))
+    monkeypatch.setattr(flow_module.cc, 'robot_state', lambda: state, raising=False)
+    monkeypatch.setattr(flow_module.cc, 'recover_robot_if_needed', lambda timeout_s: True, raising=False)
+    monkeypatch.setattr(flow_module.cc, 'wait_robot_ready', lambda timeout_s: True, raising=False)
+    monkeypatch.setattr(flow_module.cc, 'cfg', lambda: {'cell': {'limits': {'nudge_resume_settle_s': 3.0,
+                                                                           'nudge_after_reset_s': 2.0}}})
+    flow = Flow({'flow': {'plan': [], 'policy': {}}}, MockLogger())
+    flow._recover_robot()
+    assert (2.0 in sleeps) is extra_wait, sleeps
+
+
 def test_cable_tight_does_not_call_safe_retreat_and_pauses_motion(monkeypatch):
     """핵심 요구사항 검증: 케이블 이상 감지 시 safe_retreat 후퇴 동작이 실행되지 않고 모션 pause 가 호출됨."""
     log = MockLogger()

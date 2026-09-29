@@ -38,6 +38,7 @@ cell:
     nudge_settle_s: 0.5           # halt 뒤 팔이 완전히 멈출 때까지 기다렸다 기준값을 잡는다 — 제한: 임시값 · 실기 값으로 조정
     nudge_poll_s: 0.2             # 힘 읽기 주기 — 너무 빠르면(0.05 s) 로봇 실시간 채널이 하트비트를 못 보내 SAFE_STOP(실기 확인)
     nudge_resume_settle_s: 3.0    # 넛지로 재개된 뒤 로봇 상태가 STANDBY 로 돌아올 때까지 기다리는 최대 시간(폴링) — 고정 시간만 기다리면 MoveIncomplete 가 났다 · 제한: 임시값
+    nudge_after_reset_s: 2.0      # 넛지 재개 때 보호정지를 풀었으면 이동 전에 더 기다리는 시간 — 풀린 직후 보낸 이동은 제어기가 곧 세웠다(실기 7056)
 
   motion:                         # 이동 함수(motion.py) 공용 값 — INF-02. "100 % 기준 속도": 실제 속도 = 기준 × limits.vel_*_pct/100 × 실행 인자 vel_scale
     vel_tcp_max_mm_s: 400         # 직선 이동(movel) 100 % 기준 속도.  (SDD §4.3)  로봇 사양의 최대가 아니라 우리 셀에서 허용하는 최대를 적는다
