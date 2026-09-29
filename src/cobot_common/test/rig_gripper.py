@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """INF-02d 단독 시험 — 그리퍼 함수(gripper.py)로 V-05 · V-23 · V-01 을 실기에서 잰다.
 
-실행 (저장소 루트에서, 격리 상태 solo — AGENTS 규칙 13)
+실행 (저장소 루트에서, 격리 상태 solo — docs/setup/M0609_환경설정.md)
     rosinfo                                                           # 🚨 RANGE=LOCALHOST 확인
     터미널 1:  sod && sodreal                                          (이미 떠 있으면 그대로 쓴다)
     터미널 2:  soc && python3 src/cobot_common/test/rig_gripper.py check
@@ -16,7 +16,7 @@
            🔑 닫힌 쪽(0~5 mm)이 핵심이다 — 그릇 벽 파지가 ≈ 2 mm 라 거기서 흔들리면 못 가린다
     V-23   파지 힘 전환 — 쥔 채 NORMAL ↔ HOLD 를 n 회. 완료 기준 "전환 10회 낙하 0"
     V-01   폭 3상태 구분 — 빈손 · 그릇 · 컵을 n 회씩.
-           🔻 닫는 힘은 **종류별**이다(9/21): 빈손·그릇 = BOWL 힘 / 컵 = CUP 힘.
+           닫는 힘은 **종류별**이다: 빈손·그릇 = BOWL 힘 / 컵 = CUP 힘.
               컵이 15 N 에서 변형돼 낮췄고, 빈손·그릇은 간격이 2.7 mm 뿐이라 같은 조건으로 재야 한다.
               --force-n 을 주면 그 값이 전부를 덮는다.
            완료 기준 "세 범위가 겹치지 않고,
@@ -24,7 +24,7 @@
 
 🚨 이 시험대가 지키는 것
     ① 모든 명령을 **release() 로 시작** 한다 — 힘 기준 맞추기(0 N 까지 내리기)가 **빈손** 에서 일어나야
-       한다. 🔄 9/21: gripper.py 가 힘을 **읽어서** 맞추게 바뀌어(기준 잡기 삭제) 쥔 채 놓칠 일은 없어졌다.
+       한다. 지금 gripper.py 는 힘을 **읽어서** 맞추므로(기준 잡기 삭제) 쥔 채 놓칠 일은 없어졌다.
        다만 release() 로 시작하는 약속은 그대로다 — 힘은 움직이거나 닫혀 있을 때만 읽히기 때문이다.
     ② **로봇 팔을 움직이지 않는다** (`init(robot=False)`) — 그리퍼만 쓴다. 두산 드라이버도,
        아직 비어 있는 팀 cell.yaml 의 limits·motion 도 필요 없다.
@@ -53,10 +53,10 @@ _STATE_NAME = {'EMPTY': '빈손', 'BOWL': '그릇', 'CUP': '컵'}
 
 # ────────────────────────────────────────────────────────────── 재는 도구
 def _zero(preset, kind, log):
-    """🆕 빈손 영점(mm) — 결정 E16 D-A. 없으면 None (그때는 옛 방식으로 로그만 남긴다).
+    """빈손 영점(mm) — 결정 E16 D-A. 없으면 None (그때는 옛 방식으로 로그만 남긴다).
 
     🚨 드라이버가 재는 폭은 **알루미늄 손가락 사이**라 고무 핑거팁 두께가 안 빠진다
-       → 빈손으로 꽉 닫아도 0 이 아니라 10.5 mm 쯤이 읽힌다(9/21 실측).
+       → 빈손으로 꽉 닫아도 0 이 아니라 10.5 mm 쯤이 읽힌다(실측).
        그래서 판정은 `읽은 폭 − 영점`, 명령은 `영점 + 목표` 다(방향이 반대다).
     """
     z = preset.get('grip_zero_mm')
@@ -181,12 +181,12 @@ def cmd_v23(a, p, log):
     # 🚨 닫는 목표는 **기대 폭보다 작게** 준다 — SDD §5.2 의 식 그대로.
     #    기대 폭을 그대로 주면 그리퍼가 **빈손으로도 그 폭에서 멈춰**,
     #    용기를 안 대 줬는데 "파지 성공 · 낙하 0 회" 로 통과한다.
-    #    그 결과가 한석형의 cell.yaml 파지 힘이 되므로 실기에서 용기를 놓치게 된다.
+    #    그 결과가 cell.yaml 파지 힘이 되므로 실기에서 용기를 놓치게 된다.
     #    (같은 파일 cmd_v01 은 close_mm: 0.0 으로 이 규칙을 지키는데 여기만 빠져 있었다)
     expect = float(preset['grip_width_mm'])
     tol = float(preset['width_tol_mm'])
     zero = _zero(preset, a.kind, log)
-    # 🆕 결정 E16 D-A — 명령에는 영점을 **더하고**(드라이버 값이라서), 판정에서는 **뺀다**.
+    # 결정 E16 D-A — 명령에는 영점을 **더하고**(드라이버 값이라서), 판정에서는 **뺀다**.
     #    영점이 없으면 옛 방식 그대로(드라이버 값끼리 비교).
     base = zero if zero is not None else 0.0
     target = base + max(0.0, expect - 2 * tol)
@@ -201,9 +201,9 @@ def cmd_v23(a, p, log):
     log.info(f'  최초 파지(NORMAL) — 목표 {target:.2f} mm(영점 {base:.2f} + 기대 {expect:.1f} '
              f'− 2 × 허용오차 {tol:.1f}) → 실제 {w0:.2f} mm · **영점 뺀 폭 {net0:.2f} mm**')
     if abs(w0 - target) < 0.3:
-        # 🚨 9/21 결함 수정 — 전에는 경고만 하고 **통과**시켰다. 빈손으로 돌려 보니 그대로 OK 가 났다
+        # 🚨 결함 수정 — 전에는 경고만 하고 **통과**시켰다. 빈손으로 돌려 보니 그대로 OK 가 났다
         #    (컵 77.90 vs 빈손 77.80 — 차이 0.10 mm, 흔들림 0.20 보다 작다).
-        #    9/20 에 고친 "빈손으로 통과하면 안 된다" 보호가 --target-mm 을 넣으며 다시 뚫린 것이다.
+        #    앞서 고친 "빈손으로 통과하면 안 된다" 보호가 --target-mm 을 넣으며 다시 뚫린 것이다.
         #    힘 전환 시험은 **쥐고 있어야** 뜻이 있으므로 여기서 멈춘다.
         log.error(f'  🚨 목표 {target:.1f} mm 에 **그대로 도달**했다 (실제 {w0:.2f}) — '
                   f'막는 것이 없었다는 뜻이다. **빈손도 이렇게 보인다.**')
@@ -242,10 +242,10 @@ def cmd_v23(a, p, log):
     ok = not drops and change <= conf['change_limit_mm']
     log.info(f'  판정: {"OK" if ok else "확인 필요"}')
     if ok:
-        log.info(f'  → 한석형에게: presets.{a.kind}.hold_force_n = {preset["hold_force_n"]} 로 된다'
+        log.info(f'  → cell.yaml: presets.{a.kind}.hold_force_n = {preset["hold_force_n"]} 로 된다'
                  '  (V-16 에서 더 낮춰 "낙하 없는 최소" 를 찾는다)')
     else:
-        log.info('  → 힘을 올리거나 핑거 패드를 손본 뒤 다시 — 실패한 값은 한석형에게 넘기지 않는다')
+        log.info('  → 힘을 올리거나 핑거 패드를 손본 뒤 다시 — 실패한 값은 cell.yaml 에 넣지 않는다')
     log.info('🚨 용기를 쥔 채 끝난다 — 받은 뒤에 손으로 release 한다')
     return 0 if ok else 1
 
@@ -270,12 +270,12 @@ def cmd_v01(a, p, log):
     if _wait_width(log, p['width_wait_s']) is None:
         return 1
 
-    # 🔻 9/21 — 종류마다 **다른 힘**으로 닫는다. 컵은 15 N 에서 눈으로 보이게 변형됐다(민범진 관찰).
+    # 종류마다 **다른 힘**으로 닫는다. 컵은 15 N 에서 눈으로 보이게 변형됐다(실기 관찰).
     #    · 빈손·그릇 : 그릇 힘 (둘을 **같은 조건**으로 재야 비교가 된다 — 간격이 2.7 mm 뿐이라 촘촘하다)
     #    · 컵        : 컵 힘   (빈손과 60 mm 넘게 떨어져 있어 조건이 달라도 구분에 지장이 없다)
     #    --force-n 을 주면 그 값이 **전부**를 덮는다(예전 방식).
     presets = cc.cfg()['cell']['presets']
-    # 🔎 9/21 — 컵을 5 N 으로 낮췄는데 실행에서 20 N 이 찍힌 적이 있어(원인 미상) 근거를 남긴다.
+    # 🔎 컵을 5 N 으로 낮췄는데 실행에서 20 N 이 찍힌 적이 있어(원인 미상) 근거를 남긴다.
     log.info('  닫는 힘(설정에서 읽음): '
              + ' · '.join(f'{k} {(presets.get(k) or {}).get("grip_force_n")} N' for k in ('BOWL', 'CUP'))
              + (f" · --force-n {a.force_n} 로 **전부 덮음**" if a.force_n is not None else ''))
@@ -328,8 +328,8 @@ def cmd_v01(a, p, log):
 
     # ── 산출물: cell.yaml 에 넣을 값 (결정 E16 D-A — 영점을 빼서 실측 치수와 같은 뜻으로)
     log.info('')
-    log.info('  → cell.yaml presets 에 넣을 값 (한석형·PM)')
-    zero = out['EMPTY']['avg']                       # 🆕 빈손 평균 = grip_zero_mm
+    log.info('  → cell.yaml presets 에 넣을 값')
+    zero = out['EMPTY']['avg']                       # 빈손 평균 = grip_zero_mm
     log.info(f'       presets.<kind>.grip_zero_mm : {zero:.2f}'
              f'   (빈손 평균 — 판정은 `읽은 폭 − 영점`, 명령은 `영점 + 목표`)')
     for kind in ('BOWL', 'CUP'):
@@ -341,7 +341,7 @@ def cmd_v01(a, p, log):
         w = max(out[kind]['spread'], out[nb]['spread'])
         tol = round(max(0.1, min(g / 2, w * 2)), 1)          # 흔들림보다 크고 간격의 절반보다 작게
         if g <= 0 or tol <= w:
-            # 흔들림보다 큰 tol 을 잡으면 옆 상태까지 먹는다 → 값을 지어내지 않는다(AGENTS §0)
+            # 흔들림보다 큰 tol 을 잡으면 옆 상태까지 먹는다 → 값을 지어내지 않는다
             log.warning(f'       presets.{kind}.width_tol_mm : 제안 불가'
                         f'   (흔들림 {w:.2f} mm 가 {_STATE_NAME[nb]}과의 간격 {g:.2f} mm 을 먹는다)')
             log.warning('           → 핑거 패드를 두껍게 하거나 파지 위치를 바꾼 뒤 다시 잰다')
@@ -371,9 +371,9 @@ def main() -> int:
 
     with open(HERE / 'rig_gripper.yaml', encoding='utf-8') as f:
         p = yaml.safe_load(f)
-    # 🚨 9/21 — 여기서 yaml 기본값(20 N)으로 **채우면 안 된다**. 채우면 v01 의
+    # 🚨 여기서 yaml 기본값(20 N)으로 **채우면 안 된다**. 채우면 v01 의
     #    "--force-n 을 줬을 때만 덮는다" 검사가 항상 참이 되어 **컵도 20 N 으로** 닫힌다
-    #    (9/21 V-01 에서 실제로 그렇게 났고, 컵이 눌리며 안전 스위치가 걸렸다).
+    #    (V-01 에서 실제로 그렇게 났고, 컵이 눌리며 안전 스위치가 걸렸다).
     #    a.force_n 은 **사람이 준 값일 때만** 값이 있다. 기본값은 쓰는 쪽(v05)에서 고른다.
     if a.n < 1:
         return 2

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """rig_int12.py 의 로봇 없는 부분 — 호출 순서가 flow.py 와 같은지 · 빈 껍데기 판정 · 로봇 없는 probe · 좌표 점검.
 
-실제 통합은 실기(INT-12a·12b, 9/22 저녁)가 한다. 여기는 그 시험대가 **엉뚱한 순서·인자로 부르지 않는지** 와
+실제 통합은 실기(INT-12a·12b)가 한다. 여기는 그 시험대가 **엉뚱한 순서·인자로 부르지 않는지** 와
 **빈 껍데기를 성공으로 오해하지 않는지** 만 본다.
 """
 import importlib.util
@@ -87,20 +87,20 @@ def test_probe_classifies_stub_and_impl(rig):
 def test_probe_runs_against_real_f1_without_robot(rig):
     """진짜 f1 을 로봇 없이 probe 해도 죽지 않는다 — 빈 껍데기면 skip 으로 알려 주고, 구현이면 통과.
 
-    🚨 "빈 껍데기다" 를 assert 하지 않는다 — 그러면 한석형이 pick() 을 merge 하는 순간 **그 PR 의 CI 가 깨진다**.
+    🚨 "빈 껍데기다" 를 assert 하지 않는다 — 그러면 pick() 이 구현되는 순간 **이 시험이 깨진다**.
        빈 껍데기 여부는 실기 전에 `rig_int12.py check` 가 사람에게 알린다.
     """
     handling = pytest.importorskip('f1_handling.handling')
     kind, why = rig.probe(handling.pick, ('RET_B', 'BOWL'))
     assert kind in ('stub', 'impl'), why
     if kind == 'stub':
-        pytest.skip('f1.pick 은 아직 빈 껍데기 (9/21 저녁 main) — INT-12a 전에 check 로 확인한다')
+        pytest.skip('f1.pick 은 아직 빈 껍데기 — INT-12a 전에 check 로 확인한다')
 
 
 # ────────────────────────────────── 좌표 점검
 def test_missing_coords_is_empty_on_team_config(rig, cfg):
     for kind in ('BOWL', 'CUP'):
-        assert rig.missing_coords(cfg, kind) == [], kind                  # 9/21 PR #51: 빈 자세 0개
+        assert rig.missing_coords(cfg, kind) == [], kind                  # 빈 자세 0개
 
 
 def test_missing_coords_reports_key_names(rig, cfg):

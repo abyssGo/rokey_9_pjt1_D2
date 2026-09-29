@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""V-02 전 R2 — 무게 자세 두 높이에서 하중 원값을 비교한다 (9/22 ENV-05 툴 무게 재등록 뒤 · 황인재가 민범진에게서 이어받음).
+"""V-02 전 R2 — 무게 자세 두 높이에서 하중 원값을 비교한다 (ENV-05 툴 무게 재등록 뒤).
 
-    rosinfo                                                     # 🚨 RANGE=LOCALHOST 확인 (AGENTS 규칙 13)
+    rosinfo                                                     # 🚨 RANGE=LOCALHOST 확인
     터미널 1:  sod && sodreal                                   (이미 떠 있으면 그대로 쓴다)
     터미널 2:  PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_weigh_poses.py --kind BOWL -n 10
                PREWASH_VEL_SCALE=0.3 python3 src/cobot_common/test/rig_weigh_poses.py --kind CUP  -n 10
 
 무엇을 하나 — 단계마다 Enter (q = 그만)
-    ① HOME → ② WEIGH.<kind> 티칭 자세(9/21 그릇 z 158 · 컵 z 147) → 멈추고 n 회 읽기
+    ① HOME → ② WEIGH.<kind> 티칭 자세(그릇 z 158 · 컵 z 147) → 멈추고 n 회 읽기
     ③ 같은 x·y 로 곧게 올라가 z --up-to(기본 235 = safe_z) → n 회 읽기 → ④ HOME
     빈손으로 한 번, 용기를 쥐여 주고 한 번(`rig_f2.py release` → 손으로 대 주기 → `rig_f2.py grip --kind BOWL`).
-왜: 9/21 민범진 실기에서 같은 그릇이 z 158 에서 9 g(0 에 잘림), z 235 에서 68 g 으로 읽혔다(자세 고정 오차).
+왜: 앞선 실기에서 같은 그릇이 z 158 에서 9 g(0 에 잘림), z 235 에서 68 g 으로 읽혔다(자세 고정 오차).
     툴 무게를 다시 등록한 뒤 **두 높이의 차이가 줄었는지**가 R2 의 핵심이다. z 158 빈손이 0 근처로 잘리면
-    WEIGH 자세를 z 235 로 옮긴다(E14 — 좌표 담당 황인재가 고치고 보고).
+    WEIGH 자세를 z 235 로 옮긴다(E14 — 고친 뒤 보고).
 두 값을 나란히 찍는다 — 판정하지 않는다(판정은 기록 문서에서).
-    · 하중 API get_workpiece_weight() — kg(9/21) · 🚨 Fz 의 **절댓값**이라 0 을 지나며 되튄다(9/22 민범진) = 어제 "0 에 잘림"의 정체
-    · 툴 힘 Fz(BASE) 부호 그대로 → 무게 g = −Fz × 101.97 (9/22 민범진 방식 · 빈손이 음수여도 기준값 빼기로 상쇄)
+    · 하중 API get_workpiece_weight() — kg · 🚨 Fz 의 **절댓값**이라 0 을 지나며 되튄다 = 앞선 "0 에 잘림"의 정체
+    · 툴 힘 Fz(BASE) 부호 그대로 → 무게 g = −Fz × 101.97 (빈손이 음수여도 기준값 빼기로 상쇄)
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다. 종료 코드 0 / 2(실행 거부) / 130(q·Ctrl+C).
 """
 import argparse
@@ -48,16 +48,16 @@ def main():
     ap.add_argument('-n', type=int, default=10, help='높이마다 읽는 횟수')
     ap.add_argument('--up-to', type=float, default=235.0, help='둘째 높이 z (mm) — 기본 safe_z 235')
     ap.add_argument('--gap', type=float, default=0.5, help='읽기 사이 대기 (s)')
-    ap.add_argument('--settle', type=float, default=5.0, help='도착 뒤 기다릴 시간 (s) — 9/22 민범진: 5 s 전에는 +30 g')
+    ap.add_argument('--settle', type=float, default=5.0, help='도착 뒤 기다릴 시간 (s) — 실기: 5 s 전에는 +30 g')
     ap.add_argument('--home-read', action='store_true',
-                    help='HOME 에서도 읽는다(처음·끝) — 팔을 접은 자세(HOME)와 편 자세(WEIGH)의 오르내림을 비교 (9/22 황인재: '
+                    help='HOME 에서도 읽는다(처음·끝) — 팔을 접은 자세(HOME)와 편 자세(WEIGH)의 오르내림을 비교 ('
                          '"아래에서 재면 관절 때문에 값이 계속 변한다" 가설). -n 45 --gap 0.7 이면 자세마다 약 63 s 창')
     ap.add_argument('--revisit', action='store_true',
-                    help='🆕 용기를 쥔 채 결정 시험 — WEIGH 1회차 → HOME → WEIGH 2회차(다시 방문 · 방문 사이 차이) → 물건 넣고 3회차 → HOME. '
-                         'z --up-to 는 가지 않는다. 9/22 14:20 빈손 비교에서 어느 자세도 ±10 g 가 안 돼 "기준값 빼기"가 몇 분 뒤에도 서는지 본다')
+                    help='용기를 쥔 채 결정 시험 — WEIGH 1회차 → HOME → WEIGH 2회차(다시 방문 · 방문 사이 차이) → 물건 넣고 3회차 → HOME. '
+                         'z --up-to 는 가지 않는다. 빈손 비교에서 어느 자세도 ±10 g 가 안 돼 "기준값 빼기"가 몇 분 뒤에도 서는지 본다')
     ap.add_argument('--object-g', type=float, default=None, help='--revisit 3회차에 넣는 물건의 저울 무게(g) — 판정 참고용')
     ap.add_argument('--at-z', type=float, default=None,
-                    help='--revisit 를 WEIGH 티칭 자세가 아니라 같은 x·y 의 이 높이(z mm)에서 한다 — 9/22 16:25 z158 에서 100 g 물건이 +8 g 로만 '
+                    help='--revisit 를 WEIGH 티칭 자세가 아니라 같은 x·y 의 이 높이(z mm)에서 한다 — 실기 z158 에서 100 g 물건이 +8 g 로만 '
                          '보여 "쥔 그릇이 아래(공급 구조·뒤 용기)에 닿는다" 의심 → 높은 곳에서 다시 본다. 지금 z 보다 높고 150 mm 이내만')
     a = ap.parse_args()
 
@@ -80,7 +80,7 @@ def main():
         return float(d.get_current_posx(ref=d.DR_BASE)[0][2])
 
     def read(tag):
-        time.sleep(a.settle)                                 # 도착 뒤 약 5 s 는 +30 g 높게 읽힌다(9/22 민범진)
+        time.sleep(a.settle)                                 # 도착 뒤 약 5 s 는 +30 g 높게 읽힌다(실기)
         z = z_now()
         api, fz_g = [], []
         log.info(f'── {tag} · z {z:.1f} mm · {a.n}회 (도착 뒤 {a.settle:g} s 기다린 뒤)')
@@ -90,14 +90,14 @@ def main():
             g_fz = -fz * N_TO_G
             fz_g.append(g_fz)
             if isinstance(v, (int, float)) and v >= 0:
-                api.append(float(v) * 1000.0)                # kg → g (9/21 민범진: 단위 kg)
+                api.append(float(v) * 1000.0)                # kg → g (실기: 단위 kg)
                 log.info(f'  {i + 1:2d}  하중 API {float(v):.4f} kg = {float(v) * 1000.0:7.1f} g   ·   Fz {fz:+.3f} N → {g_fz:+7.1f} g')
             else:
                 log.warn(f'  {i + 1:2d}  하중 API {v!r} — 읽기 실패   ·   Fz {fz:+.3f} N → {g_fz:+7.1f} g')
             time.sleep(a.gap)
         log.info('   ' + summary(f'{tag} · 하중 API', api))
         log.info('   ' + summary(f'{tag} · −Fz', fz_g, signed=True))
-        if len(fz_g) >= 20:                                  # 긴 창이면 10회 묶음 중앙값 — 10~20 s 주기 오르내림이 보이게(9/22 14:00 그릇 폭 45 g)
+        if len(fz_g) >= 20:                                  # 긴 창이면 10회 묶음 중앙값 — 10~20 s 주기 오르내림이 보이게(실기 그릇 폭 45 g)
             blocks = [statistics.median(fz_g[i:i + 10]) for i in range(0, len(fz_g) - len(fz_g) % 10, 10)]
             log.info(f'   {tag} · −Fz 10회 묶음 중앙값: ' + ' · '.join(f'{b:+.1f}' for b in blocks)
                      + f'   (묶음 사이 폭 {max(blocks) - min(blocks):.1f} g)')
@@ -119,7 +119,7 @@ def main():
             if not standby('HOME 읽기'):
                 return 2
             _, _, home1_fz = read('HOME (처음)')
-        ask(f'② WEIGH.{a.kind} 티칭 자세로 (HOME → 저울 · 9/21 실기 5.5 s 경로)')
+        ask(f'② WEIGH.{a.kind} 티칭 자세로 (HOME → 저울 · 실기 5.5 s 경로)')
         up = float(cc.move_to('WEIGH', True, a.kind) or 0.0)
         if up > 0.0:
             cc.move_rel(0.0, 0.0, -up, 'BASE')
@@ -183,7 +183,7 @@ def main():
         log.info('  ' + summary(f'z {z2:.1f} · −Fz', high_fz, signed=True))
         if low and high:
             log.info(f'  두 높이 차이 · 하중 API: {statistics.median(high) - statistics.median(low):+.1f} g'
-                     '  ← 9/21 등록 전: 그릇 약 +56 g (12.9 → 68.4)')
+                     '  ← 툴 무게 등록 전: 그릇 약 +56 g (12.9 → 68.4)')
         if low_fz and high_fz:
             log.info(f'  두 높이 차이 · −Fz: {statistics.median(high_fz) - statistics.median(low_fz):+.1f} g   (0 에 가까울수록 자세와 무관)')
         return 0

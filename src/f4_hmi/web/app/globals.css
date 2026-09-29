@@ -1,4 +1,4 @@
-/* 운영 화면 — 시연에서 청중이 보는 화면이라 글자를 크게(F4-00 §3). 색은 여기 한곳에서. */
+/* 운영 화면 — 시연에서 청중이 보는 화면이라 글자를 크게. 색은 여기 한곳에서. */
 :root {
   --bg: #f4f6f9; --card: #ffffff; --ink: #1c2430; --dim: #6b7686; --line: #dde2ea;
   --ok: #1a8f4c; --ok-bg: #e3f4ea; --bad: #c62f2f; --bad-bg: #fbe6e6;
@@ -180,13 +180,13 @@ table.list tr.bad td { color: var(--bad); } table.list tr.warn td { color: var(-
 
 footer { padding: 4px 0 12px; }
 
-/* 🆕 F4-04·05 — 소모품 교체 완료 버튼 · 누적 KPI 칸 */
+/* F4-04·05 — 소모품 교체 완료 버튼 · 누적 KPI 칸 */
 .btn.mini { font-size: 12px; padding: 3px 9px; margin-left: 8px; border-radius: 8px; vertical-align: middle; }
 .kpi-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .kpi { background: var(--accent-bg); border-radius: 10px; padding: 10px 12px; min-width: 0; }
 .kpi.warn { background: var(--warn-bg); }
 .kpi-v { font-size: 22px; font-weight: 700; line-height: 1.3; }
-.srow-title { white-space: nowrap; }                 /* 🔄 9/27 소모품 이름 옆 '교체 완료' 버튼 때문에 '수세미'가 줄바꿈되던 것 */
+.srow-title { white-space: nowrap; }                 /* 소모품 이름 옆 '교체 완료' 버튼이 있어도 이름이 줄바꿈되지 않게 */
 .btn.mini { white-space: nowrap; }
 
 /* ── 버튼 이펙트(codepen "hover effects with box-shadow" 응용 · Sass 없이 CSS 변수로)

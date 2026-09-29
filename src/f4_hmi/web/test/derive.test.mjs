@@ -33,7 +33,7 @@ test('버튼 — 로봇 오류 멈춤은 중단 불가(사람 복구) · 케이�
 test('멈춤 원인 갈래 — 코드·문구로 8가지를 가른다', () => {
   assert.equal(D.pauseKind(st({ step: 'PAUSED' })), 'operator');
   assert.equal(D.pauseKind(st({ step: 'PAUSED', last_code: 'TOOL_LOST' })), 'tool_lost');
-  assert.equal(D.pauseKind(st({ step: 'PAUSED', last_code: 'TOOL_FAIL' })), 'tool_fail');       // 🆕 E52
+  assert.equal(D.pauseKind(st({ step: 'PAUSED', last_code: 'TOOL_FAIL' })), 'tool_fail');       // E52
   assert.equal(D.pauseKind(st({ step: 'PAUSED', last_code: 'LEFTOVER_REMAIN' })), 'leftover');
   assert.equal(D.pauseKind(st({ step: 'PAUSED', last_code: 'GRIP_FAIL' })), 'grip');
   assert.equal(D.pauseKind(st({ step: 'PAUSED', last_code: 'RACK_FULL' })), 'rack_full');
@@ -42,13 +42,13 @@ test('멈춤 원인 갈래 — 코드·문구로 8가지를 가른다', () => {
   assert.equal(D.pauseKind(st({ step: 'WIPE', last_code: 'TOOL_LOST' })), null);
 });
 
-test('알람 — 멈춤은 원인별 안내(제목·할 일) · 로봇 오류도 주황(별도 예외 X · 9/27)', () => {
+test('알람 — 멈춤은 원인별 안내(제목·할 일) · 로봇 오류도 주황(별도 예외 X)', () => {
   const a = D.alarm(d(st({ step: 'PAUSED', last_code: 'TOOL_LOST' })));
   assert.equal(a.level, 'pause'); assert.equal(a.kind, 'tool_lost'); assert.match(a.guide.title, /툴 놓침/); assert.ok(a.guide.steps.length >= 2);
   const re = D.alarm(d(st({ step: 'PAUSED', last_code: 'ROBOT_ERROR', message: 'x — 로봇 오류 · 그리퍼에 용기이(가) 있습니다.' })));
   assert.equal(re.level, 'pause'); assert.match(re.guide.title, /멈춤 — 로봇 확인/); assert.match(re.guide.steps.join(' '), /그리퍼 열림/);   // 신호 1
   assert.match(D.robotErrorGuide('그리퍼를 열었습니다 — …').title, /받아 주세요/);      // 신호 2 = 재개 버튼(E54)
-  assert.match(D.robotErrorGuide('x — 로봇 오류 · 빈손.').title, /로봇 확인/);        // 빈손도 같은 안내(경우 합침 · 9/27)
+  assert.match(D.robotErrorGuide('x — 로봇 오류 · 빈손.').title, /로봇 확인/);        // 빈손도 같은 안내(경우 합침)
   assert.match(D.robotErrorGuide('HOME 복귀 실패(1/3)').title, /HOME/);
   for (const k of Object.keys(D.GUIDE_KO)) { const g = D.GUIDE_KO[k]; assert.ok(!g.what && g.steps.length <= 3 && g.steps.every((x) => x.length <= 24), `${k} 안내가 길다`); }
   assert.ok(D.HIDE_FLOW_MSG.includes('robot_error') && D.HIDE_FLOW_MSG.includes('cable') && D.HIDE_FLOW_MSG.includes('waste_bin'));
@@ -76,7 +76,7 @@ test('다음 할 일 — 멈춤은 재개 또는 중단 · 적재 뒤는 다음 
   assert.equal(D.nextStep('RACK', { finished: 1, total: 4 }), '다음 용기 집기');
 });
 
-test('소모품 — 수세미는 그릇 수 · 솔은 컵 수 · 같은 한도 100 · 헹굼은 없다(황인재 9/27)', () => {
+test('소모품 — 수세미는 그릇 수 · 솔은 컵 수 · 같은 한도 100 · 헹굼은 없다', () => {
   const dd = d(st({ done_bowl: 90, done_cup: 100, soap_dips: 570 }));   // soap_dips(담금 수)는 안 쓴다 — 세제 = 용기 수 190
   dd.plan.consumables = { sponge_max_uses: 100, soap_max_dips: 60 };
   const c = D.consumables(dd);
@@ -101,23 +101,23 @@ test('소모품 — DB 값(usage)이 있으면 그것을 쓰고 잔반통은 g/�
   assert.doesNotMatch(cards[0].sub, /팔레트/);                                     // 옛 서버(pallets 없음)면 숨긴다
   assert.match(D.kpiCards({ done_bowl: 2, done_cup: 2, isolated: 0, error: 0, skipped: 0, pauses: 0, pallets: 1 })[0].sub, /팔레트 1장/);
   assert.equal(D.kpiCards(null).length, 0);
-  // 🆕 9/28 팔레트 카드의 누적 칸 — DB 전체 기록이 있으면 그것, 없으면 브리지 메모리 누적
+  // 팔레트 카드의 누적 칸 — DB 전체 기록이 있으면 그것, 없으면 브리지 메모리 누적
   const life = D.lifetime({ kpiAll: { pallets: 3, done_bowl: 7, done_cup: 6, isolated: 2, runs: 4 }, totals: { pallets: 0, bowls: 1 } });
   assert.deepEqual(life, { fromDb: true, pallets: 3, bowls: 7, cups: 6, isolated: 2, runs: 4 });
   assert.deepEqual(D.lifetime({ totals: { pallets: 1, bowls: 2, cups: 2, isolated: 0, runs: 1 } }), { fromDb: false, pallets: 1, bowls: 2, cups: 2, isolated: 0, runs: 1 });
   assert.equal(D.lifetime({}).pallets, 0);
-  // 멈춤 기록 창(9/28) — DB pauses 행 → 화면 줄 · 문제만에 집기 재시도 포함
+  // 멈춤 기록 창 — DB pauses 행 → 화면 줄 · 문제만에 집기 재시도 포함
   const pr = D.pauseRows([{ id: 2, started_at: '2026-09-28T15:10:03.1', ended_at: null, duration_s: null, step: 'SOAP', kind: 'tool_fail', code: 'TOOL_FAIL', resolved: null },
                           { id: 1, started_at: '2026-09-28T15:07:19', ended_at: '2026-09-28T15:07:31', duration_s: 12.4, step: 'WIPE', kind: 'tool_lost', code: 'TOOL_LOST', resolved: 'nudge' }]);
   assert.deepEqual(pr[1], { id: 1, time: '15:07:19', step: '닦기', cause: '툴 놓침', code: 'TOOL_LOST', resolved: '넛지', open: false, duration: '12 s' });
   assert.equal(pr[0].resolved, '진행 중'); assert.ok(pr[0].open); assert.equal(pr[0].step, '세제');
   assert.equal(D.problems({ events: [{ result: 'DONE', attempts: 2 }, { result: 'DONE', attempts: 1 }, { result: 'ISOLATED' }] }).length, 2);
-  // 빈 구역 알림(9/28) — 건너뜀 이벤트만
+  // 빈 구역 알림 — 건너뜀 이벤트만
   assert.deepEqual(D.skipToast({ result: 'SKIPPED', kind: 'BOWL', zone_id: 'RET_B' }), { tone: 'warn', text: '빈 구역 — 그릇 반납 구역(RET_B)에 용기가 없습니다', sub: '건너뛰고 다음 구역으로 갑니다' });
   assert.equal(D.skipToast({ result: 'DONE', kind: 'BOWL' }), null); assert.equal(D.skipToast(null), null);
 });
 
-test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토스트는 버튼/넛지·중단을 가른다(9/28)', () => {
+test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토스트는 버튼/넛지·중단을 가른다', () => {
   assert.equal(D.causeIcon('tool_lost', 'CUP'), 'brush'); assert.equal(D.causeIcon('tool_fail', 'BOWL'), 'sponge'); assert.equal(D.causeIcon('waste_bin', 'BOWL'), 'bin');
   assert.equal(D.causeIcon('cable', 'BOWL'), 'cable'); assert.equal(D.causeIcon('robot_error', 'CUP'), 'robot'); assert.equal(D.causeIcon('nope', 'BOWL'), 'timer');
   assert.match(D.resumeToast(false, 'WIPE', 'WIPE').text, /넛지\(로봇팔 가볍게 밀기\)/); assert.ok(D.GUIDE_KO.tool_lost.steps[1] === D.NUDGE.step && !/톡/.test(D.NUDGE.step)); assert.match(D.resumeToast(false, 'WIPE', 'WIPE').sub, /닦기 단계부터/);
@@ -125,13 +125,14 @@ test('알림창 — 원인 아이콘은 용기 종류를 따르고, 풀림 토�
   assert.match(D.resumeToast(true, 'SOAP', 'ISOLATE').text, /중단/);
 });
 
-test('케이블 카드는 코드 ROBOT_ERROR + 케이블 문구일 때만 · 재검증 실패는 이상 지속 카드 · 운전 중 띠 문구(9/29)', () => {
+test('케이블 카드는 코드 ROBOT_ERROR + 케이블 문구일 때만 · 다시 떨려도 같은 케이블 카드 · 운전 중 띠 문구', () => {
   const P = (last_code, message) => ({ step: 'PAUSED', last_code, message });
   assert.equal(D.pauseKind(P('ROBOT_ERROR', '케이블 상태를 확인해주세요.')), 'cable');
-  assert.equal(D.pauseKind(P('OK', '케이블 정상 확인 — 작업을 재개합니다')), 'operator');       // ① 뒤 ② 일시 정지
-  assert.equal(D.pauseKind(P('TOOL_LOST', '케이블 정상 확인 — 작업을 재개합니다')), 'tool_lost'); // ① 뒤 ③ 툴 놓침
-  const again = D.alarm({ state: P('ROBOT_ERROR', '케이블 이상 지속(떨림 90 g > 상한 80 g): 케이블 확인 후 다시 로봇팔을 가볍게 밀어 주세요') });
-  assert.equal(again.kind, 'cable'); assert.equal(again.guide.title, '케이블 이상 지속');
+  assert.equal(D.pauseKind(P('OK', '재개 — 무게를 다시 재며 케이블을 확인합니다')), 'operator');       // ① 뒤 ② 일시 정지
+  assert.equal(D.pauseKind(P('TOOL_LOST', '재개 — 무게를 다시 재며 케이블을 확인합니다')), 'tool_lost'); // ① 뒤 ③ 툴 놓침
+  // 재개 뒤 무게를 다시 재다 또 떨리면 flow 는 처음과 같은 케이블 멈춤을 다시 건다(같은 카드)
+  const cab = D.alarm({ state: P('ROBOT_ERROR', '케이블 상태를 확인해주세요. 확인 후 로봇팔을 가볍게 밀어 주세요.') });
+  assert.equal(cab.kind, 'cable'); assert.equal(cab.guide, D.GUIDE_KO.cable); assert.ok(!('cable_again' in D.GUIDE_KO));
   assert.ok(D.NUDGE_KINDS.includes('tool_fail') && !D.NUDGE_KINDS.includes('operator'));
   const plan = { policy: { FORCE_LIMIT: 'retry:1->isolate', TIMEOUT: 'retry:1->isolate', RACK_JAM: 'retry:1->isolate', TOOL_FAIL: 'pause', LEFTOVER_REMAIN: 'isolate' } };
   const R = (step, last_code) => ({ step, last_code });
@@ -144,7 +145,14 @@ test('케이블 카드는 코드 ROBOT_ERROR + 케이블 문구일 때만 · 재
   assert.match(D.runningNote(R('WIPE', 'TIMEOUT'), { policy: { TIMEOUT: 'retry:3->isolate' } }, null), /최대 3번/);
 });
 
-test('넛지 안내는 넛지로 풀리는 멈춤에만 — 로봇 오류 신호 2 · HOME 복귀 실패는 재개 버튼만(9/29)', () => {
+test('케이블 — 밀기를 알아챈 뒤 멈춘 채 바뀐 문구도 케이블 카드(E64)', () => {
+  // flow.handle_cable_tight: 넛지면 손을 뗄 시간 동안 PAUSED · ROBOT_ERROR 그대로 문구만 바꾼다 → 로봇 오류 카드로 바뀌면 안 된다
+  const s = { step: 'PAUSED', last_code: 'ROBOT_ERROR', message: '케이블 — 밀기 확인: 손을 떼 주세요. 곧 무게를 다시 잽니다' };
+  assert.equal(D.pauseKind(s), 'cable');
+  assert.equal(D.alarm({ state: s }).kind, 'cable');
+});
+
+test('넛지 안내는 넛지로 풀리는 멈춤에만 — 로봇 오류 신호 2 · HOME 복귀 실패는 재개 버튼만', () => {
   const A = (last_code, message) => D.alarm({ state: { step: 'PAUSED', last_code, message } });
   assert.ok(D.nudgeOk(A('TOOL_LOST', '')));
   assert.ok(D.nudgeOk(A('ROBOT_ERROR', 'f2.dip: 드라이버 응답 없음 — 로봇 오류 · 그리퍼에 용기이(가) 있습니다.')));

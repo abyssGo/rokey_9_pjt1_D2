@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""힘 함수 — 담당 박진용 (INF-02b). 함수 표는 docs/03_설계_SDD.md §3.1.
+"""힘 함수 (INF-02b). 함수 표는 docs/03_설계_SDD.md §3.1.
 
     import cobot_common as cc
     depth, f = cc.contact_down(max_depth=40, limit=cfg['cell']['limits']['contact_limit_n'])
@@ -10,7 +10,7 @@
 
 약속
 - 좌표계는 BASE. axis 는 'x'·'y'·'z'. target·limit·min·max 는 양수 크기(N) 이고, 누르는 방향(−axis)은 여기서 붙인다.
-- 숫자는 인자로 받거나 cfg()['cell'] 에서 읽는다(AGENTS 규칙 6). 키가 없거나 비어 있으면(null) 로봇을 움직이지 않고 KeyError.
+- 숫자는 인자로 받거나 cfg()['cell'] 에서 읽는다(SDD §3.2). 키가 없거나 비어 있으면(null) 로봇을 움직이지 않고 KeyError.
     cell.limits : safe_z_mm · timeout_s
     cell.force  : compliance_stx · contact_step_mm · contact_vel_mm_s · contact_acc_mm_s2 ·
                   retreat_vel_mm_s · retreat_acc_mm_s2 · force_max_n · search_y_period_ratio
@@ -25,7 +25,7 @@
   그 속도도 cell.motion 의 100 % 기준 × vel_scale 을 넘지 못한다. 순응·힘제어·move_periodic 처럼 힘 함수 자체의 두산 호출만
   dsr() 로 직접 한다.
 - 닦기 접촉 모션(move_spiral · move_arc)과 where · motion_done 도 여기 둔다 — 순응·힘제어를 켠 채 도는 동작이라
-  힘 상한·해제와 같이 봐야 하고, 기능 함수(f3)는 두산 함수를 직접 부르지 않는다(AGENTS §3 규칙 4).
+  힘 상한·해제와 같이 봐야 하고, 기능 함수(f3)는 두산 함수를 직접 부르지 않는다.
   이 둘에는 일시정지 폴링이 없다(move_periodic 과 같다) → 일시정지는 구간이 끝난 뒤 다음 이동에서 먹는다.
 
 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
@@ -389,7 +389,7 @@ def safe_retreat():
 
 
 # ------------------------------------------------------------------ 닦기 이동 (나선 · 원호) — 접촉 동작 전용
-# 여기 두는 이유: 순응·힘제어를 켠 채 도는 접촉 모션이라 힘 함수와 같이 봐야 한다(AGENTS §3 규칙 4 — f3 는 cc.* 만 부른다).
+# 여기 두는 이유: 순응·힘제어를 켠 채 도는 접촉 모션이라 힘 함수와 같이 봐야 한다(f3 는 cc.* 만 부른다).
 #    자유 공간 이동은 motion.py 몫이다. 두 함수 모두 일시정지 폴링이 없다 — move_periodic 과 같은 취급이라
 #    일시정지는 이 구간이 끝난 뒤 다음 이동에서 먹는다. 부르는 쪽이 구간 사이에서 is_halted() 를 본다.
 def where():
@@ -626,6 +626,6 @@ def _cell_key(section, key):
     except (KeyError, TypeError):
         value = None
     if value is None:                   # 키가 없거나 INF-04 골격처럼 비어 있음(null)
-        raise KeyError(f'cell.yaml 의 cell.{section}.{key} 가 없거나 비어 있다 — 한석형(cell.yaml) 에 요청. '
+        raise KeyError(f'cell.yaml 의 cell.{section}.{key} 가 없거나 비어 있다 — cell.yaml 에 값을 채운다. '
                        '값이 없으면 로봇을 움직이지 않는다')
     return value

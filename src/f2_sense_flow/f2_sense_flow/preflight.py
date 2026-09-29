@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""움직이기 전 문지기 — 컨트롤러의 툴·TCP 이름이 우리 좌표의 전제와 같은지 (민범진 · TS-07).
+"""움직이기 전 문지기 — 컨트롤러의 툴·TCP 이름이 우리 좌표의 전제와 같은지 (TS-07).
 
 왜: 실기에서 저울 자세로 가던 그릇이 바닥에 닿았다. 코드·좌표는 같은 날 아침에 6번 성공한 것과
     같았다. 원인은 다른 팀원이 펜던트에서 TCP 설정을 풀어 둔 것 — cell.yaml 의 posx 는 전부
@@ -137,7 +137,7 @@ def warn_if_cable_tight(cfg, log=None):
     if log:
         if limit is not None and spread > float(limit):
             log.warn(f'🔗 시작 전 힘센서 흔들림 {spread:.0f} g > {float(limit):.0f} g ({n}회 · {gap * (n - 1):.0f} s) — '
-                     '그리퍼 **케이블 장력** 의심. 움직이기 전에 케이블 여유 길이를 확인한다(9/22 V-02 · 리마인드 §6)')
+                     '그리퍼 **케이블 장력** 의심. 움직이기 전에 케이블 여유 길이를 확인한다(V-02 시험 기록)')
         else:
             log.info(f'케이블 확인 — 정지 흔들림 {spread:.0f} g ({n}회) ✅')
     return spread, vals
@@ -162,7 +162,7 @@ def go_home_safely(kind=None, log=None, carrying=True):
        시험대는 직전에 어디 있었는지 모른다(dip 을 돌리고 이어서 다른 시험대를 띄운다) → 시작할 때마다 여기서 올라온다.
 
     어떻게: cc.safe_retreat() — 힘·순응을 끄고 XY 는 그대로 Z 만 cell.limits.safe_z_mm(235)까지 올린다.
-            이미 그 위면 움직이지 않는다. 새 설정을 만들지 않고 팀이 정한 후퇴 높이를 그대로 쓴다(AGENTS §3 규칙 6).
+            이미 그 위면 움직이지 않는다. 새 설정을 만들지 않고 팀이 정한 후퇴 높이를 그대로 쓴다.
     """
     cc = _cc()
     z0 = None
@@ -171,6 +171,6 @@ def go_home_safely(kind=None, log=None, carrying=True):
     except Exception:                                 # noqa: BLE001 — 못 읽어도 후퇴는 시도한다
         pass
     if log is not None and z0 is not None:
-        log.info(f'지금 z {z0:.0f} mm → 안전 높이까지 곧게 올라온 뒤 HOME (9/22 테이블 충돌 이후)')
+        log.info(f'지금 z {z0:.0f} mm → 안전 높이까지 곧게 올라온 뒤 HOME (테이블 충돌 이후)')
     cc.safe_retreat()                                 # 힘 끄기 + Z 만 위로 (이미 위면 안 움직인다)
     cc.move_to('HOME', carrying, kind)

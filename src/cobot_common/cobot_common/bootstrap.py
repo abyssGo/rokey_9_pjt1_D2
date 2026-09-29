@@ -29,7 +29,7 @@ import threading
 
 from . import config as _config
 
-ROBOT_ID = 'dsr01'                  # 두산 드라이버 네임스페이스 (AGENTS.md §1)
+ROBOT_ID = 'dsr01'                  # 두산 드라이버 네임스페이스
 ROBOT_MODEL = 'm0609'
 _SRV_PROBE = 'dsr_controller2/system/get_robot_mode'    # 브링업이 떠 있는지 보는 서비스
 _SRV_STOP = 'dsr_controller2/motion/move_stop'          # 설치된 DSR_ROBOT2 에는 stop() 이 없어 직접 부른다
@@ -96,7 +96,7 @@ def init(name: str, robot: bool = True):
         empty = _config.unfilled(_cfg)
         if empty:
             _log().warn(f'설정에 비어 있는 값 {len(empty)}개 (예: {", ".join(empty[:3])} …) — 쓰는 함수에서 None 이 나온다. '
-                        'cell.yaml 은 한석형, params.yaml 은 절 주인이 채운다')
+                        'cell.yaml · params.yaml 에 값을 채운다')
 
 
 def io_node():
@@ -172,7 +172,7 @@ def _init_dsr(name):
         import DR_init
     except ImportError as e:
         raise RuntimeError('DR_init 을 못 찾는다: .bashrc 의 PYTHONPATH 에 ws_dsr/install/dsr_common2/lib/dsr_common2/imp '
-                           '를 넣는다 (AGENTS.md §5)') from e
+                           '를 넣는다 (docs/setup/M0609_환경설정.md 8-7)') from e
     DR_init.__dsr__id = ROBOT_ID
     DR_init.__dsr__model = ROBOT_MODEL
     _dsr_node = rclpy.create_node(f'{name}_dsr', namespace=ROBOT_ID)
@@ -191,7 +191,7 @@ def _init_dsr(name):
 
 
 def _call_setup_io(node, robot):
-    """사람별 파일이 통신 노드에 구독·클라이언트를 달 자리. 예: gripper.py 의 setup_io(node) 가 그리퍼 폭을 구독한다.
+    """기능 모듈이 통신 노드에 구독·클라이언트를 다는 자리. 예: gripper.py 의 setup_io(node) 가 그리퍼 폭을 구독한다.
 
     robot=True  : 훅이 실패하면 init 도 실패한다 — 실기·Virtual 에서는 빠진 것을 바로 드러내는 편이 안전하다.
     robot=False : 훅 실패는 경고만 남기고 건너뛴다 — "전부 mock 이면 드라이버 없이 돈다"(SDD §5.1)를 지킨다.

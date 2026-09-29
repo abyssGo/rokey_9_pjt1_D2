@@ -1,5 +1,5 @@
 'use client';
-// 운영 화면 1장 — HMI 설계초안 §3. HMI 는 보여 주고 전달만 한다(흐름·복구 판단·로봇 동작은 하지 않는다).
+// 운영 화면 1장 — SDD §6 · IRD §6. HMI 는 보여 주고 전달만 한다(흐름·복구 판단·로봇 동작은 하지 않는다).
 import { useEffect, useRef, useState } from 'react';
 import { useHmi } from './lib/useHmi';
 import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
@@ -45,7 +45,6 @@ function playBeep(freq = 1000, duration = 0.18, type = 'square', vol = 0.7) {
   }
 }
 
-// 짧은 두 음(1200 Hz 0.09 s → 120 ms 뒤 1600 Hz 0.11 s) — 멈춤이 풀렸다는 신호
 // 숫자 움직임 — 글 속 숫자만 이전 값에서 새 값으로 0.6 s 동안 움직인다(올라가든 내려가든). 숫자 개수가 다르거나 '움직임 줄이기' 설정이면 바로 새 값
 const NUM_RE = /-?\d+(?:\.\d+)?/g;
 const reduceMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
@@ -75,7 +74,7 @@ function useAnimatedText(text, ms = 600) {
 }
 function Anim({ v }) { return useAnimatedText(String(v)); }
 
-// 소리는 한 가지 음으로 두 경우만(황인재 9/28): 로봇이 멈추면 1번 · 다시 움직이면 2번
+// 소리는 한 가지 음으로 두 경우만: 로봇이 멈추면 1번 · 다시 움직이면 2번
 const TONE = 1000;
 function playStopBeep() { playBeep(TONE, 0.18, 'square', 0.75); }
 function playResumeBeep() { playBeep(TONE, 0.18, 'square', 0.75); setTimeout(() => playBeep(TONE, 0.18, 'square', 0.75), 260); }
@@ -93,18 +92,15 @@ export default function Monitor() {
   if (s && RUNNING.includes(s.step) && lastRunning.current !== s.step) { lastRunning.current = s.step; remember(s.step); }
   if (s && (s.step === 'IDLE' || s.step === 'DONE') && lastRunning.current) { lastRunning.current = ''; remember(''); }
 
-  // 멈춤이 풀리면(PAUSED → 운전) 짧은 두 음 — 툴 놓침 넛지처럼 문구 없이 재개되는 경로도 소리로 알린다
+  // 멈추면 1번 · 풀리면(PAUSED → 운전) 2번 울린다
   const wasPaused = useRef(false);
   // 멈추면 알림창(원인 그림 + 할 일) → 사람이 처리하고 확인 → 재개 버튼. 넛지로 풀리면 알림창이 닫히며 '재개되었습니다' 토스트
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const pauseSeq = useRef(0);
   const pausedCode = useRef(null);                                     // 마지막 멈춤의 원인 코드 — 노란 띠 '재개해 진행 중' 판단
-  const againMsg = useRef('');                                         // 케이블 재검증 실패로 다시 띄운 문구(같은 문구로 두 번 띄우지 않게)
   const lastResumePress = useRef(0);
   const toastTimer = useRef(null);
-  const dRef = useRef(d);
-  dRef.current = d;
   const showToast = (t) => { setToast(t); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 6000); };
   useEffect(() => {
     const step = s?.step;
@@ -112,7 +108,6 @@ export default function Monitor() {
     if (step === 'PAUSED' && !wasPaused.current) {                       // 멈춤 시작 → 알림창(내용은 그릴 때 alarm(d) 로 — 잔반통 알림처럼 원인이 한 박자 늦게 와도 따라간다) + 한 번 울림
       pauseSeq.current += 1;
       pausedCode.current = s.last_code || null;
-      againMsg.current = '';
       setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
       playStopBeep();
     }
@@ -140,11 +135,11 @@ export default function Monitor() {
     document.addEventListener('pointerdown', on);
     return () => document.removeEventListener('pointerdown', on);
   }, []);
-  const [panel, setPanel] = useState(() => {                           // 'kpi' | 'history' — 누적 KPI 와 이력은 버튼을 누르면 창으로(황인재: 한 화면에 다 보이게)
+  const [panel, setPanel] = useState(() => {                           // 'kpi' | 'history' — 누적 KPI 와 이력은 버튼을 누르면 창으로(한 화면에 다 보이게)
     try { const q = new URLSearchParams(window.location.search).get('panel'); return q === 'kpi' || q === 'history' ? q : null; } catch { return null; }   // ?panel=kpi 로 열면 창이 열린 채 시작(캡처·태블릿용)
   });
 
-  // 빈 구역 — 새 이벤트가 '건너뜀' 이면 주황 알림 + 짧은 음(로봇은 멈추지 않는다 · 황인재 9/28). 켤 때 이미 있던 이벤트는 알리지 않는다
+  // 빈 구역 — 새 이벤트가 '건너뜀' 이면 주황 알림만(로봇이 멈추지 않으니 소리 없음). 켤 때 이미 있던 이벤트는 알리지 않는다
   const lastEvent = useRef(undefined);
   useEffect(() => {
     const e = (d.events || [])[0];
@@ -155,18 +150,6 @@ export default function Monitor() {
     const t = skipToast(e);
     if (t) showToast(t);                                                  // 로봇이 멈추지 않으니 소리는 없다
   }, [d.events]);
-
-  // 케이블 재검증에서 또 떨리면 flow 는 멈춘 채 문구만 '케이블 이상 지속 …' 으로 바꾼다 — 처음 멈췄을 때처럼 알림창을 다시 띄우고 한 번 울린다
-  useEffect(() => {
-    const msg = s?.message || '';
-    if (!msg.includes('이상 지속')) againMsg.current = '';                  // 재확인 중 문구가 오면 비운다 — 같은 떨림 값으로 또 실패해도 다시 띄운다
-    if (s?.step === 'PAUSED' && pauseKind(s) === 'cable' && msg.includes('이상 지속') && msg !== againMsg.current) {
-      againMsg.current = msg;
-      pauseSeq.current += 1;
-      setModal({ seq: pauseSeq.current, step: lastRunning.current || '', kind: s.kind || 'BOWL' });
-      playStopBeep();
-    }
-  }, [s?.message, s?.step]);
 
   const can = buttons(d);
   const ITEM_KO = { sponge: '수세미', brush: '솔', soap: '세제', waste_bin: '잔반통' };
@@ -363,7 +346,6 @@ function StepBar({ d, paused }) {
   const at = paused || step;                         // 일시 정지 중이면 멈춘 단계를 가리킨다
   const idx = FLOW.indexOf(at);
   const finished = step === 'DONE';
-  const broken = false;                                         // 로봇 오류를 별도 예외로 보이지 않는다 — 붉은 단계 카드 없음(멈춤 카드는 주황 하나)
   // 좁은 화면(태블릿)에서는 단계 줄이 옆으로 밀린다 — 지금 단계 카드가 가운데 오게 줄만 민다(화면 전체는 움직이지 않는다)
   const bar = useRef(null);
   useEffect(() => {
@@ -377,7 +359,7 @@ function StepBar({ d, paused }) {
       {FLOW.map((name, i) => {
         const past = finished || (idx >= 0 && i < idx);
         const now = !finished && i === idx;
-        const cls = past ? 'past' : now ? (broken ? 'now error' : paused ? 'now paused' : 'now') : 'next';
+        const cls = past ? 'past' : now ? (paused ? 'now paused' : 'now') : 'next';   // 로봇 오류도 붉은 카드 없이 멈춤(주황) 하나
         return (
           <div key={name} className={`stepcard ${cls}`}>
             <img src={stepArt(name, kind)} alt="" width="128" height="96" />
@@ -441,7 +423,7 @@ function Now({ d, last }) {
   if (!art) { art = 'PICK'; title = STEP_KO[step] || '-'; }
 
   if (!desc && shown) {
-    if (shown === 'PICK') desc = `반납 구역 ${s.zone_id || ''} 에서 ${k ? '컵 몸통을 통째로' : '그릇 벽을 세로로'} 잡아 올린다`;
+    if (shown === 'PICK') desc = `반납 구역 ${s.zone_id || ''} 에서 ${k ? '컵 테두리를 위에서' : '그릇 벽을 세로로'} 잡아 올린다`;
     else if (shown === 'RACK') {
       const cells = pallet(d);
       const i = cells.findIndex((c) => c.loading || (!c.filled && c.kind === kind));
@@ -631,10 +613,9 @@ function Kpi({ d, period, setPeriod }) {
 
 // 이력 — 끝난 용기 1개 = /flow/event 1건. 최근 것부터 20건.
 //   브리지가 들고 있는 최근 50건(켤 때 SQLite 에서 미리 채운다) — 전체는 터미널 hmi_db dump events.
-//   [전체 / 문제만] — 문제만 = 완료가 아닌 것(격리 · 오류 · 건너뜀).
 const HISTORY_ROWS = 20;
 
-// 이력 창 — [전체 / 문제만 / 멈춤 기록]. 문제만 = 완료가 아닌 것 + 집기를 다시 시도한 것. 멈춤 기록 = DB pauses 표(FR-14 "오류 로그" · 황인재 9/28)
+// 이력 창 — [전체 / 문제만 / 멈춤 기록]. 문제만 = 완료가 아닌 것 + 집기를 다시 시도한 것. 멈춤 기록 = DB pauses 표(FR-14 "오류 로그")
 function History({ d }) {
   const [tab, setTab] = useState('all');                              // 'all' | 'problems' | 'pauses'
   const all = d.events || [];

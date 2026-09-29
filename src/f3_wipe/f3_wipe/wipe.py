@@ -1,4 +1,4 @@
-"""F3 접촉 닦기 — soap · wipe_bowl · wipe_cup. 담당 박진용 (AGENTS.md · docs/00_현재상황_리마인드.md).
+"""F3 접촉 닦기 — soap · wipe_bowl · wipe_cup.
 
 soap 이 잡은 위치로 수세미/컵솔을 가려 작업 위치까지 데려가고(움직임), wipe_bowl·wipe_cup 은 호출된 자리에서
 바로 하강해 세척한 뒤 그 높이로만 복귀한다. 숫자는 params.yaml f3 절 · cell.yaml 에서 읽는다.
@@ -61,7 +61,7 @@ def _check_tool(where):
 
 def _set_baseline():
     """지금 쥔 폭을 놓침 판정 기준으로 삼는다 — soap()·wipe_bowl()·wipe_cup() 시작부에서 각자 부른다
-    (wipe_bowl/wipe_cup 도 자기 것을 새로 잰다 — TOOL_LOST 뒤 재PICK 하면 flow 가 soap() 없이 그 함수만 재시도한다)."""
+    (wipe_bowl/wipe_cup 도 자기 것을 새로 잰다 — 닦기 재시도(E61 · 힘 상한·시간 초과)는 soap() 없이 그 함수만 다시 부른다)."""
     global _tool_baseline_mm
     _tool_baseline_mm = float(cc.grip_width())
 
@@ -503,7 +503,7 @@ def _halt_check(where):
     """구간 사이에서 강제정지·놓침을 본다 — 나선·원호는 도는 중에 끊을 수 없다."""
     if cc.is_halted():
         cc.stop_now()
-        raise cc.MotionHalted(f'wipe_bowl: {where} 앞에서 강제정지')
+        raise cc.MotionHalted(f'{where} 앞에서 강제정지')
     _check_tool(where)
 
 

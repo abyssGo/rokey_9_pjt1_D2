@@ -1,4 +1,4 @@
-"""flow 의 process_one 을 **용기 1개**에 실기로 — HMI·서비스 없이 터미널에서 (민범진 · 9/22 · INT-F2 = FLOW-04).
+"""flow 의 process_one 을 **용기 1개**에 실기로 — HMI·서비스 없이 터미널에서 (INT-F2 = FLOW-04).
 
     soc && python3 src/f2_sense_flow/test/rig_flow_once.py check                              # 로봇 없이: 어떤 모듈이 진짜/가짜인지 · 빈 껍데기
     soc && PREWASH_VEL_SCALE=0.3 python3 src/f2_sense_flow/test/rig_flow_once.py --kind BOWL --mock f3          # 그릇 1개 — F3(세제·닦기)만 가짜
@@ -10,7 +10,7 @@
     터미널에서 재개/중단을 고른다. 통합의 "뼈대" 는 따로 만들지 않는다 — 제품 경로(flow.py) 가 뼈대다(INT-F2 · SKEL-01 논의).
     끝나면 flow_node + HMI 로 같은 것을 한 번 더 돌리면 L3(INT-3a) 다.
 
-🔄 9/22 저녁: f1.tool 이 **진짜**가 됐다(#76 · V-08 10/10 · 황인재). --mock f3 으로 돌려도 로봇이 **실제로 수세미를 집었다 반납한다** —
+f1.tool 은 **진짜**다(V-08 10/10). --mock f3 으로 돌려도 로봇이 **실제로 수세미를 집었다 반납한다** —
     가짜인 것은 f3 의 세제·닦기(soap · wipe_*)뿐이다. 아래 문지기는 f1.tool 이 다시 빈 껍데기가 될 때를 위해 남겨 둔다.
 🚨 실패로 PAUSED 되면 로봇은 그 자리(정책대로 후퇴 뒤). Enter = 그 단계부터 다시 · a = 이 용기를 접고 격리(HOME → 격리 → HOME) · q = 끝(안 움직임).
 파일 이름이 test_* 가 아니라서 pytest 는 모으지 않는다.
@@ -67,7 +67,7 @@ def _make_flow(cfg, log, features, robot):
     return f, events
 
 
-STAGES = [   # flow.process_one 의 steps 순서 그대로 (번호 = 황인재 튜닝 대화용 · 9/23 15:5x WEIGH 이동 단계 제거 뒤 12개)
+STAGES = [   # flow.process_one 의 steps 순서 그대로 (번호 = 튜닝 때 단계를 가리키는 번호 · WEIGH 이동 단계 제거 뒤 12개)
     (1, 'PICK',  'f1.pick',          '반납 자리에서 집기(슬롯 1 → 2)'),
     (2, 'WEIGH', 'f2.leftover_loop', 'HOME 거쳐 무게 자세 → 재기 → 잔반이면 잔반통 털기(스플라인) → 재측정'),
     (3, 'SEAT',  'f1.place',         '스펀지 홈에 놓기'),
@@ -103,7 +103,7 @@ def _install_step_gate(f, log):
             raise KeyboardInterrupt
         t0 = time.monotonic()
         r = orig(mod_key, fn_name, *args)
-        q = ' · '.join(f'J{i + 1} {v:.1f}' for i, v in enumerate(cc.joints()))      # 🆕 9/23 튜닝 #1·#4: 단계 끝 관절 각도(J6 감김 확인)
+        q = ' · '.join(f'J{i + 1} {v:.1f}' for i, v in enumerate(cc.joints()))      # 튜닝용: 단계 끝 관절 각도(J6 감김 확인)
         log.info(f'   ← 단계 {n} 끝 · {time.monotonic() - t0:.1f} s · {getattr(r, "code", r)} · 관절 {q}')
         return r
     f.call_fn = gated
@@ -118,7 +118,7 @@ def main():
     ap.add_argument('-n', type=int, default=1, help='연속 몇 개 (반납 구역에 그만큼)')
     ap.add_argument('--no-robot', action='store_true', help='전부 가짜일 때만')
     ap.add_argument('--step', action='store_true',
-                    help='🆕 9/23 튜닝용: 단계마다 번호·이름을 찍고 Enter 를 기다린다(q = 그만) — 없앨 동작·빨리 할 동작을 번호로 고르기')
+                    help='튜닝용: 단계마다 번호·이름을 찍고 Enter 를 기다린다(q = 그만) — 없앨 동작·빨리 할 동작을 번호로 고르기')
     ap.add_argument('--list', action='store_true', help='단계 번호표만 찍고 끝낸다(로봇 안 움직임)')
     ap.add_argument('--nudge', action='store_true',
                      help='PAUSED 에서 키보드로 안 묻는다 — 넛지(로봇팔 가볍게 밀기)·HMI 로만 재개(E37 실기용)')

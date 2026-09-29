@@ -93,11 +93,11 @@ def test_call_does_not_crash_the_cell(flow):
 
 
 # ────────────────────────────────── 🚨 바깥 호출이 터져도 셀이 죽지 않는다
-# PR #8 리뷰에서 실제로 죽는 것이 확인된 결함이다 (flow_node 가 exit 1 로 종료).
+# 코드 검토에서 실제로 죽는 것이 확인된 결함이다 (flow_node 가 exit 1 로 종료).
 # cobot_common.safe_retreat 는 지금 NotImplementedError 뼈대라 **실제로 터진다.**
 
 def _boom(*a):
-    raise NotImplementedError('아직 구현 전이다 — 담당 박진용')
+    raise NotImplementedError('아직 구현 전이다')
 
 
 def test_retreat_failure_does_not_escape():
@@ -170,7 +170,7 @@ def test_signal_peek_keeps():
 
 
 # ────────────────────────────────── 🚨 보호 통로 자체가 죽지 않는가
-# PR #8 리뷰 뒤 전수 점검에서 나온 것들. call() 안에도 보호 밖 코드가 있었다.
+# 그 검토 뒤 전수 점검에서 나온 것들. call() 안에도 보호 밖 코드가 있었다.
 
 def test_call_survives_non_result_return():
     """기능 함수가 Result 가 아닌 것을 돌려줘도 call() 이 죽으면 안 된다.

@@ -36,7 +36,7 @@ def test_tables_exist_and_event_row_keeps_flow_fields(db):
     assert row['kind'] == 'BOWL' and row['result'] == 'DONE' and row['rack_slot'] == 'RACK_B1'
     assert row['weight_before_g'] == 94.0 and row['weight_after_g'] == 2.0 and row['duration_s'] == 71.2
     assert row['waste_g'] == 92.0 and row['ts'].startswith('2026-09-29T')
-    assert 'force_log_path' not in row and 'source' not in row              # 황인재 9/27: 뺀 항목
+    assert 'force_log_path' not in row and 'source' not in row              # 뺀 항목
 
 
 def test_waste_counts_only_when_leftover_was_dumped(db):
@@ -85,7 +85,7 @@ def test_kpi_totals_averages_and_pauses(db):
 
 
 def test_kpi_pallets_count_runs_that_filled_the_rack(tmp_path):
-    # 🆕 9/28 황인재: 처리한 팔레트 수 — 칸(rack_slots)을 다 채우고 끝난 회차만. 기간(run·all)을 따르고, 칸 수를 모르면 0
+    # 처리한 팔레트 수 — 칸(rack_slots)을 다 채우고 끝난 회차만. 기간(run·all)을 따르고, 칸 수를 모르면 0
     d = HmiDb(tmp_path / 'p.db', now=Clock(), rack_slots=4)
     r1 = d.start_run(); d.end_run(r1, {'done_bowl': 2, 'done_cup': 2, 'isolated': 0})
     r2 = d.start_run(); d.end_run(r2, {'done_bowl': 1, 'done_cup': 2, 'isolated': 1})
@@ -132,7 +132,7 @@ def test_recorder_makes_runs_pauses_and_events(db):
 
 
 def test_recorder_closes_run_when_flow_restarts_without_done(db):
-    # 🆕 9/28 flow 를 도중에 껐다 켜면(DONE 없이 IDLE) 지난 회차를 마지막 작업 상태로 닫는다 — 다음 회차의 KPI(이번 실행)에 섞이지 않게
+    # flow 를 도중에 껐다 켜면(DONE 없이 IDLE) 지난 회차를 마지막 작업 상태로 닫는다 — 다음 회차의 KPI(이번 실행)에 섞이지 않게
     rec = Recorder(db, waste_limit_g=50000)
     store = StateStore(2.0)
     store.subscribe(rec.on_store)
@@ -232,7 +232,7 @@ def test_api_usage_kpi_replace_and_db(tmp_path):
 
 
 def test_ws_path_resolves_relative_to_workspace_root(tmp_path, monkeypatch):
-    """🆕 9/27 — 홈에서 켜도 DB 는 워크스페이스의 파일(황인재: 홈에 생긴 DB 와 F4 폴더의 빈 DB 가 달랐다)."""
+    """홈에서 켜도 DB 는 워크스페이스의 파일(켠 폴더 기준이면 홈에 생긴 DB 와 F4 폴더의 빈 DB 가 달라진다)."""
     from f4_hmi import paths
     monkeypatch.chdir(tmp_path)
     assert paths.ws_path('prewash.db') == paths.WS_ROOT / 'prewash.db'
@@ -242,9 +242,9 @@ def test_ws_path_resolves_relative_to_workspace_root(tmp_path, monkeypatch):
 
 
 def test_recorder_pause_kind_cable_needs_robot_error_code():
-    """케이블 복구 뒤 남은 '케이블 정상 확인' 문구로 다음 멈춤(일시 정지·툴 놓침)을 케이블로 적지 않는다 — 화면과 같은 규칙."""
+    """케이블 멈춤을 재개한 뒤 남은 '재개 — 무게를 다시 재며 케이블을 확인합니다' 문구로 다음 멈춤(일시 정지·툴 놓침)을 케이블로 적지 않는다 — 화면과 같은 규칙."""
     from f4_hmi.recorder import pause_kind
     assert pause_kind({'last_code': 'ROBOT_ERROR', 'message': '케이블 상태를 확인해주세요.'}) == 'cable'
-    assert pause_kind({'last_code': 'OK', 'message': '케이블 정상 확인 — 작업을 재개합니다'}) == 'operator'
-    assert pause_kind({'last_code': 'TOOL_LOST', 'message': '케이블 정상 확인 — 작업을 재개합니다'}) == 'tool_lost'
+    assert pause_kind({'last_code': 'OK', 'message': '재개 — 무게를 다시 재며 케이블을 확인합니다'}) == 'operator'
+    assert pause_kind({'last_code': 'TOOL_LOST', 'message': '재개 — 무게를 다시 재며 케이블을 확인합니다'}) == 'tool_lost'
 
