@@ -41,7 +41,7 @@ def test_launch_defaults():
 
 def test_flow_only_and_env(monkeypatch):
     nodes, _ = _spawn(monkeypatch, {'f2_sense_flow', 'f4_hmi'}, use_mock='f1, f3', vel_scale='0.3', hmi='false')
-    assert len(nodes) == 1                                                   # PC-A: flow_node 프로세스 1개
+    assert len(nodes) == 1                                                   # GPU PC(로봇 제어): flow_node 프로세스 1개
     flow = nodes[0]
     assert (flow.node_package, flow.node_executable) == launch_common.FLOW
     env = {''.join(s.text for s in k): ''.join(s.text for s in v) for k, v in flow.additional_env}

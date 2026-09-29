@@ -16,7 +16,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='황인재',
+    maintainer='Team Prewash',
     maintainer_email='hwang-injae@users.noreply.github.com',
     description='F4 시스템 모니터(웹 HMI) — hmi_bridge · fake_state_pub',
     license='Apache-2.0',

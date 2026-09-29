@@ -3,7 +3,7 @@
 
 런치가 띄우는 것
     flow_node  (f2_sense_flow) — 메인 프로그램. 이 프로세스 안에서 f1·f2·f3 함수가 돈다. 항상 1개
-    hmi_bridge (f4_hmi)        — hmi:=true 일 때만. 통합 실행에서는 PC-B 에서 `ros2 run f4_hmi hmi_bridge` 로 따로 띄운다
+    hmi_bridge (f4_hmi)        — hmi:=true 일 때만. 통합 실행에서는 화면 PC 에서 `ros2 run f4_hmi hmi_bridge` 로 따로 띄운다
 
 런치 인자 → 프로그램: 환경변수로 넘긴다 (cobot_common.config 가 읽어 cfg 에 얹는다)
     use_mock:="f1,f3"   → PREWASH_USE_MOCK  → cfg['flow']['use_mock']   (빈 값이면 전부 실제)

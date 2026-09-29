@@ -4,7 +4,7 @@
   <name>f2_sense_flow</name>
   <version>0.1.0</version>
   <description>PreWash-Cell F2 무게·털기·헹굼 기능 함수 + flow_node(메인 프로그램). IRD v3.0 §4·§6.</description>
-  <maintainer email="zldzmfoq100@gmail.com">beomjin</maintainer>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>cobot_api</exec_depend>

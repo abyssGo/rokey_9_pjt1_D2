@@ -7,7 +7,7 @@
     PreWash-Cell 메시지 계약(IRD v3.0) 정본 패키지.
     msg 2개(FlowState · FlowEvent). 기능 함수의 약속은 cobot_api.
   </description>
-  <maintainer email="zldzmfoq100@gmail.com">민범진</maintainer>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
