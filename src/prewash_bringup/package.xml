@@ -4,7 +4,7 @@
   <name>prewash_bringup</name>
   <version>0.1.0</version>
   <description>PreWash-Cell 런치: prewash.launch.py(GPU PC(로봇 제어), flow_node 프로세스 1개) · prewash_mock.launch.py(로봇 없이 flow 전부 mock + hmi). SDD §10.</description>
-  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team D2</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>launch</exec_depend>

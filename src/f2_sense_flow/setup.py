@@ -12,7 +12,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Team Prewash',
+    maintainer='Team D2',
     maintainer_email='hwang-injae@users.noreply.github.com',
     description='PreWash-Cell F2 무게·털기·헹굼 + flow_node',
     license='Apache-2.0',

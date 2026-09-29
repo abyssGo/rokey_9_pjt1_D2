@@ -12,7 +12,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Team Prewash',
+    maintainer='Team D2',
     maintainer_email='hwang-injae@users.noreply.github.com',
     description='F1 파지·이송·적재 함수 모듈(pick · place · move_to · tool · rack_place)',
     license='Apache-2.0',

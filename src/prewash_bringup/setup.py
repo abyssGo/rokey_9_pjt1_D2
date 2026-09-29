@@ -15,7 +15,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Team Prewash',
+    maintainer='Team D2',
     maintainer_email='hwang-injae@users.noreply.github.com',
     description='PreWash-Cell 런치 2종 (실기 · mock)',
     license='Apache-2.0',

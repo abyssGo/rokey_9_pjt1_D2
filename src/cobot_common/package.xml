@@ -4,7 +4,7 @@
   <name>cobot_common</name>
   <version>0.1.0</version>
   <description>PreWash-Cell 공용 로봇 함수 모음: 두산 API 초기화(init·io_node·cfg·shutdown, SDD §3.2) · 설정 로더(config) · 이동(motion)·그리퍼(gripper)·힘(force)·무게(weigh)·초기화(bootstrap) 공용 로봇 함수.</description>
-  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team D2</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>rclpy</exec_depend>
