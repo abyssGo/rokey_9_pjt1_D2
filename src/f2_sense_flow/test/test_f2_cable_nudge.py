@@ -274,3 +274,54 @@ def test_cable_screen_resume_restarts_at_once_and_consumes_the_signal(monkeypatc
     assert outcome == RETRY_STEP
     assert polls[0] == 3
     assert not sig.peek('resume'), '쓴 재개 신호가 남아 있다'
+
+
+# ────────────────────────────────── 넛지로 풀리는 멈춤 전부 — 손을 뗄 시간을 기다린 뒤 복구하고 움직인다
+def _nudge_flow(monkeypatch, answer):
+    """멈춤에서 answer(넛지·재개 버튼)로 풀리는 Flow — sleep · 복구 · 그 뒤 동작의 순서를 order 에 적는다."""
+    import f2_sense_flow.flow as flow_module
+    order = []
+    monkeypatch.setattr(flow_module.time, 'sleep', lambda s: order.append(('sleep', s)))
+    monkeypatch.setattr(flow_module.cc, 'cfg', lambda: {'f2': {'nudge': {'settle_s': 1.5}}})
+    flow = Flow({'flow': {'plan': [], 'policy': {}}}, MockLogger())
+    monkeypatch.setattr(flow, 'wait_resume', lambda sig, allow_nudge=False: answer)
+    monkeypatch.setattr(flow, '_recover_robot', lambda: order.append(('recover',)))
+    monkeypatch.setattr(flow, '_retreat', lambda: (order.append(('retreat',)), True)[1])
+    flow.step = flow._prev_step = 'SOAP'
+    return flow, order
+
+
+@pytest.mark.parametrize('code,expect', [('TOOL_FAIL', 'retry_step'), ('TOOL_LOST', 'retry_tool_pick')])
+def test_failure_pause_nudge_waits_for_hands_off_before_recover_and_move(monkeypatch, code, expect):
+    """툴 집기 실패·툴 놓침 멈춤을 밀기로 풀면 — 손을 뗄 시간(f2.nudge.settle_s)을 기다리고 → 로봇 복구 → 그 뒤에 움직인다.
+    (실기: 밀고 2~3 s 뒤 이동이 끊겨 로봇 오류 멈춤 — 손이 닿은 채 이동을 보냈다)"""
+    import f2_sense_flow.flow as flow_module
+    flow, order = _nudge_flow(monkeypatch, flow_module.RESUMED_NUDGE)
+    flow.last_code = code
+    out = flow.handle_failure(Signals(), action=flow_module.PAUSE)
+    assert out == {'retry_step': flow_module.RETRY_STEP, 'retry_tool_pick': flow_module.RETRY_TOOL_PICK}[expect]
+    assert ('sleep', 1.5) in order and ('recover',) in order, order
+    assert order.index(('sleep', 1.5)) < order.index(('recover',)), order
+    if code == 'TOOL_LOST':                                   # 곧게 위로(후퇴)는 복구 뒤에
+        assert order.index(('retreat',)) > order.index(('recover',)), order
+
+
+def test_failure_pause_resume_button_does_not_wait(monkeypatch):
+    """재개 버튼으로 풀면 손이 팔에 없다 — 손 떼기 대기를 넣지 않는다(재개가 느려지지 않게)."""
+    import f2_sense_flow.flow as flow_module
+    flow, order = _nudge_flow(monkeypatch, flow_module.RESUMED)
+    flow.last_code = 'TOOL_FAIL'
+    assert flow.handle_failure(Signals(), action=flow_module.PAUSE) == flow_module.RETRY_STEP
+    assert not [o for o in order if o[0] == 'sleep'], order
+
+
+def test_robot_error_nudge_waits_for_hands_off_before_retreat(monkeypatch):
+    """로봇 오류(빈손) 멈춤을 밀기로 풀면 곧게 위로 → HOME 으로 움직인다 — 그 앞에도 손 떼기 대기 → 복구."""
+    import f2_sense_flow.flow as flow_module
+    flow, order = _nudge_flow(monkeypatch, flow_module.RESUMED_NUDGE)
+    flow.last_code = 'ROBOT_ERROR'
+    monkeypatch.setattr(flow, '_gripper_closed', lambda: False)
+    monkeypatch.setattr(flow, '_go_home_or_wait', lambda sig, max_tries=3: (order.append(('home',)), True)[1])
+    monkeypatch.setattr(flow, 'emit_event', lambda result: None)
+    assert flow.handle_failure(Signals(), action=flow_module.PAUSE) == flow_module.GO_ON
+    assert order.index(('sleep', 1.5)) < order.index(('recover',)) < order.index(('home',)), order

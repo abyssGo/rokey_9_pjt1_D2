@@ -847,13 +847,13 @@ class Flow:
         1. to_paused 로 상태를 PAUSED 로 변경하고 대시보드 안내 메시지 설정
         2. 현재 모션 즉시 PAUSE (후퇴 없이 그 자리에서 멈춤)
         3. 사용자 넛지(외력 변화량) 또는 HMI resume 대기
-        4. 넛지 또는 resume 감지 시: (넛지면 손을 뗄 시간 f2.nudge.settle_s) → 보호정지 복구·STANDBY 확인(_recover_robot)
+        4. 넛지 또는 resume 감지 시: (넛지면 손을 뗄 시간 f2.nudge.settle_s — _after_nudge) → 보호정지 복구·STANDBY 확인(_recover_robot)
            → 모션 resume → RETRY_STEP — 무게 단계를 다시 하며(HOME 을 거쳐) 그 무게 재기가 케이블을 다시 본다
            (아직 떨리면 같은 케이블 멈춤이 다시 걸린다)
         5. abort 요청: abort_container(sig) 로 정리
         주의: 멈춘 자리에서 케이블을 다시 재지 않는다 — 민 직후 약 8 s 동안 가만히 재는 사이 손이 닿거나 다시 밀면
            떨림이 수천 g 으로 튀어 다시 멈췄고, 소리·화면 변화가 없어 밀기를 못 알아들은 것처럼 보였다(실기).
-           다른 넛지 멈춤처럼 밀면 바로 재개(비프 2번)하고, 판정은 다시 재는 무게(표본 30개)에 맡긴다.
+           다른 넛지 멈춤처럼 밀면 바로 재개(비프 2번)하고, 판정은 다시 재는 무게(f2.weigh_samples 개)에 맡긴다.
         """
         self.to_paused('케이블 장력 이상 — 케이블 상태 확인 및 넛지 재개 대기', sig)
         self.message = '케이블 상태를 확인해주세요. 확인 후 로봇팔을 가볍게 밀어 주세요.'
@@ -888,17 +888,12 @@ class Flow:
                 sig.clear('stop')
                 self.log.info(f'재개 요청 감지(유형: {ev}) — 무게를 다시 재며 케이블을 확인한다')
 
-                # 주의: 밀기를 알아챈 순간에는 손이 아직 팔에 있다 — 곧바로 이동을 보내면 제어기가 외력으로 그 이동을 붙잡아
-                #    움직이지도 끝나지도 않은 채 멈춰 있었다(실기: 감지 3 ms 뒤 movej → 외력 경고 7060 → 2 분 정지).
-                #    손을 뗄 시간(f2.nudge.settle_s)을 두고, 그 뒤에 보호정지 복구·STANDBY 확인(_recover_robot)을 한다.
+                # 주의: 밀기를 알아챈 순간에는 손이 아직 팔에 있다 — 손을 뗄 시간을 두고 로봇을 복구한다(_after_nudge).
                 if ev == 'nudge':
                     self.message = '케이블 — 밀기 확인: 손을 떼 주세요. 곧 무게를 다시 잽니다'
-                    try:
-                        settle_s = float(((cc.cfg().get('f2') or {}).get('nudge') or {}).get('settle_s') or 1.5)
-                    except Exception:                          # noqa: BLE001 — 설정을 못 읽어도 멈추지 않는다
-                        settle_s = 1.5
-                    time.sleep(settle_s)
-                self._recover_robot()
+                    self._after_nudge()
+                else:
+                    self._recover_robot()
                 self._guard(self._resume, what='resume')
                 self.step = self._prev_step
                 self.message = '재개 — 무게를 다시 재며 케이블을 확인합니다'
@@ -928,7 +923,7 @@ class Flow:
             if answer == ABORTED:                     # 사람이 이 용기를 접기로 했다
                 return self.abort_container(sig)
             if answer == RESUMED_NUDGE:
-                self._recover_robot()
+                self._after_nudge()
             if code == TOOL_LOST:                      # E37·E62 — 닦는 도중 놓쳤다: 곧게 위로 → "툴 집기" 단계부터(툴 집기 → 세제 → 닦기). 다시 집기 실패는 TOOL_FAIL 정책대로
                 return self._repick_tool(sig)
             # 그 밖(GRIP_FAIL·RACK_FULL·TOOL_FAIL)은 **실패한 그 단계부터** 이어 간다.
@@ -969,9 +964,13 @@ class Flow:
             self.message = (f'{base} — 로봇 오류 · 빈손. 로봇과 주변을 확인한 뒤 로봇팔 가볍게 밀기(또는 재개) → '
                             f'곧게 위로 → HOME → 다음 용기로 갑니다.{bed_note}')
         self.to_paused(f'코드 {ROBOT_ERROR}', sig)
-        if self.wait_resume(sig, allow_nudge=True) == ABORTED:     # flow_node 는 로봇 오류 중 중단을 거절한다 — 직접 호출·시험 대비
+        answer = self.wait_resume(sig, allow_nudge=True)
+        if answer == ABORTED:                          # flow_node 는 로봇 오류 중 중단을 거절한다 — 직접 호출·시험 대비
             return self.abort_container(sig)
-        self._recover_robot()
+        if answer == RESUMED_NUDGE:
+            self._after_nudge()
+        else:
+            self._recover_robot()
         if held:
             self.log.warn(f'로봇 오류 — 사람 신호 1 · 그리퍼를 연다({what}) · 팔은 움직이지 않는다')
             self._guard(cc.release, what='release')
@@ -1019,6 +1018,22 @@ class Flow:
             return self._robot_error_pause(sig)
         self.log.info('재개 — 툴 놓침: 곧게 올라왔다 → 툴 집기부터 다시(툴 집기 → 세제 → 닦기)')
         return RETRY_TOOL_PICK
+
+    def _after_nudge(self):
+        """넛지(밀기)로 재개된 직후 — 손을 뗄 시간(f2.nudge.settle_s)을 기다린 뒤 로봇을 복구한다(_recover_robot).
+
+        주의: 밀기를 알아챈 순간에는 손이 아직 팔에 있다. 곧바로 이동을 보내면 제어기가 외력으로 그 이동을 세운다
+           (실기: 케이블 멈춤 — 감지 3 ms 뒤 movej → 외력 경고 7060 → 정지 · 툴 놓침·툴 집기 실패 멈춤 — 밀고 2~3 s 뒤 로봇 오류 멈춤).
+           순서가 중요하다: 먼저 기다리고 → 그 뒤에 로봇 상태를 본다. 기다리는 사이 밀기로 보호정지가 걸렸어도 복구가 잡는다.
+        넛지로 풀리는 멈춤(케이블 · 툴 놓침 · 툴 집기 실패 · 로봇 오류 신호 1)은 모두 이 길을 탄다. 재개 버튼은 손이 팔에 없으므로 기다리지 않는다.
+        """
+        try:
+            settle_s = float(((cc.cfg().get('f2') or {}).get('nudge') or {}).get('settle_s') or 1.5)
+        except Exception:                              # noqa: BLE001 — 설정을 못 읽어도 멈추지 않는다
+            settle_s = 1.5
+        self.log.info(f'넛지 재개 — 손을 뗄 시간 {settle_s:g} s 를 기다린 뒤 로봇 상태를 확인한다')
+        time.sleep(settle_s)
+        self._recover_robot()
 
     def _recover_robot(self):
         """넛지·재개 뒤 컨트롤러가 STANDBY 로 돌아올 때까지 본다 — 보호정지(SAFE_STOP)면 자동 복구(set_robot_control).
