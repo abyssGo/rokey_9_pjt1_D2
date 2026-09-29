@@ -240,3 +240,41 @@ def test_spread_no_limit_no_warning(fake):
     W.weigh(6)
     assert not any('케이블' in m for lv, m in log.lines if lv == 'warn')
 
+
+# ────────────────────────────────── 재는 값을 화면으로 — 표본마다 듣는 함수를 부른다
+def test_listener_gets_every_sample_then_the_median(fake):
+    """표본을 하나 읽을 때마다 지금까지 읽은 값 전부를, 다 재면 done=True 와 중앙값을 넘긴다(화면의 무게 측정 칸)."""
+    fake(FakeDsr([10.0, 30.0, 20.0]))
+    heard = []
+    W.set_weigh_listener(lambda samples, n, done, median_g: heard.append((samples, n, done, median_g)))
+    try:
+        g = W.weigh(3)
+    finally:
+        W.set_weigh_listener(None)
+    assert [len(h[0]) for h in heard] == [1, 2, 3, 3]
+    assert [h[2] for h in heard] == [False, False, False, True]
+    assert all(h[1] == 3 for h in heard) and heard[0][3] is None
+    assert heard[-1][3] == pytest.approx(g) and heard[-1][0] == pytest.approx(heard[2][0])
+    heard[0][0].append(999.0)                                 # 넘겨받은 목록을 고쳐도 다음 값에 섞이지 않는다(사본)
+    assert 999.0 not in heard[1][0]
+
+
+def test_listener_failure_does_not_stop_weighing(fake):
+    """듣는 함수가 터져도(화면 쪽 문제) 무게는 끝까지 잰다 — 경고만 남긴다."""
+    log = fake(FakeDsr([10.0, 30.0, 20.0]))
+
+    def boom(*a):
+        raise RuntimeError('화면이 없다')
+    W.set_weigh_listener(boom)
+    try:
+        assert W.weigh(3) == pytest.approx(W.weigh_last()['median_g'])
+    finally:
+        W.set_weigh_listener(None)
+    assert any('표본 알림 실패' in m for lv, m in log.lines if lv == 'warn')
+
+
+def test_no_listener_by_default(fake):
+    """듣는 함수를 걸지 않으면 예전과 같다."""
+    fake(FakeDsr([10.0, 11.0, 12.0]))
+    assert W._listener is None
+    assert W.weigh(3) == pytest.approx(W.weigh_last()['median_g'])

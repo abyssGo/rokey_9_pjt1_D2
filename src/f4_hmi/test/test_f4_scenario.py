@@ -153,3 +153,14 @@ def test_leftover_remain_scenario_pauses_at_shake_holding_the_bowl():
     scenes = sc.build(sc.load('leftover_remain'))
     paused = [s for s in scenes if s.state['step'] == 'PAUSED']
     assert len(paused) == 1 and paused[0].state['last_code'] == 'LEFTOVER_REMAIN' and paused[0].state['kind'] == 'BOWL' and paused[0].gripping
+
+
+def test_weigh_samples_are_repeatable_and_median_matches():
+    # 가짜 무게 표본 — 같은 입력이면 같은 값 · 그 종류의 '털기 전' 무게 주위 · 중앙값은 실제 무게 함수와 같은 규칙
+    scn = sc.load('normal')
+    a = sc.weigh_samples(scn, 'BOWL', 15)
+    assert a == sc.weigh_samples(scn, 'BOWL', 15) and len(a) == 15
+    base = scn['weight_g']['BOWL'][0]
+    assert all(abs(v - base) <= scn['weigh']['ripple_g'] + 0.1 for v in a)
+    assert sc.median([3.0, 1.0, 2.0]) == 2.0 and sc.median([4.0, 1.0, 2.0, 3.0]) == 2.5 and sc.median([]) == 0.0
+    assert sc.weigh_samples(scn, 'BOWL', 0) == []

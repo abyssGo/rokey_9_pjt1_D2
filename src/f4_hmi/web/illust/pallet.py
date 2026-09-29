@@ -57,8 +57,8 @@ def _item(s, kind, x, y, st, n):
     if kind == 'BOWL':
         if st == 'done':
             s.shadow(x, y, FLOOR, 26, op=.45, squash=.7)
-        s.standing_bowl(x, y, FLOOR + 1 + lift)
-        X, Y = s.P(x + 20, y, FLOOR + 1 + lift + 124)
+        s.standing_bowl(x, y, FLOOR + 1 + lift)                          # 바닥이 보는 쪽(+x) — 실제 적재 방향
+        X, Y = s.P(x - 20, y, FLOOR + 1 + lift + 124)                    # 번호표는 가장 높은 곳(뒤쪽 테두리) 위에
     else:
         if st == 'done':
             s.shadow(x, y, FLOOR, 36, op=.45)

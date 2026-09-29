@@ -7,7 +7,7 @@ done_hold_s: 2.0            # 전부 끝난 뒤 DONE 을 유지하는 시간 (�
 pause_hold_s: 10.0          # 실패로 멈춘 PAUSED 를 유지하는 시간 (실제로는 사람이 재개·중단을 누를 때까지)
 step_s:                     # 단계마다 머무는 시간
   PICK: 2.5
-  WEIGH: 2.0
+  WEIGH: 12.0               # 표본을 하나씩 읽는 모습이 화면에 보일 만큼
   SHAKE: 2.5
   SEAT: 2.5
   SOAP: 2.0
@@ -31,4 +31,5 @@ counts: {soap_dips: 3, rinse_dips: 2}                       # 용기 1개마다 
 force: {target_n: 1.5, ripple_n: 0.4, period_s: 1.0}        # 닦는 동안의 /cell/force 흉내: 목표 힘 ± 출렁임
                                                              #   params.yaml f3.wipe_bowl.target_force_n(1.5 N · V-03 실기)에 맞췄다 — 6 N 이면 화면 그래프가 목표선보다 늘 4배 높았다
 weight_g: {BOWL: [310.0, 182.0], CUP: [165.0, 121.0]}       # 이벤트의 무게 [털기 전, 털기 후]
+weigh: {samples: 30, ripple_g: 12.0, span: 0.7}             # 무게 단계(WEIGH) 동안의 /flow/weigh 흉내: 표본 수 · 출렁임(g) · 장면 시간 중 표본을 읽는 구간(앞 70 %) — 그 뒤 중앙값
 rates: {state_hz: 2.0, gripping_hz: 2.0, force_hz: 10.0}    # 발행 주기 (IRD §6)

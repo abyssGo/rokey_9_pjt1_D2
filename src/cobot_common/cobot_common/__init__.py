@@ -7,7 +7,7 @@
     bootstrap.py · config.py · __init__.py   init · io_node · cfg · shutdown · config.load
     motion.py                                move_to · move_rel · move_joint_rel
     gripper.py                               grip · grip_level · release · grip_width
-    weigh.py                                 weigh
+    weigh.py                                 weigh · weigh_last · set_weigh_listener(재는 값을 화면으로)
     force.py                                 force_on/off · force_reached · contact_down · periodic_search · safe_retreat ·
                                              where · motion_done · move_spiral · move_arc (닦기 접촉 모션)
 

@@ -33,6 +33,7 @@
    게다가 이동 속도·이력에 따라 수십 g 씩 달라진다(빈손 빠른 이동 −89 · 그릇 느린 이동 −5).
    잔반 판정은 `측정값 − 빈 용기 기준값` 이라 두 값을 같은 경로·같은 자세·같은 속도로 재면 상쇄된다.
    주의: 흔들림: 정지해 있어도 ±25 g 가 10~20 s 주기로 오르내린다(실기) → 표본을 10 개(≈ 7 s) 이상 잡아 중앙값.
+      지금 설정은 30 개 × 0.5 s(≈ 15 s 창 · params.yaml f2.weigh_samples) — 창이 흔들림 한 주기에 가까워야 중앙값이 흔들림을 지운다.
    주의: 읽기 사이에 간격(f2.weigh_sample_gap_s)을 둔다 — 실기: 간격 없이 50 회를 0.03 s 에 읽으니
       50 개가 전부 −48.7 이었다. get_tool_force 는 컨트롤러가 주기적으로 갱신하는 값을 돌려주므로 갱신 전에
       다시 읽으면 같은 값이다. 표본이 "10 개" 이려면 시간으로도 퍼져 있어야 한다.
@@ -47,10 +48,38 @@ import time
 #    `from .weigh import *` 가 함수를 패키지에 올려 모듈 이름을 가린다.
 #    `from cobot_common import weigh` 는 함수를, 모듈이 필요하면
 #    `importlib.import_module('cobot_common.weigh')` 를 쓴다(시험 코드 참고).
-__all__ = ['weigh', 'weigh_last']
+__all__ = ['weigh', 'weigh_last', 'set_weigh_listener']
 
 _MIN_SAMPLES = 1                           # weigh(n) 의 n 하한 — 0 이하를 주어도 최소 1회는 읽는다
 _last = {}                                 # 마지막 weigh() 의 {'median_g', 'spread_g', 'n'} — 케이블 장력 경고·기록용 (weigh_last)
+_listener = None                           # 표본을 읽을 때마다 부르는 함수 (set_weigh_listener) — 화면에 재는 값을 보여 주는 데 쓴다
+
+
+def set_weigh_listener(fn):
+    """재는 동안 표본을 하나 읽을 때마다 fn(samples, n, done, median_g) 을 부르게 한다. None 이면 끈다.
+
+    samples  : 지금까지 읽은 값(g) 의 사본 — 잰 순서대로
+    n        : 잴 횟수
+    done     : 다 쟀으면 True — 이때만 median_g 가 값이다(그 전에는 None)
+    주의: fn 은 weigh() 를 부른 스레드(메인)에서 불린다 — 값을 넘기기만 하고 바로 돌아와야 한다(오래 걸리면 읽기 간격이 늘어난다).
+       fn 이 예외를 내도 재기는 계속한다.
+    """
+    global _listener
+    _listener = fn
+
+
+def _tell(samples, n, done=False, median_g=None):
+    """듣는 함수가 있으면 부른다. 거기서 무엇이 터져도 재기를 멈추지 않는다."""
+    fn = _listener
+    if fn is None:
+        return
+    try:
+        fn(list(samples), n, done, median_g)
+    except Exception as e:                 # noqa: BLE001 — 화면 표시 때문에 무게 재기가 죽으면 안 된다
+        try:
+            _log().warn(f'weigh 표본 알림 실패 — {e!r} (재기는 계속한다)')
+        except Exception:                  # noqa: BLE001
+            pass
 
 
 def weigh_last():
@@ -128,6 +157,7 @@ def weigh(n, reset=False):
             _log().warn(f'툴 힘 읽기 실패값 {f!r} — 버린다')
             continue
         samples.append(-float(f[_FZ]) * N_TO_G)       # ⑥ 중력은 −Z → 무게 = −Fz
+        _tell(samples, n)
 
     if not samples:
         raise RuntimeError(f'하중을 {n}회 모두 읽지 못했다 — 브링업·제어권을 확인한다')
@@ -139,6 +169,7 @@ def weigh(n, reset=False):
     drift, jitter = _drift_and_jitter(samples)
     _last.clear()
     _last.update(median_g=g, spread_g=spread, drift_g=drift, jitter_g=jitter, n=len(samples))
+    _tell(samples, n, done=True, median_g=g)
     # 개별 값도 남긴다 — V-02 에서 회차 값을 안 남겨 평균·표준편차를 못 냈다(그 기록 §2)
     _log().info(f'weigh n={n} → {g:.1f} · 흐름 {drift:+.0f} g · 떨림 {jitter:.0f} g '
                 f'(읽음: {", ".join(f"{s:.1f}" for s in samples)})')
@@ -148,7 +179,7 @@ def weigh(n, reset=False):
     if limit is not None and jitter > float(limit):
         _log().warn(f'🔗 무게 떨림 {jitter:.0f} g > {float(limit):.0f} g — 그리퍼 **케이블 장력** 의심. '
                     '케이블 여유 길이를 확인한다(V-02 시험 기록). 이 값은 참고만')
-    # 영점 흐름 = 기준값이 낡았다는 신호. 재는 21 s 안에서도 움직이면 5 시간 전 기준값은 더더욱 안 맞는다
+    # 영점 흐름 = 기준값이 낡았다는 신호. 재는 몇 초 안에서도 움직이면 5 시간 전 기준값은 더더욱 안 맞는다
     dlimit = lim.get('max_weigh_drift_g')
     if dlimit is not None and abs(drift) > float(dlimit):
         _log().warn(f'📉 재는 동안 값이 {drift:+.0f} g 흘렀다 (상한 {float(dlimit):.0f} g) — **영점이 움직이고 있다.** '

@@ -314,7 +314,7 @@ def RACK(kind, pid):
         s.standing_bowl(0, 0, zb)
         tines(26)
         top = zb + 2 * (BOWL["r1"] + BOWL["flange"])
-        gripper(s, 20 + 2, 0, top - 22, 6, finger=44, ang=0)
+        gripper(s, -(20 + 2), 0, top - 22, 6, finger=44, ang=0)       # 테두리(입구 쪽 · 뒤)를 잡는다 — 바닥이 보는 쪽
         X, Y = s.P(0, 62, zb + 62)
         s.arrow([(X - 26, Y - 40), (X - 26, Y + 14)])
     else:

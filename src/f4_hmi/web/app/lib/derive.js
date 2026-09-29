@@ -148,27 +148,6 @@ export function cycle(d) {
   return { last: ds[0], mean: ds.reduce((a, b) => a + b, 0) / ds.length, n: ds.length, recent: ds.slice(0, 8).reverse() };
 }
 
-// 몇 번째 용기인가 — 끝난 용기(완료 + 격리) 수와 계획 수
-export function progress(d) {
-  const s = d.state || {};
-  return {
-    finished: (s.done_bowl || 0) + (s.done_cup || 0) + (s.isolated || 0),
-    total: (s.target_bowl || 0) + (s.target_cup || 0),
-  };
-}
-
-// 다음 할 일 — "지금 하는 일" 칸의 한 줄. 적재 뒤에는 다음 용기(남았으면) 또는 끝
-export function nextStep(step, p) {
-  if (step === 'IDLE') return '시작 누르기';
-  if (step === 'DONE') return '팔레트 확인';
-  if (step === 'PAUSED') return '재개 또는 중단';
-  if (step === 'ERROR') return '운영자 복구';
-  if (step === 'WEIGH') return '털기 또는 안착';               // 잔반(50 g 이상)이 있을 때만 턴다
-  const i = FLOW.indexOf(step);
-  if (i >= 0 && i < FLOW.length - 1) return STEP_KO[FLOW[i + 1]];
-  return p.finished + 1 < p.total ? '다음 용기 집기' : '마지막 — 완료';
-}
-
 // 소모품 — 교체까지 남은 횟수. 한도의 15 % 이하로 남으면 warn(곧 교체), 0 이면 bad(교체 필요)
 function remain(used, max) {
   if (used == null) return null;
@@ -290,6 +269,26 @@ export function weightText(e) {
   if (!b && !a) return '-';
   const g = (v) => Math.max(0, Math.round(v || 0));
   return `${g(b)} → ${g(a)} g`;
+}
+
+// 무게 측정 칸('지금 하는 일' 카드) — 표본을 읽는 대로 한 칸씩 채우고, 다 재면 중앙값과 잔반 판정을 보여 준다(/flow/weigh → d.weigh)
+//   칸은 늘 그린다: 아직 잰 것이 없으면(idle) 빈 칸 plan.weigh_samples 개 · 재는 중(measuring) · 다 잼(done) · 재다가 값이 끊김(stalled)
+//   잰 값은 그 용기를 처리하는 동안 남는다 — 새 용기를 집으러 가면 서버가 지운다(state_store)
+//   숫자는 이력의 '무게 전 → 후' 와 같은 규칙 — 0 g 아래(센서 오차)는 0 으로
+export const WEIGH_STALE_MS = 5000;
+export function weighView(d, now = Date.now()) {
+  const w = d && d.weigh;
+  const plan = (d && d.plan) || {};
+  const limit = Number(plan.leftover_threshold_g) || null;
+  const samples = w && Array.isArray(w.samples_g) ? w.samples_g : [];
+  const n = Math.max((w && w.target_n) || Number(plan.weigh_samples) || 0, samples.length);
+  const g = (v) => Math.max(0, Math.round(v || 0));
+  const cells = Array.from({ length: n }, (_, i) => (i < samples.length ? g(samples[i]) : null));
+  if (!samples.length) return { phase: 'idle', kind: '', n, count: 0, cells, median: null, limit, leftover: null };
+  const done = !!w.done;
+  const phase = done ? 'done' : now - (w.at || 0) > WEIGH_STALE_MS ? 'stalled' : 'measuring';
+  return { phase, kind: w.kind || '', n, count: samples.length, cells, median: done ? g(w.median_g) : null, limit,
+           leftover: done && limit != null ? (w.median_g || 0) >= limit : null };
 }
 
 // stamp(epoch 초) → 'HH:MM:SS' 현지 시각. 없으면 '-'

@@ -3,7 +3,7 @@
 
     GET  /api/state                     지금 값 전부(연결·상태·그리퍼·힘·최근 이벤트·계획)
     POST /api/start|stop|resume|abort   버튼 → flow 의 같은 이름 서비스 → {ok, message, latency_ms} 를 그대로 돌려준다
-    WS   /ws/state                      서버 → 브라우저. 붙자마자 type=state(전부) 1번, 그 뒤로 state · event · force · gripping · conn
+    WS   /ws/state                      서버 → 브라우저. 붙자마자 type=state(전부) 1번, 그 뒤로 state · event · weigh · force · gripping · conn
     GET  /                              운영 화면(Next.js 로 만든 web/out/) — 아직 안 만들었으면 시험 페이지
     GET  /test                          시험 페이지(브리지 점검용 — 그대로 둔다)
     GET  /api/usage · /api/kpi?period=  소모품·잔반통 사용량(마지막 교체 뒤) · 누적 KPI(run/today/all)      (SQLite)
@@ -47,7 +47,9 @@ def create_app(store, cfg: dict, command=None, web_dir: Path = WEB_DIR, recorder
     flow = cfg.get('flow') or {}
     plan = {'plan': flow.get('plan') or [], 'rack_order': flow.get('rack_order') or {},
             'consumables': flow.get('consumables') or {},
-            'policy': flow.get('policy') or {}}          # 실패 정책 — 화면이 '자동 재시도 중' 을 가릴 때 쓴다(derive.retryPolicy)
+            'policy': flow.get('policy') or {},          # 실패 정책 — 화면이 '자동 재시도 중' 을 가릴 때 쓴다(derive.retryPolicy)
+            'leftover_threshold_g': (cfg.get('f2') or {}).get('leftover_threshold_g'),   # 잔반 판정 기준(g) — 무게 측정 칸의 '잔반 있음/없음'
+            'weigh_samples': (cfg.get('f2') or {}).get('weigh_samples')}                 # 무게 표본 수 — 재기 전에도 빈 칸을 그 수만큼 그린다
     hub = Hub()
     store.subscribe(hub.from_ros)
     app.state.hub = hub

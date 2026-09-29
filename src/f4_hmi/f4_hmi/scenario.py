@@ -221,3 +221,21 @@ def force_at(scn, t_s) -> float:
     import math
     f = scn['force']
     return max(0.0, float(f['target_n']) + float(f['ripple_n']) * math.sin(2.0 * math.pi * t_s / float(f['period_s'])))
+
+
+def weigh_samples(scn, kind, n) -> list:
+    """무게 표본 흉내: 그 종류의 '털기 전' 무게 주위로 출렁이는 값 n 개(g). 같은 입력이면 늘 같은 값(시험·화면 확인용)."""
+    import math
+    w = scn.get('weigh') or {}
+    base = float((scn['weight_g'].get(kind) or [0.0])[0])
+    ripple = float(w.get('ripple_g', 12.0))
+    return [round(base + ripple * math.sin(1.7 * i + 0.4), 1) for i in range(max(0, int(n)))]
+
+
+def median(values) -> float:
+    """중앙값 — 실제 무게 함수(cobot_common.weigh)와 같은 규칙."""
+    s = sorted(values)
+    if not s:
+        return 0.0
+    mid = len(s) // 2
+    return s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2.0

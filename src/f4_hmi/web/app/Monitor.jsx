@@ -5,8 +5,8 @@ import { useHmi } from './lib/useHmi';
 import { VIEW, ORDER, BASE, FRONT, DIV, SLOT, BADGE } from './lib/palletArt';
 import {
   FLOW, RUNNING, STEP_KO, KIND_KO, RESULT_KO, CODE_KO,
-  buttons, pallet, zones, cycle, alarm, problems, clock, why, progress, nextStep, consumables, pauseKind, HIDE_FLOW_MSG,
-  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk, weightText,
+  buttons, pallet, zones, cycle, alarm, problems, clock, why, consumables, pauseKind, HIDE_FLOW_MSG,
+  kpiCards, PERIOD_KO, causeIcon, resumeToast, lifetime, NUDGE, pauseRows, skipToast, runningNote, nudgeOk, weightText, weighView,
 } from './lib/derive';
 
 // 그림 — web/illust/build.py 가 코드로 그린 등각 일러스트. public/illust/ 에 있다
@@ -405,7 +405,6 @@ function useElapsed(s) {
 function Now({ d, last }) {
   const s = d.state;
   const elapsed = useElapsed(s);
-  const p = progress(d);
   const step = s ? s.step : null;
   const kind = s && s.kind === 'CUP' ? 'CUP' : 'BOWL';
   const k = kind === 'CUP' ? 1 : 0;
@@ -431,7 +430,6 @@ function Now({ d, last }) {
     } else desc = (DESC[shown] || [])[k] || '';
     if (tone === 'error' && s.message) desc = s.message;
   }
-  const nth = !s ? '-' : step === 'IDLE' ? `0 / ${p.total}` : step === 'DONE' ? `${p.finished} / ${p.total}` : `${Math.min(p.finished + 1, p.total)} / ${p.total}`;
 
   return (
     <section className={`card now-card ${tone}`}>
@@ -445,12 +443,35 @@ function Now({ d, last }) {
         {s && s.kind ? <span className="kind-chip">{KIND_KO[s.kind]}</span> : null}
       </div>
       <div className="now-desc">{desc}</div>
-      <div className="tiles">
-        <div title="끝난 용기 수가 바뀐 때부터 — 화면을 도중에 열면 그때부터 잰다"><span>이번 용기</span><b>{elapsed != null ? `${elapsed.toFixed(0)} s` : '-'}</b></div>
-        <div><span>몇 번째</span><b>{nth}</b></div>
-        <div><span>다음</span><b className="text">{s ? nextStep(step, p) : '-'}</b></div>
+      <div className="now-foot">
+        <div className="now-time" title="끝난 용기 수가 바뀐 때부터 — 화면을 도중에 열면 그때부터 잰다"><span>이번 용기 작업 시간</span><b>{elapsed != null ? `${elapsed.toFixed(0)} s` : '-'}</b></div>
+        <WeighLive v={weighView(d)} />
       </div>
     </section>
+  );
+}
+
+// 무게 측정 — 표본을 읽는 대로 한 칸씩 채우고(방금 읽은 칸은 강조), 다 재면 중앙값과 잔반 판정을 보여 준다.
+//   칸은 늘 그린다(카드 높이가 바뀌지 않게) — 아직 잰 것이 없으면 빈 칸. 잰 값은 그 용기를 처리하는 동안 남는다
+function WeighLive({ v }) {
+  const head = { idle: '무게 단계에서 측정값이 나옵니다', measuring: `${v.count} / ${v.n}번째 측정 중`, stalled: `${v.count} / ${v.n}번째에서 멈춤`, done: `${v.count}번 측정 완료` }[v.phase];
+  return (
+    <div className={`weigh ${v.phase}`} role="status" aria-label="무게 측정">
+      <div className="weigh-head">
+        <b>무게 측정{v.kind ? ` — ${KIND_KO[v.kind] || v.kind}` : ''}</b>
+        <span className="dim small">{head}</span>
+      </div>
+      <div className="weigh-cells">
+        {v.cells.map((g, i) => (
+          <span key={i} title={`${i + 1}번째`} className={`weigh-cell ${g == null ? 'empty' : ''} ${v.phase === 'measuring' && i === v.count - 1 ? 'latest' : ''}`}>{g == null ? '' : g}</span>
+        ))}
+      </div>
+      <div className="weigh-result">
+        <span>중앙값</span>
+        <b>{v.phase === 'done' ? `${v.median} g` : v.phase === 'idle' ? '-' : '측정 중…'}</b>
+        {v.leftover != null ? <span className={`weigh-tag ${v.leftover ? 'warn' : 'ok'}`}>{v.leftover ? `잔반 있음 (기준 ${v.limit} g 이상)` : `잔반 없음 (기준 ${v.limit} g 미만)`}</span> : null}
+      </div>
+    </div>
   );
 }
 

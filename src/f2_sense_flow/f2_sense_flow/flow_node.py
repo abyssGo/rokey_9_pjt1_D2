@@ -36,7 +36,7 @@ from cobot_api import ROBOT_ERROR
 
 import cobot_common as cc
 from cobot_common import config as cc_config
-from cobot_msgs.msg import FlowEvent, FlowState
+from cobot_msgs.msg import FlowEvent, FlowState, WeighLive
 from std_srvs.srv import Trigger
 
 from f2_sense_flow.flow import Flow, Signals, load_features
@@ -69,7 +69,7 @@ def safe_cb(what):
 
 
 class Io:
-    """통신 배선 — /flow/* 서비스 4개, /flow/state 타이머, /flow/event 발행기.
+    """통신 배선 — /flow/* 서비스 4개, /flow/state 타이머, /flow/event · /flow/weigh 발행기.
 
     주의: 콜백에서 하는 일은 깃발 세우기와 값 읽기뿐이다. 로봇 함수를 부르지 않는다.
        콜백에서 로봇을 움직이면 TS-01 의 교착이 그대로 되살아난다.
@@ -85,6 +85,7 @@ class Io:
         node.create_service(Trigger, '/flow/abort', self._on_abort)      # FLOW-03 (IRD §6)
         self.state_pub = node.create_publisher(FlowState, '/flow/state', 10)
         self.event_pub = node.create_publisher(FlowEvent, '/flow/event', 10)
+        self.weigh_pub = node.create_publisher(WeighLive, '/flow/weigh', 10)
 
         self.rate_hz = flow.state_pub_hz          # Flow 가 이미 검증했다(0·음수·문자열 → 2.0)
         node.create_timer(1.0 / self.rate_hz, self._on_state_timer)
@@ -172,6 +173,25 @@ class Io:
             setattr(m, k, v)
         self.event_pub.publish(m)
 
+    @safe_cb('/flow/weigh')
+    def publish_weigh(self, samples, n, done, median_g):
+        """무게를 재는 동안 표본을 하나 읽을 때마다 불린다(cc.set_weigh_listener) — 화면이 재는 값을 그대로 보여 준다.
+
+        값은 빈 용기 기준값(f2.empty_weight_g)을 뺀 것이다 — 이력의 '무게 전 → 후' 와 같은 기준.
+        주의: 메인 스레드(무게 재는 중)에서 불린다. 메시지를 만들어 내보내기만 하고 바로 돌아간다.
+        """
+        kind = self.flow.kind or ''
+        empties = (cc.cfg().get('f2') or {}).get('empty_weight_g') or {}
+        empty = float(empties.get(kind) or 0.0)
+        m = WeighLive()
+        m.kind = kind
+        m.target_n = max(0, min(255, int(n)))
+        m.samples_g = [float(v) - empty for v in samples]
+        m.done = bool(done)
+        m.median_g = float(median_g) - empty if done and median_g is not None else 0.0
+        m.stamp = self.node.get_clock().now().to_msg()
+        self.weigh_pub.publish(m)
+
 
 def main():
     """flow_node 의 진입점 — 설정을 읽어 로봇 유무를 정하고, cc.init → 문지기 → Flow·Io 를 만들어 메인 스레드에서 flow.run.
@@ -219,6 +239,8 @@ def main():
                     resume=cc.resume if robot else None)
         io = Io(node, flow, sig)
         flow._publish_event = io.publish_event       # 두뇌 → 배선 (두뇌는 ROS 를 모른다)
+        if robot:
+            cc.set_weigh_listener(io.publish_weigh)  # 무게 표본 → 화면(/flow/weigh). 가짜 기능만 돌 때는 재지 않는다
 
         log.info(f'flow 준비됨 — plan 그릇 {flow.target_bowl} · 컵 {flow.target_cup} · '
                  f'state {io.rate_hz} Hz · use_mock={use_mock or "없음"} · robot={robot}')
