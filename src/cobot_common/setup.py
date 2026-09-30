@@ -15,7 +15,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Team Prewash',
+    maintainer='Team D2',
     maintainer_email='hwang-injae@users.noreply.github.com',
     description='PreWash-Cell 공용 로봇 함수 모음(두산 API 초기화 · 설정 로더 · 이동 · 힘 · 무게)',
     license='Apache-2.0',

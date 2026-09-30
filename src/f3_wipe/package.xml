@@ -4,7 +4,7 @@
   <name>f3_wipe</name>
   <version>0.1.0</version>
   <description>F3 접촉 닦기 함수 모듈(노드 아님): soap · wipe_bowl · wipe_cup. 서명·반환은 cobot_api.F3Api(IRD v3.0 §5).</description>
-  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team D2</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>cobot_api</exec_depend>

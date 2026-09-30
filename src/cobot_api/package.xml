@@ -4,7 +4,7 @@
   <name>cobot_api</name>
   <version>3.0.0</version>
   <description>PreWash-Cell 기능 함수의 약속(정본): 공통 ID·실패 코드·반환 타입·함수 서명. IRD v3.0 §2~5. 로봇 코드 없음.</description>
-  <maintainer email="hwang-injae@users.noreply.github.com">Team Prewash</maintainer>
+  <maintainer email="hwang-injae@users.noreply.github.com">Team D2</maintainer>
   <license>Apache-2.0</license>
   <test_depend>python3-pytest</test_depend>
   <export><build_type>ament_python</build_type></export>

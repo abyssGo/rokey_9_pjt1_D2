@@ -12,7 +12,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Team Prewash',
+    maintainer='Team D2',
     maintainer_email='hwang-injae@users.noreply.github.com',
     description='F3 접촉 닦기 함수 모듈(soap · wipe_bowl · wipe_cup)',
     license='Apache-2.0',
