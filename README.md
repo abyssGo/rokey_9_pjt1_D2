@@ -47,8 +47,8 @@ https://github.com/user-attachments/assets/39b6fed5-1fb4-4138-8bd3-99d8b640b0f6
 
 ### 1-1. 시스템 설계도 (System Architecture)
 <p align="center">
-  <img src="docs/images/system_architecture_pc.png" width="900" alt="시스템 설계도"><br>
-  <sub>시스템 설계도 — 대화형 판은 <a href="docs/images/system_architecture_pc.html">docs/images/system_architecture_pc.html</a></sub>
+  <a href="https://hwang-injae.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html"><img src="docs/images/system_architecture_pc.png" width="900" alt="시스템 설계도"></a><br>
+  <sub>시스템 설계도 — <b><a href="https://hwang-injae.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html">그림을 누르면 대화형 아키텍처가 브라우저에 열린다</a></b> (GitHub Pages · 원본 <a href="docs/images/system_architecture_pc.html">HTML</a>)</sub>
 </p>
 
 * *설명: PC 2대 · 프로그램(노드) 2개. GPU PC 의 `flow_node` 가 로봇을 움직이고, 화면 PC 의 `hmi_bridge` 가 ROS 토픽 3개를 받아 브라우저에 보여 주며 버튼 4개를 서비스로 보낸다. 기능(집기 · 무게 · 닦기 …)은 노드가 아니라 파이썬 함수다.*
