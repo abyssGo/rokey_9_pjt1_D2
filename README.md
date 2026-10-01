@@ -102,7 +102,7 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 | 예외 복구 | 예외 8종 설계 · 7종 실기(6종 + 빈 시작) 모두 정의대로 복구 · 로봇 오류는 안전망(실기 시험 제외 · 자동 시험) | 실패마다 재시도 · 격리 · 정지 · 재개가 정의대로 | 달성 |
 | 운영 화면 · 기록 | 기록 누락 0 · 두 PC 사이 버튼 응답 7~96 ms(무선) | 누락 0 · 응답 1 s 이내 | 달성 |
 | 용기당 사이클 타임 | 배속 1.0 에서 그릇 153 · 219 s(잔반 털기 1회 포함) · 컵 182 · 192 s · 평균 186.5 s | 90 s 이내 | **미달** |
-| 자동 시험 | `pytest` 616 passed · 8 skipped · 1 xfailed · 화면 계산 15 pass | 로봇 없이 실패 0 | 달성 |
+| 자동 시험 | `pytest` 616 passed · 9 skipped · 1 xfailed · 화면 계산 15 pass | 로봇 없이 실패 0 | 달성 |
 
 ## 실행 방법
 
@@ -140,7 +140,7 @@ python3 -m pytest -q src
 | 확인 | 통과 기준 |
 |---|---|
 | 빌드 마지막 줄 | `Summary: 8 packages finished` |
-| 시험 마지막 줄 | `616 passed, 8 skipped, 1 xfailed` · `failed` 없음 (건너뛴 8개는 3 의 화면 부품이 있어야 도는 시험) |
+| 시험 마지막 줄 | `616 passed, 9 skipped, 1 xfailed` · `failed` 없음 (건너뛴 9개는 3 의 화면 부품이 있어야 도는 시험) |
 
 ### 3. 운영 화면 부품
 
@@ -164,7 +164,7 @@ cd ~/rokey_pjt01_ws/src/f4_hmi/web && npm install && npm run build && cd ~/rokey
 cd src/f4_hmi/web && node --test test/ && cd ~/rokey_pjt01_ws
 ```
 
-통과 기준은 `50 passed` 와 `pass 15` · `fail 0`.
+통과 기준은 `51 passed` 와 `pass 15` · `fail 0`.
 
 ### 4. 로봇 없이 실행
 

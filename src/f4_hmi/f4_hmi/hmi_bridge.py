@@ -4,7 +4,7 @@
     ros2 run f4_hmi hmi_bridge      →  http://localhost:8000  (포트는 params.yaml 의 hmi.port)
 
 웹 서버 부품(fastapi · uvicorn)은 HMI 전용 상자(venv, params.yaml 의 hmi.venv_dir)에 있다. `ros2 run` 은 시스템 파이썬으로 돌기 때문에
-상자를 열지(activate) 않았으면 상자의 site-packages 를 직접 찾아 붙인다 → 상자를 여는 것을 잊어도 그대로 뜬다.
+상자의 site-packages 를 직접 찾아 시스템 경로보다 앞에 붙인다 → 상자를 열지(activate) 않아도 그대로 뜬다.
 """
 import site
 import sys
@@ -14,20 +14,25 @@ from cobot_common import config
 
 
 def _ensure_web_parts(venv_dir):
-    """fastapi·uvicorn 을 import 할 수 있게 한다. 못 하면 설치 방법을 알려 주고 끝낸다."""
-    try:
-        import fastapi, uvicorn                              # noqa: F401,E401 — 이미 보이면(상자를 열었거나 시스템에 있으면) 그대로
-        return
-    except ModuleNotFoundError:
-        pass
+    """상자의 fastapi·uvicorn 을 import 할 수 있게 한다. 못 하면 설치 방법을 알려 주고 끝낸다.
+
+    상자의 site-packages 는 시스템 경로보다 **앞에** 붙인다 — 뒤에 붙이면 ROS 와 함께 apt 로 깔린 옛 typing_extensions(4.10) ·
+    pydantic 이 먼저 잡혀, 상자의 새 fastapi · anyio 가 import 중에 죽는다(새 Ubuntu 24.04 에서 실제로 난다:
+    cannot import name 'sentinel' from 'typing_extensions'). 옛 판이 이미 올라와 있으면 내려서 상자 판으로 다시 읽게 한다."""
+    before = list(sys.path)
     for sp in sorted(Path(str(venv_dir)).expanduser().glob('lib/python*/site-packages')):
         site.addsitedir(str(sp))
+    added = [p for p in sys.path if p not in before]
+    if added:
+        sys.path[:] = added + before
+        for name in [m for m in sys.modules if m.split('.')[0] in ('typing_extensions', 'pydantic', 'pydantic_core')]:
+            del sys.modules[name]
     try:
         import fastapi, uvicorn                              # noqa: F401,E401
-    except ModuleNotFoundError as e:
-        sys.exit(f'hmi_bridge: 웹 서버 부품이 없다({e.name}). 한 번만 설치한다 —\n'
+    except ImportError as e:
+        sys.exit(f'hmi_bridge: 웹 서버 부품을 불러오지 못했다({e}). 한 번만 설치한다 —\n'
                  f'  python3 -m venv --system-site-packages {venv_dir}\n'
-                 f'  {venv_dir}/bin/pip install fastapi "uvicorn[standard]" websockets')
+                 f'  {venv_dir}/bin/pip install -r <워크스페이스>/requirements.txt')
 
 
 def main():
