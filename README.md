@@ -12,7 +12,7 @@
 **결과 한눈에** ([자세히](#결과))
 
 - 시작 1번으로 그릇 2 · 컵 2 를 사람 개입 없이 끝까지 처리 — 배속 1.0 무정지 완주 약 13분(실기)
-- 잔반 대용품 4/4 감지 · 빈 용기 오판 0/8, 예외 6종과 빈 시작 모두 정의대로 복구(실기)
+- 잔반 대용품 4/4 감지 · 빈 용기 오판 0/8, 예외 8종 설계 · 7종 실기(6종 + 빈 시작) 정의대로 복구
 - 용기당 사이클 타임은 목표 90 s 에 미달 — 배속 1.0 평균 186.5 s
 
 ## 주요 기능
@@ -132,7 +132,7 @@ source /opt/ros/jazzy/setup.bash && colcon build --symlink-install && source ins
 python3 -m pytest -q src                      # 616 passed, 8 skipped, 1 xfailed
 
 # 2. 운영 화면 부품
-python3 -m venv --system-site-packages ~/venvs/hmi && ~/venvs/hmi/bin/pip install fastapi "uvicorn[standard]" websockets
+python3 -m venv --system-site-packages ~/venvs/hmi && ~/venvs/hmi/bin/pip install -r requirements.txt
 cd src/f4_hmi/web && npm install && npm run build && cd ~/rokey_pjt01_ws
 
 # 3. 로봇 없이 실행 → 브라우저 http://localhost:8000 에서 시작 (기능이 가짜라 그릇 2 · 컵 2 가 곧바로 완료)
@@ -198,7 +198,7 @@ python3 -m pytest -q src
 
 ```bash
 python3 -m venv --system-site-packages ~/venvs/hmi
-~/venvs/hmi/bin/pip install fastapi "uvicorn[standard]" websockets
+~/venvs/hmi/bin/pip install -r ~/rokey_pjt01_ws/requirements.txt
 cd ~/rokey_pjt01_ws/src/f4_hmi/web && npm install && npm run build && cd ~/rokey_pjt01_ws
 ```
 
@@ -544,6 +544,7 @@ rokey_pjt01_ws/                ROS 2 워크스페이스 (저장소 루트)
 │   ├── env/                   PC 환경 설정 (Ubuntu 24.04 · ROS 2 Jazzy · M0609 + RG2)
 │   ├── research/              주제 조사 — 법규 · 산업 조사 · 브리핑 자료
 │   └── images/                아키텍처 · 플로우 차트 · 배치도 · 화면 캡처
+├── requirements.txt           pip 의존성 (운영 화면 서버용 가상환경)
 ├── LICENSE                    Apache-2.0
 └── README.md
 ```
@@ -563,7 +564,7 @@ rokey_pjt01_ws/                ROS 2 워크스페이스 (저장소 루트)
 | 툴 집기 · 반납 | 수세미 10/10 · 솔 10/10 · 낙하 0 (9/22) | 10회 중 9회 이상 · 낙하 0 | 달성 | 실기 |
 | 닦기 힘 | 그릇 평균 2.64 / 2.06 N · 최대 6.91 / 6.34 N(그릇 1 / 2) · 컵 최대 3.39 N · 힘 로그 기록 · 상한 초과 0 | 목표 범위 유지 · 힘 로그 기록 · 상한(10 N) 초과 시 즉시 후퇴 | 달성 | 실기 |
 | 팔레트 적재 | 12/12 · 낙하 0 · 컵은 뒤집어 적재 | 90 % 이상 · 낙하 0 | 달성 | 실기 |
-| 예외 복구 | 예외 6종과 빈 시작 모두 정의대로 복구(두 PC 구성에서도 같음) | 실패마다 재시도 · 격리 · 정지 · 재개가 정의대로 | 달성 | 실기 |
+| 예외 복구 | 예외 8종 설계 · 7종 실기(6종 + 빈 시작) 모두 정의대로 복구 · 두 PC 구성에서도 같음 · 로봇 오류는 실기 시험 제외 | 실패마다 재시도 · 격리 · 정지 · 재개가 정의대로 | 달성 | 실기 |
 | 운영 화면 · 기록 | 기록 누락 0 · 두 PC 사이 버튼 응답 7~96 ms(무선) | 누락 0 · 응답 1 s 이내 | 달성 | 실기 |
 | 용기당 사이클 타임 | 배속 1.0 에서 153 ~ 219 s (평균 186.5 s) | 90 s 이내 | **미달** | 실기 |
 | 자동 시험 | `pytest` 616 passed · 8 skipped · 1 xfailed · 화면 계산 15 pass | 로봇 없이 실패 0 | 달성 | 자동 |
