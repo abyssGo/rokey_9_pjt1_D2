@@ -72,7 +72,7 @@ cd src/f4_hmi/web && node --test test/          # 화면 계산(derive.js — �
 
 ## 로봇 없이 화면 확인하는 법
 ```bash
-# 최상위 README 설치 및 실행 Step 2 의 첫 세 줄(cd · source · export)을 먼저 친 터미널에서
+# 최상위 README 실행 방법 4 의 첫 세 줄(cd · source · export)을 먼저 친 터미널에서
 ros2 run f4_hmi hmi_bridge                                                           # 터미널 1 → http://localhost:8000
 ros2 run f4_hmi fake_state_pub tool_lost --speed 0.5                                 # 터미널 2 — 대본 이름을 바꿔 가며(멈춤을 천천히 보려면 --speed 0.4)
 # 🚨 화면(web/app)을 고쳤으면 `cd src/f4_hmi/web && npm run build` 뒤 **브라우저를 새로고침(Ctrl+Shift+R)** — 열려 있던 탭은 옛 JS 를 계속 돈다. 브리지는 HTML 에 no-store 를 붙인다(app.py)

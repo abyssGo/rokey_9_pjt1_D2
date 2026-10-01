@@ -36,6 +36,6 @@ python3 -m pytest -q src                  # 616 passed, 8 skipped, 1 xfailed
 cd src/f4_hmi/web && node --test test/    # 화면 계산 시험(Node 18 내장) — 15 pass
 ```
 
-- 건너뛴 8개는 운영 화면 부품(`fastapi` 등)이 있어야 도는 시험이다. 설치는 루트 [README](../README.md) '설치 및 실행'의 Step 1 ③. ③을 마친 뒤 `~/venvs/hmi/bin/python3 -m pytest -q src/f4_hmi` 로 돌리면 함께 실행된다(50 passed).
+- 건너뛴 8개는 운영 화면 부품(`fastapi` 등)이 있어야 도는 시험이다. 설치는 루트 [README](../README.md) '실행 방법' 3. 3 을 마친 뒤 `~/venvs/hmi/bin/python3 -m pytest -q src/f4_hmi` 로 돌리면 함께 실행된다(50 passed).
 - xfailed 1개는 알려진 빈틈(닦기 재시도가 성공해도 기록의 닦기 시간 · 힘 로그 경로가 1회차 값으로 남는다)을 표시해 두는 시험이다 — `f2_sense_flow/test/test_f2_e60_flow.py`.
-- 시험대(`rig_*.py`)는 로봇을 움직인다. 실행법은 각 파일 머리말과 루트 README '설치 및 실행'(Step 4 · Step 5)에 있다.
+- 시험대(`rig_*.py`)는 로봇을 움직인다. 실행법은 각 파일 머리말과 루트 README '실행 방법' 5-2 · 5-3 에 있다.

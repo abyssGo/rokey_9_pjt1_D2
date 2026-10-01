@@ -19,7 +19,7 @@
 
 ## 시험
 ```bash
-# 최상위 README 설치 및 실행 Step 3 의 '로봇용 터미널 준비' 줄을 먼저 친 터미널에서
+# 최상위 README 실행 방법 5-1 의 '터미널 준비(로봇용)' 줄을 먼저 친 터미널에서
 python3 src/f3_wipe/test/rig_f3.py bowl -n 3            # 실기 시험대 — soap | bowl | cup 을 같은 함수로 연속 3회 이상
 python3 -m pytest -q src/f3_wipe                          # 자동 시험(로봇 없이)
 ```
