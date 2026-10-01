@@ -1,6 +1,6 @@
 // 받은 값 → 화면에 그릴 값. 전부 순수 함수(화면·통신과 무관).
 // 팔레트 칸·반납 구역은 메시지에 없어서 계획(plan)과 수량으로 파생한다 — SDD §6 · IRD §6.
-// 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+// 표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 
 export const FLOW = ['PICK', 'WEIGH', 'SHAKE', 'SEAT', 'SOAP', 'WIPE', 'RINSE', 'RACK'];   // 용기 1개의 순서(IRD §8)
 export const RUNNING = [...FLOW, 'ISOLATE'];

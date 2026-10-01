@@ -5,7 +5,7 @@
 우리는 계산하지 않고 받기만 한다. 다만 그냥 받으면 안 되는 이유가 있다:
 
 ① 값이 넓게 퍼진다 — V-02 실측에서 200 g 추가 40.8 g 폭으로 흔들렸다
-   (기록은 docs/test_logs/ 색인의 V-02). → 여러 번 재서 중앙값을 쓴다.
+   (기록은 docs/test-reports/ 색인의 V-02). → 여러 번 재서 중앙값을 쓴다.
       평균은 한 번 크게 튄 값에 끌려가지만 중앙값은 안 끌려간다.
 ② 움직이는 중에 재면 가속도가 섞인다 → 부르는 쪽(f2.weigh)이 먼저 멈춘다.
 ③ 주의: 실패를 음수로 알려 준다 — 설치된 DSR_ROBOT2.py 의 get_workpiece_weight 는
@@ -40,7 +40,7 @@
    그래서 `params.yaml` 의 `f2.empty_weight_g` 는 저울 무게가 아니라 이 함수로 읽은 값이어야 한다.
    저울로 잰 진짜 무게를 넣으면 빈 용기가 잔반 24 g 으로 보인다.
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import time
 

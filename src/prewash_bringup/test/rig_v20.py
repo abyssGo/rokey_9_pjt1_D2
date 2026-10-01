@@ -14,7 +14,7 @@ flow_node.main() 을 그대로 실행한다(모듈 파일은 고치지 않는다
 완료 기준(SDD §9.2 V-20): 함수 번갈아 2바퀴 · 모션 중 /flow/state 2 Hz · stop 수락(함수 사이) · 멈춰 있을 때 Ctrl+C 뒤 재실행 정상.
 시험 값은 같은 폴더의 rig_v20.yaml. probe 종료 코드 0(통과) / 1(실패).
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import functools
 import os

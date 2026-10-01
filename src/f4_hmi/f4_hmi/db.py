@@ -9,7 +9,7 @@
 
     사용량 셈: 수세미 = 그릇 완료 수 · 솔 = 컵 완료 수 · 세제 = 완료 용기 수(용기당 1회) · 잔반통 = 버린 잔반 g 합.
     버린 잔반 = 무게 전 − 무게 후, 잔반 판정(전 > leftover_threshold_g)이 났을 때만(털지 않았으면 0).
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import sqlite3
 import threading

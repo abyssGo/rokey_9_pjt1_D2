@@ -8,7 +8,7 @@
     단계 순서 PICK → WEIGH → SHAKE → SEAT → SOAP → WIPE → RINSE → RACK, 용기마다 이벤트 1건, 전부 끝나면 DONE 을 잠깐 유지한 뒤 IDLE.
     실패는 정책대로: isolate(격리) → ISOLATE 단계 + ISOLATED 이벤트 / next_zone(빈 구역) → SKIPPED 이벤트 / pause → PAUSED(last_code 에 실패 코드).
     수량·소모품 값은 IDLE 로 돌아가도 남는다(다음 시작 때 0 으로).
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 from dataclasses import dataclass, field
 from pathlib import Path

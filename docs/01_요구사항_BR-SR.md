@@ -17,7 +17,7 @@
 ### 1.1 배경과 문제
 - 야구장·축구장은 일회용품 규제(자원재활용법, 2022~)와 지자체 사업(서울 잠실 2024 · 서울월드컵경기장 2026 · 경기도 2026)으로 **다회용기 전환이 확산** 중이다. 그러나 전국 야구장 매장의 99.7%가 아직 일회용품을 쓴다(2026.6). 병목은 **회수 후 세척**이다.
 - 공공·민간 세척센터(청주·양평, 일 2만 개)는 본세척은 자동화됐지만 **분류·애벌세척·랙 적재는 사람의 손**이다. 경기 직후 수천 개가 몰리는 젖은 반복 노동이라 인력 확보가 어렵다.
-- 환경부·식약처 「다회용기 세척 위생기준 가이드라인」(2023.7)은 세척 공정과 **반납 수량의 전산 관리**를 요구한다. (근거: [ref/법규_산업조사.md](ref/법규_산업조사.md))
+- 환경부·식약처 「다회용기 세척 위생기준 가이드라인」(2023.7)은 세척 공정과 **반납 수량의 전산 관리**를 요구한다. (근거: [research/법규_산업조사.md](research/법규_산업조사.md))
 
 ### 1.2 목표
 두산 M0609 1대 + OnRobot RG2로 **반납된 그릇·컵의 예비세척 전처리**를 자동화한다. 반납 구역에 놓인(겹쳐 있어도 되는) 용기를 찾아 집어 **잔반을 무게로 판정·제거**하고, **스펀지 고정틀에서 안쪽을 닦고**, **헹굼 모션 후 식기세척기용 팔레트의 정해진 칸·각도로 적재**한다. 본세척은 식기세척기가 한다.
@@ -141,7 +141,7 @@
 | PC | Ubuntu 24.04 · ROS 2 Jazzy · Python 3.12 · GPU 불필요('GPU PC' 는 로봇 제어 PC 의 이름일 뿐). 개발 4대(각자 Virtual/mock), 통합 실행 GPU PC(로봇 제어) + 화면 PC(HMI) |
 | 소프트웨어 | `doosan-robot2`(dsr_msgs2) · `DSR_ROBOT2` API · `m0609_rg2_bringup` · 우리 워크스페이스 `rokey_pjt01_ws` (cobot_msgs, cobot_api, cobot_common, f1_handling, f2_sense_flow, f3_wipe, f4_hmi, prewash_bringup) · FastAPI + WebSocket + SQLite |
 | 사용 로봇 기능 | movej/movel/amovel, trans, 사용자 좌표계, get_workpiece_weight, get_tool_force, check_force_condition, task_compliance_ctrl, set_desired_force, move_periodic, set_digital_output/get_digital_input, mwait, stop |
-| 네트워크 | GPU PC ↔ 컨트롤러 TCP 12345(DDS 아님, 유선 192.168.1.x · GPU PC 192.168.1.60). GPU PC ↔ 화면 PC ROS 2 DDS, `ROS_DOMAIN_ID=60` — 강의실 무선망(172.18.0.x)이 기본 탐색(멀티캐스트)을 막아 GPU PC 의 Fast DDS **Discovery Server**(172.18.0.101:11811 · `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` · `ROS_SUPER_CLIENT=TRUE`)로 서로 찾는다(SDD §1.2 · §10). 평소 개발·시험은 `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`로 격리([환경설정](setup/M0609_환경설정.md)). HMI 는 화면 PC 브라우저 `http://localhost:8000`(`hmi.host` 127.0.0.1) |
+| 네트워크 | GPU PC ↔ 컨트롤러 TCP 12345(DDS 아님, 유선 192.168.1.x · GPU PC 192.168.1.60). GPU PC ↔ 화면 PC ROS 2 DDS, `ROS_DOMAIN_ID=60` — 강의실 무선망(172.18.0.x)이 기본 탐색(멀티캐스트)을 막아 GPU PC 의 Fast DDS **Discovery Server**(172.18.0.101:11811 · `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` · `ROS_SUPER_CLIENT=TRUE`)로 서로 찾는다(SDD §1.2 · §10). 평소 개발·시험은 `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`로 격리([환경설정](env/M0609_환경설정.md)). HMI 는 화면 PC 브라우저 `http://localhost:8000`(`hmi.host` 127.0.0.1) |
 | 시뮬레이션 | DRCF Virtual: 궤적·시퀀스만. **힘·무게·접촉 없음** → mock으로 대체, 임계값은 실기 |
 | 워크셀 | 반납 구역 2곳(그릇·컵, 각 200×200 mm급, 용기가 겹쳐 놓일 수 있음 · 🔄 as-built E41: 구역마다 고정 슬롯 2개에 겹치지 않게), 잔반통, 스펀지 고정틀(그릇 홈·컵 홈, 여유 1~2 mm), 툴 홀더 2종, 수조 2개(빈), 팔레트 모형(그릇 2·컵 2), 격리 구역(2개 이상 · 🔄 as-built 9/29 E65: 그릇·컵 한 곳 — 시작 전 비우고, 격리가 생기면 다음 격리 전에 사람이 치운다) |
 

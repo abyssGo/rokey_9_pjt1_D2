@@ -20,7 +20,7 @@ Ctrl+C 처리 (flow_node·rig 는 signal.signal 을 따로 걸지 않는다 — 
     rclpy 처리기를 끄고, 신호가 오면 ⓐ 두산 API 가 돌리는 실행기를 깨워 ⓑ 메인 스레드에 KeyboardInterrupt 를
     일으킨다. finally 의 shutdown() 이 move_stop(정지) → 실행기 종료 → rclpy.shutdown() 순으로 끝낸다.
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import atexit
 import signal
@@ -172,7 +172,7 @@ def _init_dsr(name):
         import DR_init
     except ImportError as e:
         raise RuntimeError('DR_init 을 못 찾는다: .bashrc 의 PYTHONPATH 에 ws_dsr/install/dsr_common2/lib/dsr_common2/imp '
-                           '를 넣는다 (docs/setup/M0609_환경설정.md 8-7)') from e
+                           '를 넣는다 (docs/env/M0609_환경설정.md 8-7)') from e
     DR_init.__dsr__id = ROBOT_ID
     DR_init.__dsr__model = ROBOT_MODEL
     _dsr_node = rclpy.create_node(f'{name}_dsr', namespace=ROBOT_ID)

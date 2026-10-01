@@ -19,7 +19,7 @@
     ③ **아무것도 고치지 않는다** — 읽고 재기만 한다. 결과를 보고 나서 gripper.py 를 고친다.
     ④ Ctrl+C 로 끊으면 그리퍼에 아무 명령도 보내지 않는다.
 
-실행 (저장소 루트에서, 격리 상태 solo — docs/setup/M0609_환경설정.md)
+실행 (저장소 루트에서, 격리 상태 solo — docs/env/M0609_환경설정.md)
     rosinfo                                          # 🚨 RANGE=LOCALHOST 확인
     터미널 1:  sod && sodreal                         (이미 떠 있으면 그대로 쓴다)
     터미널 2:  soc && python3 src/cobot_common/test/rig_gripper_probe.py

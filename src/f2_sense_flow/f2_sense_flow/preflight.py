@@ -15,7 +15,7 @@
 첫 이동 자체도 여기서 한다(go_home_safely) — 낮은 자세에서 HOME 으로 가다 테이블을 쓴 충돌 때문.
 주의: 통신 노드의 실행기가 다른 스레드에서 돌고 있어야 동기 호출(call)이 돌아온다 — cc.init 뒤에만 부른다(gripper._send 와 같은 조건).
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 __all__ = ['PreflightError', 'check_controller', 'require_controller', 'warn_if_cable_tight', 'go_home_safely']
 

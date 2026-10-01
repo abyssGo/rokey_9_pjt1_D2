@@ -7,13 +7,13 @@
 #   - 양식은 티칭 데이터에 맞췄다(CELL-04 · 결정 E4) — 아래 stations 위의 '자세 적는 법' 을 본다.
 #   - 값 옆 주석에 단위·허용 범위·바꾼 이유를 적는다. 예)  safe_z_mm: 150   # V-19 도달 범위 확인
 #
-# 로봇 컨트롤러 쪽 툴 설정 — 이 파일의 값이 아니라 Dart 에서 등록한다 (ENV-05 · 기록은 docs/test_logs/ 색인의 ENV-05)
+# 로봇 컨트롤러 쪽 툴 설정 — 이 파일의 값이 아니라 Dart 에서 등록한다 (ENV-05 · 기록은 docs/test-reports/ 색인의 ENV-05)
 #   TCP `GripperDA_v1`    : X 0 · Y 0 · Z 208 mm · A 0 · B 0 · C 0   ← 이 파일의 posx 좌표는 전부 이 TCP 기준이다. 주의: 바꾸면 좌표가 전부 틀어진다
 #   툴 무게 `Tool Weight` : 1.440 kg · 무게중심 (3.98, −3.21, 2.45) mm  ← Dart 자동 측정 2회째(1회째 1.450 kg · (4.65, −4.31, −0.80))
 #     그 전(실습 때 값) 1.400 kg · (0.17, 4.85, 10.91) — 무게 판정이 자세마다 60 g 달라 다시 쟀다. 무게 판정 기준값은 이 설정으로 잰다
 #   주의: 두 이름을 바꾸지 않는다 — rig_v03·rig_v10 이 이름으로 확인한다. 브링업 뒤 get_current_tool·get_current_tcp 서비스(`robottool` 별칭)로 두 이름이 나오는지 본다
 #
-# 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+# 표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 cell:
   limits:                         # 속도·안전 높이·공통 힘 상한·타임아웃  (SDD §4.3 예시: 60 · 30 · 150 · 10 · 15 · 10)
     vel_free_pct: 60              # 빈손 이동 속도 % (SDD §4.3)
@@ -52,7 +52,7 @@ cell:
     acc_joint_fast_max_deg_s2: 600 # 물 털기 전용 가속도 상한 — 짧은 왕복은 가속도가 빠르기를 정한다(200 이면 ±25° 3회에 8 s · 실기)
     move_timeout_s: 30            # 이동 1번의 상한 시간(일시정지한 시간은 빼고). 넘으면 정지 명령을 보내고 오류 — V-24 에서 추가
 
-  force:                          # 힘 함수(force.py) 공용 값. 값은 V-03 실기로 확정(시험 기록 docs/test_logs/20260919_V-03_*)
+  force:                          # 힘 함수(force.py) 공용 값. 값은 V-03 실기로 확정(시험 기록 docs/test-reports/20260919_V-03_*)
     compliance_stx: [1000, 1000, 200, 100, 100, 100]   # 순응 강성 [x, y, z, rx, ry, rz] N/m · Nm/rad
                                   #   Z 를 가장 물렁하게(200) — 닿을 때 충격을 흡수. 옆·회전도 낮춰(1000·100) 툴이 바닥을 물고
                                   #   비틀릴 때 붙었다 떨어지며 작업대를 흔드는 것(스틱-슬립)을 줄였다. 강의 범위 X·Y·Z 0~20000, 회전 0~400

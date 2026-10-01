@@ -26,6 +26,7 @@ __pycache__/
 venv/
 venvs/
 env/
+!docs/env/
 
 # ============================================================
 # 두산 로봇 / 시뮬레이터
@@ -98,7 +99,7 @@ prewash.db
 # SQLite 가 쓰는 도중 생기는 prewash.db-journal · -wal · -shm
 prewash.db-*
 *.sqlite
-docs/test_logs/*.mp4
+docs/test-reports/*.mp4
 
 # 드라이브 업로드용 임시 파일 (저장소에 넣지 않음)
 _upload/

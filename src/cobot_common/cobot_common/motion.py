@@ -13,7 +13,7 @@
     cc.pause() · cc.resume()                           # 이동 도중에 즉시 멈췄다가 하던 동작을 이어서 (HMI 일시정지·재개)
     cc.halt()  · cc.clear_halt()                       # 강제정지: 그 자세 그대로 멈추고, 풀기 전까지 새 이동을 내보내지 않는다
 
-이동을 보내는 방식 (V-24a 결과 · 기록은 docs/test_logs/ 색인의 V-24)
+이동을 보내는 방식 (V-24a 결과 · 기록은 docs/test-reports/ 색인의 V-24)
     두산의 동기 이동(movej·movel)은 끝날 때까지 드라이버의 통로를 붙잡아 일시정지 요청이 이동이 끝난 뒤에야 처리된다.
     그래서 세 함수 모두 비동기 이동(amovej·amovel)을 보내고 check_motion() 을 짧게 반복해서 물어본다(폴링).
     부르는 쪽에서는 달라진 것이 없다 — 이동이 끝나야 함수가 돌아온다. 일시정지 중에는 돌아오지 않고 재개를 기다린다.
@@ -38,7 +38,7 @@
 
 제한 사항: 사용자 좌표계의 좌표(좌표는 전부 BASE 절대 자세로 적는다) · 회전을 포함한 상대 이동 · 관절 자세(posj)의 접근점은 지원하지 않는다.
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import math
 import threading

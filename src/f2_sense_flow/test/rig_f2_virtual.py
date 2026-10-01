@@ -8,7 +8,7 @@
     → Virtual 에 **있는 것(이동)은 진짜로**, **없는 것(무게·그리퍼)만 가짜로** 바꿔 끼운다.
        바꿔 끼운 것은 실행할 때마다 로그에 찍는다 — 이 시험을 "다 됐다" 로 오해하면 안 된다.
 
-실행 (저장소 루트에서, 격리 상태 solo — docs/setup/M0609_환경설정.md)
+실행 (저장소 루트에서, 격리 상태 solo — docs/env/M0609_환경설정.md)
     rosinfo                                                       # 🚨 RANGE=LOCALHOST 확인
     터미널 1:  sod && sodvir                                       (이미 떠 있으면 그대로 쓴다)
     터미널 2:  soc && python3 src/f2_sense_flow/test/rig_f2_virtual.py all

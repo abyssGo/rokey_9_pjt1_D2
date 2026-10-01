@@ -27,7 +27,7 @@
   position[finger_joint] 가 곧 관절각이다. 왕복 검증 오차 0.000 mm,
   그릇 벽 구간(0~5 mm)에서 1 mm 당 관절각 차이 0.0091 rad — 분해능 충분.
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import threading
 import time

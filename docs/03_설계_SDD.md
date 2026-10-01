@@ -3,7 +3,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 ID | SDD-PREWASH-001 · **v3.2 제출판** (2026-09-29) — v3.0(9/18 스크립트형 구조 · [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md)) + 동결 뒤 반영: §3.1 공중 점검 5 N(E58) · §6 운영 화면 9/25~27(E57) · §7 예외 처리(E42~E55 · E60~E63) · 케이블 멈춤 바로 재개(E64) · 격리 한 곳·위에서 다시 잡기(E65) · 지정 좌표 하강 곧게(E44 · E50) · 시연 PC 2대(GPU PC · 화면 PC · Discovery Server — §1.1~1.2 · §10) · §14 향후 개선 |
+| 문서 ID | SDD-PREWASH-001 · **v3.2 제출판** (2026-09-29) — v3.0(9/18 스크립트형 구조 · [DSN-02b](decisions/20260918_결정기록_구조_인터페이스.md)) + 동결 뒤 반영: §3.1 공중 점검 5 N(E58) · §6 운영 화면 9/25~27(E57) · §7 예외 처리(E42~E55 · E60~E63) · 케이블 멈춤 바로 재개(E64) · 격리 한 곳·위에서 다시 잡기(E65) · 지정 좌표 하강 곧게(E44 · E50) · 시연 PC 2대(GPU PC · 화면 PC · Discovery Server — §1.1~1.2 · §10) · §14 향후 개선 |
 | 상위 | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) · [02_인터페이스_IRD.md](02_인터페이스_IRD.md) |
 | 그림 | **[images/system_architecture_pc.html](images/system_architecture_pc.html)**(Archify 대화형 · 명세 `.archify.json` · 캡처 `.png`) |
 
@@ -21,7 +21,7 @@
 
 그림 규칙(Archify 판): **초록 = 우리 프로그램·함수 모듈**(flow_node · hmi_bridge · f1/f2/f3 · cobot_common) · **주황 = ROS 2 DDS**(토픽·서비스) · **보라 = 기록**(records.csv · prewash.db) · **회색 = 드라이버·장비**(두산·그리퍼 드라이버 · 컨트롤러 · RG2) · **점선 상자 = PC 경계(GPU PC · 화면 PC)와 로봇 셀**. 굵은 초록 화살표가 시연 실행 경로(시작 → flow_node → 기능 함수), 회색이 로봇 명령 경로(cobot_common → 드라이버 → 장비), 점선이 상태·설정 흐름이다. 화살표 라벨은 실제 이름(`/flow/*` · `cc.*` · 서비스·포트)이다.
 
-**구조 한 줄 요약(9/18 저녁 결정, [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md))**: `flow_node`가 **메인 프로그램**이다. f1·f2·f3는 노드가 아니라 **함수를 제공하는 파이썬 패키지**이고, `flow_node`의 메인 스레드가 그 함수를 차례로 부른다. 두산 API가 전제하는 "혼자 도는 스크립트" 방식 그대로다. ROS 통신은 flow ↔ HMI, 그리고 `cobot_common` ↔ 두산·그리퍼 드라이버뿐이다.
+**구조 한 줄 요약(9/18 저녁 결정, [DSN-02b](decisions/20260918_결정기록_구조_인터페이스.md))**: `flow_node`가 **메인 프로그램**이다. f1·f2·f3는 노드가 아니라 **함수를 제공하는 파이썬 패키지**이고, `flow_node`의 메인 스레드가 그 함수를 차례로 부른다. 두산 API가 전제하는 "혼자 도는 스크립트" 방식 그대로다. ROS 통신은 flow ↔ HMI, 그리고 `cobot_common` ↔ 두산·그리퍼 드라이버뿐이다.
 
 ### 1.1 PC 배치 (시연: 2대 · 개발: 4대 각자)
 | PC | 역할 | 실행하는 것 | 네트워크 |
@@ -128,7 +128,7 @@ rokey_pjt01_ws/                ← 저장소 루트 (rokey_9_pjt1_D2)
 │   └── prewash_bringup/       launch/prewash.launch.py · prewash_mock.launch.py
 └── build/ install/ log/       (.gitignore)
 ```
-두산 드라이버는 별도 워크스페이스 `~/ws_cobot_pjt/ws_dsr`(강사 배포, 수정 안 함)에 있고, 우리 워크스페이스(clone 위치 자유, `.bashrc`의 `PREWASH_WS`)가 그 위에 겹쳐진다(source 순서: ws_dsr → rokey_pjt01_ws). 상세는 [setup/M0609_환경설정.md](setup/M0609_환경설정.md).
+두산 드라이버는 별도 워크스페이스 `~/ws_cobot_pjt/ws_dsr`(강사 배포, 수정 안 함)에 있고, 우리 워크스페이스(clone 위치 자유, `.bashrc`의 `PREWASH_WS`)가 그 위에 겹쳐진다(source 순서: ws_dsr → rokey_pjt01_ws). 상세는 [env/M0609_환경설정.md](env/M0609_환경설정.md).
 
 ### 3.1 `cobot_common` 공용 로봇 함수 (9/19 오후 분담 — **사람별 파일**: `bootstrap.py`·`config.py`·`__init__.py`·`motion.py` 황인재 / `gripper.py`·`weigh.py` 민범진 / `force.py` + 패키지 정리·리뷰 박진용. 좌표 값은 한석형의 `cell.yaml`. 부르는 쪽은 그대로 `cc.함수()`. 🟡 표시는 DSN-03에서 확인)
 | 함수 | [담당] 내용 (H 황인재 · S 한석형 · M 민범진 · P 박진용) |
@@ -156,7 +156,7 @@ rokey_pjt01_ws/                ← 저장소 루트 (rokey_9_pjt1_D2)
 | `safe_retreat()` | [P] 켜져 있는 힘·순응을 끄고 → X·Y는 그대로 Z만 `cell.limits.safe_z_mm`까지 올린다(이미 위면 안 움직임). 🚨 두산 `DR_Error`가 난 프로세스에서는 `rclpy.shutdown()`이 불려 더 이상 명령이 안 나간다 → 그때는 새 프로세스의 복구 도구 `src/cobot_common/test/release_force.py`([TS-05](troubleshooting/TS-05_DR_Error_rclpy_shutdown_복구.md)) |
 | `compliance_on(stx=None)` · `compliance_off()` · `force_release()` · `where()` · `motion_done()` · `move_spiral(rev, rmax_mm, time_s)` · `move_arc(mid, end, vel_mm_s, vel_deg_s, radius_mm)` · `move_periodic(amp, period, repeat)` | [P] **닦기 접촉 모션** — 순응·힘제어를 켠 채 도는 동작이라 힘 함수와 같이 둔다(f3 는 `cc.*` 만 부른다 — 두산 호출은 cobot_common 과 preflight 문지기에만). `compliance_on` = 순응만 ON(힘 방향과 같은 축으로 움직이는 나선 구간용) · `force_release` = 힘제어만 OFF(순응 유지) · `move_spiral`·`move_periodic` 은 **비동기로 시작**하고 부르는 쪽이 `motion_done()` 으로 기다리며 힘을 본다. 🚨 `move_spiral` 은 **속도로 부르면 드라이버가 통째로 멈춘다**(브링업 재시작) → `vel·acc 0 + time` 으로만. 반경 대비 회전 수가 많으면 **시작조차 하지 않는다**(반경 14 mm 에 7바퀴·1.5 s 는 안 돌고 2.8바퀴·3 s 는 돈다) → `where()` 로 확인. 🚨 `move_periodic` 은 진폭을 준 축에 **주기도 함께** 줘야 한다(두산 2.1218). 🚨 이 셋에는 **일시정지 폴링이 없다** → 구간이 끝난 뒤 다음 이동에서 먹는다 |
 
-### 3.2 실행 뼈대 규약 (9/18 [TS-01](troubleshooting/TS-01_두산API_초기화_실행기_교착.md) → [DSN-02b](meetings/20260918_결정기록_구조_인터페이스.md))
+### 3.2 실행 뼈대 규약 (9/18 [TS-01](troubleshooting/TS-01_두산API_초기화_실행기_교착.md) → [DSN-02b](decisions/20260918_결정기록_구조_인터페이스.md))
 두산 API(`DSR_ROBOT2`)는 **혼자 위에서 아래로 도는 스크립트**를 전제로 만들어졌다. 로봇 명령마다 자기가 실행기를 돌려 응답을 기다리므로, 서비스 콜백 안에서 부르면 교착한다. 그래서 우리는 로봇을 움직이는 코드를 **전부 메인 스레드에서 차례로** 실행한다.
 
 ```
@@ -476,7 +476,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 ---
 
 ## 6. 휴먼 인터페이스
-🔄 9/25 화면 완성 · 9/27 기록 DB(F4-04) · 누적 KPI(F4-05) · 소모품 4줄 · 잔반통 한도 추가(E57)(F4 · UT-F4 TC-11 항목 1~18 · `docs/test_logs/20260925_UT-F4_TC-11_HMI_황인재.md`) · ✅ F4 검증 완료(9/29 실제 flow 실행 · 소리 확인). 화면 구성 표는 `src/f4_hmi/README.md`.
+🔄 9/25 화면 완성 · 9/27 기록 DB(F4-04) · 누적 KPI(F4-05) · 소모품 4줄 · 잔반통 한도 추가(E57)(F4 · UT-F4 TC-11 항목 1~18 · `docs/test-reports/20260925_UT-F4_TC-11_HMI_황인재.md`) · ✅ F4 검증 완료(9/29 실제 flow 실행 · 소리 확인). 화면 구성 표는 `src/f4_hmi/README.md`.
 | 요소 | 동작 |
 |---|---|
 | 연결 표시 | 맨 위 점: `flow 연결됨` / `flow 연결 끊김 — 마지막 값`(2 s 이상 `/flow/state` 없음 · 버튼 전부 비활성 · 마지막 화면 유지) / `HMI 서버에 닿지 않는다` |
@@ -547,7 +547,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 |---|---|---|---|---|---|
 | V-01 | 파지 폭으로 그릇·컵·빈손 3상태 구분 — **그릇은 옆면(벽) 세로 파지 ≈ 2 mm**(9/19 확인 — 빈손과 구분됨), 컵은 몸통을 통째로 파지(폭 ≈ 컵 지름)라 간격이 충분하다 | M | 9/20 A (그리퍼 세션: V-05·V-23과 함께) | 상태마다 10회 — 세 범위가 겹치지 않고, 가장 가까운 두 상태(그릇 ≈ 2 mm ↔ 빈손)의 간격이 흔들림(최대 − 최소)의 2배 이상 | 핑거 패드를 두껍게(그릇 폭 ↑)·프리셋 폭·허용 오차 조정 |
 | V-02 | 하중 측정 정밀도(100/200 g 추 10회) | M | 9/20 A (weigh 이식과 함께) | ±20 g | 임계 100 g, 대용품 무겁게 |
-| V-03 | 힘제어 켠 채 XY 나선 이동 | P | 9/19 B 착수 → **9/20 A** | ✅ **가능**(9/19 4회차 실기) · 9/20 15회차까지 닦기 절차 확정 — 기록 `docs/test_logs/20260919_V-03_힘제어중_XY이동.md` · rig `src/cobot_common/test/rig_v03.py` | 수세미로는 **벽**을 힘으로 못 찾는다 → 벽 반지름은 치수로 계산(E6) · 바닥은 접촉 깊이가 실행마다 12~17 mm 로 달라 `contact_down` 으로 찾는다(E13) |
+| V-03 | 힘제어 켠 채 XY 나선 이동 | P | 9/19 B 착수 → **9/20 A** | ✅ **가능**(9/19 4회차 실기) · 9/20 15회차까지 닦기 절차 확정 — 기록 `docs/test-reports/20260919_V-03_힘제어중_XY이동.md` · rig `src/cobot_common/test/rig_v03.py` | 수세미로는 **벽**을 힘으로 못 찾는다 → 벽 반지름은 치수로 계산(E6) · 바닥은 접촉 깊이가 실행마다 12~17 mm 로 달라 `contact_down` 으로 찾는다(E13) |
 | V-04 | Move Periodic 탐색으로 홈 안착(2 mm 오프셋) | S(+P) | 9/21 C (F1-05 첫 단계) | 5회 중 4회 | 홈 여유 늘리기, 챔퍼 |
 | V-05 | **그리퍼 드라이버 연결** — 강사 배포 `onrobot_rg_control`의 `/onrobot/sendCommand` 응답 + **현재 폭을 읽을 경로 확정**(드라이버는 `OnRobotRGInput`을 발행하지 않는다 → `/onrobot_joint_states` 관절각 환산 등. DO/DI 배선 방식은 예비) | M | 9/20 A (제안서 §5의 30분 절차) | 명령 → 동작 → 폭 값(mm) 갱신이 코드에서 읽힘 | 폭 피드백만으로 판정 |
 | V-06 | 팔레트 칸 삽입 각도·걸림 힘 판정 | S | 9/22 B (F1-04 첫 단계) | 걸림 시 힘 상승 식별 | 각도 삽입 → 수직 놓기 |
@@ -620,7 +620,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 | 정지·재개 | 실행 중 HMI 정지 → PAUSED → 재개 |
 
 ### 9.8 기록·녹화 규칙
-- 시험 기록: `docs/test_logs/YYYYMMDD_TCxx.md` — 일시·담당·모드(Virtual/Real)·속도·결과표·로그 경로·영상 파일명·이슈 번호.
+- 시험 기록: `docs/test-reports/YYYYMMDD_TCxx.md` — 일시·담당·모드(Virtual/Real)·속도·결과표·로그 경로·영상 파일명·이슈 번호.
 - **단위기능 테스트마다 녹화.** 영상 파일명 `YYYYMMDD_TCxx_기능_담당_시도N.mp4` (예: `20260920_TC01_pick_한석형_시도1.mp4`). 통합은 `YYYYMMDD_INTxx_…`. 영상은 저장소에 넣지 않고 드라이브·노션 링크를 기록에 적는다.
 - 사전 검증(V)도 같은 양식으로 `YYYYMMDD_Vxx_…`.
 

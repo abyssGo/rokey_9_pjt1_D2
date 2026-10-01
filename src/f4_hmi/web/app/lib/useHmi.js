@@ -2,7 +2,7 @@
 // 값 받기 — hmi_bridge 하고만 이야기한다(로봇·ROS 를 모른다). 계약: src/f4_hmi/README.md(REST·WS) · docs/02_인터페이스_IRD.md §6·§7
 //   ① WebSocket /ws/state — 서버가 먼저 밀어 준다. 붙자마자 전부 1번, 그 뒤 state · event · weigh · conn (force · gripping 은 안 쓴다)
 //   ② 끊기면 2초 뒤 다시 걸고, 그동안은 GET /api/state 를 0.5초마다 물어본다(시험 페이지와 같은 방식)
-// 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+// 표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const POLL_MS = 500;

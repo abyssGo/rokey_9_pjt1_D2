@@ -28,7 +28,7 @@
   힘 상한·해제와 같이 봐야 하고, 기능 함수(f3)는 두산 함수를 직접 부르지 않는다.
   이 둘에는 일시정지 폴링이 없다(move_periodic 과 같다) → 일시정지는 구간이 끝난 뒤 다음 이동에서 먹는다.
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import time
 

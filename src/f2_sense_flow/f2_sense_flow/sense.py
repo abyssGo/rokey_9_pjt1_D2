@@ -29,7 +29,7 @@
   · 미끄러짐 판정을 바꾸고 싶다 → _slipped()
   · 새 실패 코드를 쓰고 싶다  → cobot_api.contracts 의 CODES 에 먼저 있어야 한다
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import functools
 import time

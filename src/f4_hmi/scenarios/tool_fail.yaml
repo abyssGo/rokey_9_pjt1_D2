@@ -1,7 +1,7 @@
 # 툴 집기 실패 — 두 번째 그릇에서 홀더의 수세미를 집지 못해 멈춤(TOOL_FAIL → pause · E52). 용기는 스펀지 홈에, 툴은 홀더에 그대로.
 # 사람이 홀더를 확인해 고쳐 꽂고 넛지(로봇팔 가볍게 밀기) 또는 재개하면 flow 가 툴 집기부터 다시 한다(RETRY_STEP). 격리는 하지 않는다.
 # 실제 flow 의 문구를 그대로 넣었다(handle_failure · TOOL_FAIL). 시연 예외 ⑨ 의 화면 연습용.
-# 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+# 표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 title: 툴 집기 실패 — 홀더 확인 → 넛지 → 다시 집고 이어감
 items:
   - {kind: BOWL, zone: RET_B, rack_slot: RACK_B1}

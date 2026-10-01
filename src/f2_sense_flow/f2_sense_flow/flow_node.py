@@ -25,7 +25,7 @@ Ctrl+C 는 cobot_common.init() 이 단독으로 맡는다 (SDD §3.1).
 주의: flow_node 에는 name=·namespace=·--ros-args -r __node:= 를 주지 않는다 (SDD §10).
    프로세스 안의 두 노드(flow_node · flow_node_dsr)에 모두 걸려 이름이 같아진다.
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import functools
 import traceback

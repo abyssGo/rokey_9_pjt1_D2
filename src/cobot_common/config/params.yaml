@@ -4,7 +4,7 @@
 #   - 여러 기능이 같이 쓰는 값(좌표·속도·힘 상한·프리셋)은 여기 두지 않는다 → cell.yaml.
 #   - 코드에서는  cc.cfg()['f3']['wipe_bowl']['limit_n']  처럼 읽는다. 숫자를 코드에 쓰지 않는다.
 #
-# 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+# 표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 
 f1:                                   # ── f1 절 ── 값은 SDD §4.3 예시에서 시작해 검증으로 확정
   insert_approach_mm: 0               # 팔레트 삽입 전 힘 감시 하강 거리(mm). 0 = 칸 자세가 정확해 감시 없이 곧게 내려 놓는다(마지막 land_slow_mm 완충) —

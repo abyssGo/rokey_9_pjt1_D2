@@ -8,7 +8,7 @@ Result.fail(code) 로 돌려준다. 좌표·숫자는 전부 cell.yaml · params
 어떤 실패에서도 로봇은 안전 높이로(cc.safe_retreat), 툴 반납은 flow 가 tool(RETURN) 을 부른다.
 
 공개 함수 다섯 개 — move_to(F1-01) · place(F1-01) · pick(F1-02) · tool(F1-03) · rack_place(F1-04) — 는 모두 구현되어
-실기로 검증됐다(기록은 docs/test_logs/). 스펀지 홈 놓기는 티칭 높이의 일반 놓기로 돌며, 힘 탐색 안착(F1-05)은 넣지 않았다(place 참고).
+실기로 검증됐다(기록은 docs/test-reports/). 스펀지 홈 놓기는 티칭 높이의 일반 놓기로 돌며, 힘 탐색 안착(F1-05)은 넣지 않았다(place 참고).
   본문은 cobot_common 의 motion · gripper · force 함수로만 채운다:
       import cobot_common as cc
       p = cc.cfg()['cell']['zones'][zone_id]          # 숫자는 YAML 에서
@@ -22,7 +22,7 @@ Result.fail(code) 로 돌려준다. 좌표·숫자는 전부 cell.yaml · params
     flow.call() 이 받아 ROBOT_ERROR → 후퇴 → PAUSED 로 바꾸고 오류 문구를 상태 메시지(HMI 화면)에 싣는다
     — 여기서 삼켜 코드만 돌려주면 "왜 멈췄는지"가 사라진다. 주의: 그래서 이동이 실패한 뒤에는 release 하지 않는다(공중에서 놓지 않는다).
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 import cobot_common as cc
 from cobot_api import (BRUSH, CUP, EMPTY_ZONE, FORCE_LIMIT, GRIP_FAIL, PICK, RACK_JAM, RETURN, SPONGE, TIMEOUT, TOOL_FAIL,

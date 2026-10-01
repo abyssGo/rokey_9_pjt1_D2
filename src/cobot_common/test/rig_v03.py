@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """V-03 — 힘제어를 켠 채 X·Y 로 움직일 수 있는가 (솔로 그릇 안쪽 바닥을 누르며 문지르기). 실기 전용 · Virtual 은 흐름만.
 
-실행 (저장소 루트, 격리 상태 solo — docs/setup/M0609_환경설정.md)
+실행 (저장소 루트, 격리 상태 solo — docs/env/M0609_환경설정.md)
     Virtual 흐름 확인 :  sod && sodvir  →  soc && python3 src/cobot_common/test/rig_v03.py
     Virtual + 가짜 벽 :  soc && python3 src/cobot_common/test/rig_v03.py --fake-wall   (나선 → 벽 → 2바퀴 흐름·시간)
                          그릇 크기를 바꿔 보려면  --fake-wall --fake-bowl-d 200   (안지름 mm)

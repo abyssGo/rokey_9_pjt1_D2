@@ -1,6 +1,6 @@
 # 모든 대본이 같이 쓰는 값 — 대본 파일(normal.yaml …)에서 같은 키를 적으면 그 값으로 덮어쓴다(step_s 처럼 일부만도 된다).
 # 주의: 여기 숫자는 화면 개발용 흉내 값이다. 실제 공정 시간·힘과 무관하다.
-# 표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+# 표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 loop: true                  # 한 바퀴가 끝나면 처음부터 다시 (fake_state_pub --once 로 끌 수 있다)
 idle_s: 3.0                 # 시작 전·끝난 뒤 IDLE 로 있는 시간
 done_hold_s: 2.0            # 전부 끝난 뒤 DONE 을 유지하는 시간 (실제 flow: flow.done_hold_s)

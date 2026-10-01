@@ -9,7 +9,7 @@
 - 문자열 ID·코드는 아래 상수를 쓴다(오타 방지). 값은 ROS 메시지·YAML·기록·HMI 에서도 같다.
 - mock 모듈도 같은 서명을 지킨다 → check_api(모듈, F1Api) 로 검사.
 
-표기 — E-nn: 팀 결정 번호(docs/meetings/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test_logs/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
+표기 — E-nn: 팀 결정 번호(docs/decisions/20260919_결정기록_DSN-03.md) · V-nn/INT-nn: 검증 항목(docs/test-reports/) · TS-nn: 트러블슈팅(docs/troubleshooting/)
 """
 from dataclasses import dataclass, asdict
 from typing import Protocol, List
