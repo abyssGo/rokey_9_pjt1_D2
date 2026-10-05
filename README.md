@@ -12,6 +12,7 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 | 소프트웨어 | Ubuntu 24.04 · ROS 2 Jazzy · Python 3.12 · FastAPI + Next.js(운영 화면) · SQLite |
 | 결과 | 시작 1번으로 그릇 2 · 컵 2 무정지 완주(배속 1.0 · 약 13분) · 예외 8종 설계 · 7종 실기 복구 · 자동 시험 616개 통과 |
 | 바로 해 보기 | 로봇 없이 Ubuntu 24.04 PC 한 대로 흐름과 운영 화면을 돌려 본다 → [실행 방법 1~4](#실행-방법) |
+| 내 역할 (박진용) | 4명 중 **F3 접촉 닦기 · 공용 힘 함수 · 안전 · 최종 영상**을 맡았다 → [내가 한 일](MY_ROLE.md) |
 
 ## 목차
 
