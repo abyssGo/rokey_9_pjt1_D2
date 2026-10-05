@@ -38,8 +38,8 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 ### 아키텍처
 
 <p align="center">
-  <a href="https://hwang-injae.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html"><img src="docs/images/system_architecture_pc.png" width="900" alt="시스템 아키텍처"></a><br>
-  <sub><a href="https://hwang-injae.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html">시스템 아키텍처 HTML</a> · <a href="docs/images/system_architecture_pc.png">PNG</a></sub>
+  <a href="https://abyssgo.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html"><img src="docs/images/system_architecture_pc.png" width="900" alt="시스템 아키텍처"></a><br>
+  <sub><a href="https://abyssgo.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html">시스템 아키텍처 HTML</a> · <a href="docs/images/system_architecture_pc.png">PNG</a></sub>
 </p>
 
 **PC 2대 · 프로그램(노드) 2개**(PC 1대로도 돌아간다). 기능(집기 · 무게 · 닦기 …)은 노드가 아니라 **파이썬 함수**이고, 메인 프로그램 `flow_node` 가 순서대로 부르며 로봇 명령도 여기서만 낸다. 두 PC 는 GPU PC 의 Fast DDS Discovery Server 로 서로를 찾는다([5-4](#실행-방법)).
@@ -130,7 +130,7 @@ sudo apt update && sudo apt install -y ros-jazzy-ros-base ros-dev-tools
 
 ```bash
 sudo apt install -y git python3-colcon-common-extensions python3-pytest python3-venv python3-pymodbus
-cd ~ && git clone https://github.com/hwang-injae/rokey_9_pjt1_D2.git rokey_pjt01_ws
+cd ~ && git clone https://github.com/abyssGo/rokey_9_pjt1_D2.git rokey_pjt01_ws
 cd ~/rokey_pjt01_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
