@@ -2,7 +2,7 @@
 
 이 저장소는 **4명이 2주간(2026-09-18 ~ 09-30) 함께 만든 팀 프로젝트**입니다.
 원본: [hwang-injae/rokey_9_pjt1_D2](https://github.com/hwang-injae/rokey_9_pjt1_D2) · 팀 전체 소개는 [README](README.md).
-이 문서는 그중 **제가 맡아서 설계·구현·검증한 부분**만 적은 것입니다.
+코드는 네 명이 서로 리뷰하며 함께 만들었습니다. 이 문서는 그중 **제가 맡아 설계·구현·검증한 부분**을 적은 것입니다.
 
 | 항목 | 내용 |
 |---|---|
@@ -10,7 +10,7 @@
 | 맡은 공용 코드 | `cobot_common/force.py` + 패키지 정리 · 리뷰 — 순응 · 힘 제어 · 접촉 하강 · 탐색 · 안전 후퇴 (팀 전체가 쓰는 공용 함수, [SDD §3.1](docs/03_설계_SDD.md) 분담) |
 | 맡은 역할 | **안전 담당** — 충돌 감도 · 속도 한계 변경 승인, 로봇 정지 방식 확정([SDD §8](docs/03_설계_SDD.md) · [DSN-03 E17 ①](docs/decisions/20260919_결정기록_DSN-03.md)) |
 | 대표 성과 | 팀 전체 실행 구조를 바꾼 [TS-01](docs/troubleshooting/TS-01_두산API_초기화_실행기_교착.md) **발견 · 최소 재현** (아래 5번) |
-| 그 밖에 | 힘 관련 실기 검증(V-03) · 안전 파라미터 실측(SAFE-01) · 용기 치수 실측(CELL-02a) · [최종 영상](https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a) 제작([README](README.md) 상단) |
+| 그 밖에 | 힘 관련 실기 검증(V-03) · 안전 파라미터 실측(SAFE-01) · 용기 치수 실측(CELL-02a) · [최종 영상](https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a) 제작(민범진과 공동 · [README](README.md) 상단의 그 영상) |
 | 기록 | 병합된 PR 15개 · 커밋 23개 · 작성 문서 9건 |
 
 ## 1. F3 기능 함수 3개 — [`src/f3_wipe/`](src/f3_wipe/) (695줄, [패키지 README](src/f3_wipe/README.md))
