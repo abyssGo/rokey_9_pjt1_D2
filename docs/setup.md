@@ -25,7 +25,7 @@ sudo apt update && sudo apt install -y ros-jazzy-ros-base ros-dev-tools
 
 ```bash
 sudo apt install -y git python3-colcon-common-extensions python3-pytest python3-venv python3-pymodbus
-cd ~ && git clone https://github.com/hwang-injae/rokey_9_pjt1_D2.git rokey_pjt01_ws
+cd ~ && git clone https://github.com/rokey9-d2/rokey_9_pjt1_D2.git rokey_pjt01_ws
 cd ~/rokey_pjt01_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
