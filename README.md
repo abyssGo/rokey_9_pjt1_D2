@@ -8,20 +8,31 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 
 | 항목 | 내용 |
 |---|---|
+| 내 역할 | **PM** · 인터페이스 · 운영 화면(HMI) · 기록 DB · 셀 통합 · 무게 측정 안정화 → [내가 한 것](#내가-한-것) |
 | 하드웨어 | Doosan M0609(6축 협동로봇) + OnRobot RG2 그리퍼 |
 | 소프트웨어 | Ubuntu 24.04 · ROS 2 Jazzy · Python 3.12 · FastAPI + Next.js(운영 화면) · SQLite |
 | 결과 | 시작 1번으로 그릇 2 · 컵 2 무정지 완주(배속 1.0 · 약 13분) · 예외 8종 설계 · 7종 실기 복구 · 자동 시험 616개 통과 |
-| 바로 해 보기 | 로봇 없이 Ubuntu 24.04 PC 한 대로 흐름과 운영 화면을 돌려 본다 → [실행 방법 1~4](#실행-방법) |
+| 바로 해 보기 | 로봇 없이 Ubuntu 24.04 PC 한 대로 흐름과 운영 화면을 돌려 본다 → [실행 방법](#실행-방법) |
 
 ## 목차
 
-1. [주요 기능](#주요-기능)
-2. [시스템 구성](#시스템-구성)
-3. [결과](#결과)
-4. [실행 방법](#실행-방법)
-5. [개발 환경 · 사용 장비](#개발-환경--사용-장비)
-6. [프로젝트 구조](#프로젝트-구조)
-7. [팀 · 라이선스](#팀--라이선스)
+1. [배경과 목표](#배경과-목표)
+2. [주요 기능](#주요-기능)
+3. [시스템 구성](#시스템-구성)
+4. [결과](#결과)
+5. [내가 한 것](#내가-한-것)
+6. [트러블슈팅](#트러블슈팅)
+7. [배운 점 · 한계](#배운-점--한계)
+8. [실행 방법](#실행-방법)
+9. [개발 환경 · 사용 장비](#개발-환경--사용-장비)
+10. [프로젝트 구조](#프로젝트-구조)
+11. [팀 · 라이선스](#팀--라이선스)
+
+## 배경과 목표
+
+경기장 일회용품 규제와 지자체 사업으로 다회용기 전환이 늘고 있지만, 병목은 **회수 뒤 세척**이다. 세척센터에서도 본세척은 자동화됐지만 분류 · 애벌세척 · 랙 적재는 아직 사람 손이고, 경기 직후 수천 개가 몰리는 젖은 반복 노동이라 사람을 구하기 어렵다.
+
+그래서 **두산 M0609 1대 + RG2 로 예비세척 전처리(잔반 제거 → 닦기 → 헹굼 → 팔레트 적재)를 자동화하는 소형 셀**을 목표로 했다. 카메라 · 전용 설비 없이 매장 단위로 놓을 수 있게 하고, 시작 버튼 1회로 연속 처리하며, 오류가 나도 격리 · 재개로 운영을 이어 가고, 처리 기록을 남겨 위생 가이드라인의 기록 요구를 맞춘다. 근거와 전체 요구사항은 [요구사항 문서](docs/01_요구사항_BR-SR.md)에 있다.
 
 ## 주요 기능
 
@@ -41,7 +52,7 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
   <sub><a href="https://hwang-injae.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html">시스템 아키텍처 HTML</a> · <a href="docs/images/system_architecture_pc.png">PNG</a></sub>
 </p>
 
-**PC 2대 · 프로그램(노드) 2개**(PC 1대로도 돌아간다). 기능(집기 · 무게 · 닦기 …)은 노드가 아니라 **파이썬 함수**이고, 메인 프로그램 `flow_node` 가 순서대로 부르며 로봇 명령도 여기서만 낸다. 두 PC 는 GPU PC 의 Fast DDS Discovery Server 로 서로를 찾는다([5-4](#실행-방법)).
+**PC 2대 · 프로그램(노드) 2개**(PC 1대로도 돌아간다). 기능(집기 · 무게 · 닦기 …)은 노드가 아니라 **파이썬 함수**이고, 메인 프로그램 `flow_node` 가 순서대로 부르며 로봇 명령도 여기서만 낸다. 두 PC 는 GPU PC 의 Fast DDS Discovery Server 로 서로를 찾는다([실행 방법 5-4](docs/setup.md#5-실제-로봇)).
 
 | 위치 | 구성 | 역할 |
 |---|---|---|
@@ -104,311 +115,79 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 | 용기당 사이클 타임 | 배속 1.0 에서 그릇 153 · 219 s(잔반 털기 1회 포함) · 컵 182 · 192 s · 평균 186.5 s | 90 s 이내 | **미달** |
 | 자동 시험 | `pytest` 616 passed · 9 skipped · 1 xfailed · 화면 계산 15 pass | 로봇 없이 실패 0 | 달성 |
 
+## 내가 한 것
+
+PM 으로 요구사항 · 설계 문서와 결정 기록, 셀 통합을 이끌었고 인터페이스 · 운영 화면 · 기록 DB 와 무게 측정 안정화를 맡았다.
+
+- **실행 구조 결정** — 팀원이 찾은 "서비스 콜백 안에서 두산 API 를 부르면 멈추는" 문제를 실제 드라이버로 다시 확인하고, 실행 구조 5가지를 비교 시험해 **노드 2개 · 기능은 함수 · 로봇 명령은 메인 프로그램 한 곳**으로 바꾸기로 정했다. → [트러블슈팅 1](#1-콜백-안-로봇-명령-교착--실행-구조-변경)
+- **인터페이스 먼저 고정** — 기능 함수 13개의 약속(`cobot_api`)과 메시지 3개(`cobot_msgs`)를 먼저 정해, 4명이 로봇 1대를 나눠 쓰면서도 로봇 없이 각자 개발 · 시험할 수 있게 했다. → [인터페이스 문서](docs/02_인터페이스_IRD.md)
+- **운영 화면 · 기록 DB** — FastAPI · Next.js 운영 화면(시작 · 일시 정지 · 재개 · 중단, 멈춤 원인 안내, 누적 KPI)과 SQLite 기록 DB(표 5개)를 맡았다. 두 PC 를 무선으로 이은 구성에서 버튼 응답 7~96 ms · 기록 누락 0 을 확인했다.
+- **무게 측정 안정화** — 무게 측정을 이어받아, 값이 자세 · 시간에 따라 출렁이는 원인이 **그리퍼 케이블 장력**임을 찾고 케이블 여유 · 측정 자세 · 기준값 측정 절차를 정했다. → [트러블슈팅 2](#2-무게가-자세--시간에-따라-출렁임--그리퍼-케이블-장력)
+- **셀 통합 · 실기 운용** — 9/22 부터 통합을 맡아 9/23 기능 동결과 "기본 흐름은 유지하고 예외 처리만 고친다" 원칙을 정했다. 정해진 좌표로 내려가는 동작은 힘 감시 없이 Z 만 곧게 + 마지막 15 mm 완충으로 정했다. → [트러블슈팅 4](#4-재파지--툴-반납-중-안전정지--접근점에서-z-만-곧게--15-mm-완충)
+
+## 트러블슈팅
+
+내가 원인 확인이나 해결 결정에 참여한 문제 4가지다. 나머지 기록은 [트러블슈팅 기록](docs/troubleshooting/)에 있다.
+
+### 1. 콜백 안 로봇 명령 교착 → 실행 구조 변경
+
+- **문제** — 처음 설계(기능 노드 3개가 서비스 콜백 안에서 로봇을 움직임)대로 만들면 두 번째 명령부터 응답 없이 멈추고, 다른 프로세스의 명령은 조용히 덮어써졌다.
+- **원인** — 두산 API 는 명령마다 실행기를 직접 돌리는데, 콜백 안에서는 이미 실행기가 그 콜백을 처리하는 중이다.
+- **해결** — 구조 5가지를 가상 로봇으로 비교 시험해 "기능은 함수, 메인 스레드가 차례로 부르고 통신만 별도 스레드"로 바꿨다. 로봇 명령은 메인 프로그램 한 곳에서만 나간다.
+- **결과** — 연속 6회 성공 · 모션 중 상태 발행 2 Hz 유지. ([TS-01](docs/troubleshooting/TS-01_두산API_초기화_실행기_교착.md))
+
+### 2. 무게가 자세 · 시간에 따라 출렁임 → 그리퍼 케이블 장력
+
+- **문제** — 같은 무게 자세인데 오는 길에 따라 90 g 이 달랐고(집은 자리에서 곧장 −113 g · HOME 경유 −23 g), 빈 그릇 10회 측정의 폭이 44.8 g 으로 기준(20 g)을 넘었다.
+- **원인** — 팽팽한 그리퍼 케이블이 자세와 시간에 따라 툴을 당겼다.
+- **해결** — 케이블 여유를 늘리고, 무게는 항상 HOME 을 거쳐 같은 자세에서 재며, 빈 용기 기준값은 실행 직전에 다시 잰다.
+- **결과** — 21 s 측정 창의 흔들림 ±12~17 g · 96 g 물건 오차 +3 g 으로 잔반 임계 50 g 을 판정할 수 있게 됐다(98 g 대용품 4/4 감지 · 빈 용기 오판 0/8). ([V-02 시험 기록](docs/test-reports/20260922_V-02_무게기준값_황인재.md))
+
+### 3. 일시 정지가 이동이 끝난 뒤에야 걸림 → 비동기 이동 + 짧은 확인
+
+- **문제** — 이동 도중 일시 정지를 눌러도 그 이동이 끝난 뒤(4.97 s 뒤)에야 멈췄다.
+- **원인** — 이동 명령이 끝날 때까지 기다리는 동기 방식이라, 이동 중에는 정지 신호를 처리할 틈이 없었다.
+- **해결** — 이동을 비동기로 보내고 0.05 s 마다 완료 · 정지 신호를 확인하게 바꿨다.
+- **결과** — 가상 시험 10/10, 실기에서도 툴을 든 채 정지 → 재개로 하던 동작을 이어 갔다. ([V-24 시험 기록](docs/test-reports/20260921_V-24_실기_일시정지_황인재.md))
+
+### 4. 재파지 · 툴 반납 중 안전정지 → 접근점에서 Z 만 곧게 + 15 mm 완충
+
+- **문제** — 9/23 컵 재파지 중 안전정지가 걸렸고, 힘을 감시하며 내려가는 동작은 한 걸음(3 mm)에 약 3 s 가 걸려 느렸다.
+- **원인** — HOME 에서 관절 이동으로 곧장 가다 열린 그리퍼가 컵 · 홈 틀에 걸린 것으로 보았다.
+- **해결** — 놓기 · 적재 · 툴 반납 · 재파지는 접근점에서 자세를 맞춘 뒤 Z 만 곧게 내리고, 마지막 15 mm 만 30 mm/s 로 천천히 내린다. 힘 감시는 닦기 · 바닥 찾기 같은 접촉 동작에만 남겼다.
+- **결과** — 0.5 배속 통합 12회 정상 · 컵 재파지 6/6, 9/29 배속 1.0 무정지 완주로 이어졌다. ([결정 기록 E44](docs/decisions/20260919_결정기록_DSN-03.md))
+
+## 배운 점 · 한계
+
+**배운 점**
+
+- 인터페이스를 먼저 고정하니, 로봇 1대를 나눠 쓰는 4명이 로봇 없이도 병렬로 개발할 수 있었다.
+- 로봇팔로 무게를 재 보니, 외력으로 재는 값은 케이블 같은 하드웨어 요인에 크게 흔들렸다. 코드보다 측정 조건을 먼저 확인해야 한다.
+- 바뀐 것마다 검증 수준(자동 시험 / 가상 / 실기)을 적게 하니, 실기 확인 전인 변경이 확인된 것처럼 병합되는 일을 막을 수 있었다.
+
+**한계와 다음에 할 것**
+
+- 용기당 사이클 타임이 153~219 s 로 목표(90 s)에 못 미쳤다. 무게 단계(HOME 경유 + 안정 대기 8 s)와 재파지 · 헹굼 단계가 가장 오래 걸렸다.
+- 닦기 동작 중에 일시 정지를 누르면 그 동작이 끝난 뒤 멈춘다(컵 주기 운동 약 13 s). 즉시 멈추고 재개 때 닦기를 처음부터 하도록 바꾸는 것이 다음 과제다.
+- 헹굼은 과정 안전 규정에 따라 물 없이 모션만 했고, 잔반은 대용품으로 시험했다.
+- 격리 구역이 그릇 · 컵 공용 한 곳이라 다음 격리 전에 사람이 치워야 한다.
+- `cell.yaml` 좌표는 우리 워크셀 기준이라 다른 셀에서는 다시 티칭해야 한다.
+
 ## 실행 방법
 
-**1~4 는 로봇 없이 Ubuntu 24.04(데스크톱) PC 한 대에서 그대로 따라 하면 된다.** 인터넷만 있으면 되고, 위에서 아래로 명령을 복사해 실행한다. 저장소는 2 의 `git clone` 이 `~/rokey_pjt01_ws` 에 받는다.
-
-### 1. ROS 2 Jazzy 설치
-
-이미 `/opt/ros/jazzy` 가 있으면 건너뛴다. [ROS 2 공식 설치 안내](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)와 같은 방법이다.
+로봇 없이 Ubuntu 24.04 · ROS 2 Jazzy PC 한 대에서 흐름과 운영 화면을 돌려 볼 수 있다. 필요한 패키지 설치, 운영 화면 부품, 실제 로봇(PC 1대 · 2대) 절차는 **[docs/setup.md](docs/setup.md)** 에 있다.
 
 ```bash
-sudo apt update && sudo apt install -y software-properties-common curl
-sudo add-apt-repository -y universe
-export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F'"' '{print $4}')
-curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
-sudo dpkg -i /tmp/ros2-apt-source.deb
-sudo apt update && sudo apt install -y ros-jazzy-ros-base ros-dev-tools
-```
-
-| 확인 | 통과 기준 |
-|---|---|
-| `ls /opt/ros/jazzy/setup.bash` | 파일이 있다 |
-
-### 2. 받기 · 빌드 · 자동 시험
-
-```bash
-sudo apt install -y git python3-colcon-common-extensions python3-pytest python3-venv python3-pymodbus
+# 받기 · 빌드 · 자동 시험 (ROS 2 Jazzy · colcon · pytest 설치 뒤 — setup.md 1~2)
 cd ~ && git clone https://github.com/hwang-injae/rokey_9_pjt1_D2.git rokey_pjt01_ws
-cd ~/rokey_pjt01_ws
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
-source install/setup.bash
+cd ~/rokey_pjt01_ws && source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install && source install/setup.bash
 python3 -m pytest -q src
-```
 
-| 확인 | 통과 기준 |
-|---|---|
-| 빌드 마지막 줄 | `Summary: 8 packages finished` |
-| 시험 마지막 줄 | `616 passed, 9 skipped, 1 xfailed` · `failed` 없음 (건너뛴 9개는 3 의 화면 부품이 있어야 도는 시험) |
-
-### 3. 운영 화면 부품
-
-화면 서버용 가상환경과 웹 화면을 만든다.
-
-```bash
-sudo apt install -y nodejs npm
-python3 -m venv --system-site-packages ~/venvs/hmi
-~/venvs/hmi/bin/pip install -r ~/rokey_pjt01_ws/requirements.txt
-cd ~/rokey_pjt01_ws/src/f4_hmi/web && npm install && npm run build && cd ~/rokey_pjt01_ws
-```
-
-| 확인 | 통과 기준 |
-|---|---|
-| `npm run build` 끝 | `(Static)  prerendered as static content` · `src/f4_hmi/web/out/index.html` 이 생긴다 |
-
-(선택) 화면 쪽 시험 — 2 와 같은 터미널(새 터미널이면 `cd ~/rokey_pjt01_ws && source /opt/ros/jazzy/setup.bash && source install/setup.bash` 먼저)에서:
-
-```bash
-~/venvs/hmi/bin/python3 -m pytest -q src/f4_hmi
-cd src/f4_hmi/web && node --test test/ && cd ~/rokey_pjt01_ws
-```
-
-통과 기준은 `51 passed` 와 `pass 15` · `fail 0`.
-
-### 4. 로봇 없이 실행
-
-로봇과 드라이버 없이 메인 프로그램과 운영 화면을 띄운다. 기능은 가짜로 돈다.
-
-```bash
-cd ~/rokey_pjt01_ws
-source /opt/ros/jazzy/setup.bash && source install/setup.bash
+# 로봇 없이 실행 (운영 화면 부품 설치 뒤 — setup.md 3) → 브라우저 http://localhost:8000 에서 시작
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 ros2 launch prewash_bringup prewash_mock.launch.py
 ```
-
-| 확인 | 통과 기준 |
-|---|---|
-| 터미널 | `IDLE — /flow/start 를 기다린다` 와 `HMI 서버를 연다 → http://localhost:8000` |
-| 브라우저 <http://localhost:8000> | 화면이 뜨고 연결 점이 초록이다 |
-| 화면의 **시작** 버튼 | 곧바로 그릇 2 · 컵 2 완료(기능이 가짜라 로봇 동작 시간이 없다) |
-
-- `setup_io 를 건너뛴다` 경고 두 줄은 두산 드라이버가 없을 때 나오는 정상 안내다. 끌 때는 Ctrl+C.
-- 브라우저 없이 확인하려면 새 터미널에서 `source /opt/ros/jazzy/setup.bash && export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST && ros2 service call /flow/start std_srvs/srv/Trigger` → `success=True`. 같은 방법으로 `stop` · `resume` · `abort` 도 부른다.
-
-<details>
-<summary><b>멈춤 화면 골라 보기 (가짜 상태 발행기)</b></summary>
-
-4 의 launch 대신 터미널 2개로 돌린다. 두 터미널 모두 4 의 첫 세 줄(`cd` · `source` · `export`)을 먼저 실행한다. launch 와 같은 포트를 쓰므로 한 번에 하나만 켠다.
-
-```bash
-ros2 run f4_hmi hmi_bridge
-```
-
-```bash
-ros2 run f4_hmi fake_state_pub tool_lost
-```
-
-`tool_lost` 자리에 넣을 수 있는 이름: `normal` · `paused` · `isolate` · `error` · `empty_zone` · `tool_lost` · `leftover_remain` · `cable` · `tool_fail`. 기록 DB 조회는 `ros2 run f4_hmi hmi_db kpi`.
-
-</details>
-
-### 5. 실제 로봇
-
-두산 M0609 + RG2 와 우리 워크셀이 있을 때만 한다. 1~3 을 마친 PC 에서 이어서 한다.
-
-<details>
-<summary><b>5-1. 두산 드라이버 설치 (처음 한 번)</b></summary>
-
-드라이버는 이 저장소에 없다. 교육 과정 배포본(`doosan-robot2` · 그리퍼 드라이버 `onrobot_rg_control` · `m0609_rg2_bringup`)을 `~/ws_cobot_pjt/ws_dsr` 에 받아 빌드한다. 절차는 [환경 설정 문서 §8](docs/env/M0609_환경설정.md)에 있다. RViz 가 필요하므로 데스크톱 패키지도 설치하고, 빌드가 끝나면 확인한다.
-
-```bash
-sudo apt install -y ros-jazzy-desktop
-source ~/ws_cobot_pjt/ws_dsr/install/setup.bash
-ros2 pkg prefix m0609_rg2_bringup && python3 -c "import DR_init; print('DR_init OK')"
-```
-
-통과 기준은 설치 경로 한 줄과 `DR_init OK`. `DR_init` 을 못 찾으면 아래 줄을 `~/.bashrc` 맨 아래에 넣고 터미널을 새로 연다.
-
-```bash
-export PYTHONPATH=$PYTHONPATH:~/ws_cobot_pjt/ws_dsr/install/dsr_common2/lib/dsr_common2/imp
-```
-
-**터미널 준비(로봇용)** — 5-2 와 5-3 의 모든 터미널에서 먼저 실행한다.
-
-```bash
-cd ~/rokey_pjt01_ws
-source ~/ws_cobot_pjt/ws_dsr/install/setup.bash && source install/setup.bash
-export ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
-```
-
-</details>
-
-<details>
-<summary><b>5-2. 가상 로봇 (RViz)</b></summary>
-
-**터미널 1 — 가상 브링업**
-
-```bash
-ros2 launch m0609_rg2_bringup bringup.launch.py mode:=virtual host:=127.0.0.1 port:=12345 model:=m0609
-```
-
-**터미널 2 — 좌표 순회**
-
-```bash
-python3 src/cobot_common/test/rig_coords.py --from 1
-```
-
-RViz 에 로봇이 뜨고 셀 좌표를 차례로 돈다. 통과 기준은 마지막 줄 `결과: 통과 — OK n · FAIL 0`. 가상 로봇에는 힘 · 무게 · 접촉이 없다.
-
-</details>
-
-<details>
-<summary><b>5-3. 실제 로봇 — PC 1대</b></summary>
-
-> **주의**
-> - `cell.yaml` 의 좌표는 우리 워크셀 배치 기준이다. 배치가 다른 셀에서는 좌표를 다시 티칭한 뒤에 돌린다.
-> - 처음 켜는 셀과 다시 티칭한 뒤의 첫 실행은 `vel_scale:=0.3` 을 붙여 천천히 돌린다.
-> - 급할 때는 Ctrl+C 가 아니라 **E-Stop**.
-
-| 전제 | 값 |
-|---|---|
-| PC 유선 주소 | `192.168.1.x/24` 로 고정 |
-| 로봇 제어기 · 그리퍼 | `192.168.1.100` · `192.168.1.1` |
-| 티치 펜던트 | 툴 `Tool Weight`(1.440 kg)와 TCP `GripperDA_v1`(Z 208 mm) 등록 — 이름이 다르면 프로그램이 시작을 거부한다 |
-
-**① 터미널 1 — 브링업**
-
-```bash
-ping -c 3 192.168.1.100
-ros2 launch m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 port:=12345 model:=m0609
-```
-
-**② 터미널 2 — 툴 · TCP 확인**
-
-```bash
-ros2 service call /dsr01/dsr_controller2/tool/get_current_tool dsr_msgs2/srv/GetCurrentTool
-ros2 service call /dsr01/dsr_controller2/tcp/get_current_tcp dsr_msgs2/srv/GetCurrentTcp
-```
-
-통과 기준은 `Tool Weight` 와 `GripperDA_v1`.
-
-**③ 터미널 2 — 빈 용기 기준값** (실행 직전에 한 번 · 무게 값이 시간에 따라 흐르므로)
-
-그리퍼가 빈 상태에서 아래 첫 줄을 실행한다. 그리퍼가 열리고 `▶ BOWL 을(를) 그리퍼 사이에 대 주세요 — 준비되면 Enter` 가 뜨면 빈 그릇을 대고 Enter 를 누른다. 다음 줄은 로봇이 HOME 을 거쳐 무게 재는 자세로 움직여 잰다(약 1분 30초). 마지막 줄은 그릇을 **손으로 받친 채** 실행한다.
-
-```bash
-python3 src/f2_sense_flow/test/rig_f2.py grip --kind BOWL
-PREWASH_VEL_SCALE=0.3 python3 src/f2_sense_flow/test/rig_f2.py empty --kind BOWL -n 3
-python3 src/f2_sense_flow/test/rig_f2.py release
-```
-
-출력의 `중앙값 X g (폭 Y g)` 에서 폭이 20 g 이하면, 중앙값을 `src/cobot_common/config/params.yaml` 의 `f2.empty_weight_g.BOWL` 에 넣는다. 컵도 같은 순서로 재서 `f2.empty_weight_g.CUP` 에 넣는다.
-
-```bash
-python3 src/f2_sense_flow/test/rig_f2.py grip --kind CUP
-PREWASH_VEL_SCALE=0.3 python3 src/f2_sense_flow/test/rig_f2.py empty --kind CUP -n 3
-python3 src/f2_sense_flow/test/rig_f2.py release
-```
-
-**④ 터미널 2 — 메인 프로그램과 화면**
-
-팔레트와 격리 구역을 비우고, 반납 구역에 그릇 2개와 컵 2개를 놓는다.
-
-```bash
-ros2 launch prewash_bringup prewash.launch.py hmi:=true
-```
-
-| 확인 | 통과 기준 |
-|---|---|
-| 터미널 | 시작부에 `[prewash] use_mock=없음(전부 실제) · vel_scale=1 · hmi=True` → 문지기 통과 → 케이블 확인 → `IDLE` |
-| 브라우저 <http://localhost:8000> | 연결 점이 초록이다 |
-| **시작** 버튼 | 그릇 2 → 컵 2 를 처리하고 `IDLE` 로 돌아온다 |
-
-**⑤ 끝낼 때** — 로봇이 멈춘 뒤 터미널 2 → 터미널 1 순서로 Ctrl+C.
-
-</details>
-
-<details>
-<summary><b>5-4. 실제 로봇 — PC 2대 (GPU PC + 화면 PC)</b></summary>
-
-PC 두 대가 같은 망에 있을 때 쓴다. GPU PC 는 1 · 2 와 5-1, 화면 PC 는 1 · 2 · 3 을 마쳐 둔다. 5-3 의 주의와 전제는 그대로 적용하고, 5-3 의 ① · ④ 는 실행하지 않는다. 무선망이 ROS 2 기본 탐색(멀티캐스트)을 막으므로 GPU PC 에 Fast DDS Discovery Server 를 띄우고 두 PC 가 거기에 붙는다.
-
-**① GPU PC 의 주소 확인** — `hostname -I` 로 무선 쪽 주소를 적어 둔다(예: `172.18.0.101`). 아래 명령의 `GPU_IP=172.18.0.101` 을 **이 값으로 바꿔서** 실행한다. `ping -c 3 192.168.1.100`(GPU PC → 로봇)과 `ping -c 3 <GPU_IP>`(화면 PC → GPU PC)가 되어야 한다.
-
-**② GPU PC 터미널 A — Discovery Server** (끝까지 켜 둔다)
-
-```bash
-export GPU_IP=172.18.0.101
-source /opt/ros/jazzy/setup.bash
-fastdds discovery --server-id 0 --udp-address $GPU_IP --udp-port 11811
-```
-
-**③ GPU PC 터미널 B — 브링업**
-
-```bash
-export GPU_IP=172.18.0.101
-source ~/ws_cobot_pjt/ws_dsr/install/setup.bash
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$GPU_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
-ros2 daemon stop && ros2 daemon start
-ros2 launch m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 port:=12345 model:=m0609
-```
-
-**④ GPU PC 터미널 C — 준비 · 툴/TCP 확인 · 빈 용기 기준값**
-
-```bash
-export GPU_IP=172.18.0.101
-cd ~/rokey_pjt01_ws
-source ~/ws_cobot_pjt/ws_dsr/install/setup.bash && source install/setup.bash
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$GPU_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
-```
-
-이 터미널에서 5-3 의 ②(툴 · TCP 확인)와 ③(빈 용기 기준값)을 그대로 한다.
-
-**⑤ GPU PC 터미널 C — 메인 프로그램** (④와 같은 터미널 · `hmi:=true` 는 붙이지 않는다 — 붙이면 화면 서버와 기록 DB 가 두 곳에 생긴다)
-
-```bash
-ros2 launch prewash_bringup prewash.launch.py
-```
-
-통과 기준: 시작부에 `[prewash] use_mock=없음(전부 실제) · vel_scale=1 · hmi=False` → 문지기 통과 → 케이블 확인 → `IDLE`.
-
-**⑥ 화면 PC 터미널 — 화면 서버** (GPU PC 의 A · B · C 가 모두 켜진 뒤 · 두산 드라이버는 필요 없다)
-
-```bash
-export GPU_IP=172.18.0.101
-cd ~/rokey_pjt01_ws
-source /opt/ros/jazzy/setup.bash && source install/setup.bash
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$GPU_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
-ros2 daemon stop && ros2 daemon start
-ros2 run f4_hmi hmi_bridge
-```
-
-**⑦ 연결 확인** — 화면 PC 에서 새 터미널을 열고 ⑥의 처음 네 줄(`export GPU_IP` · `cd` · `source` · `export`)을 먼저 실행한 뒤:
-
-```bash
-ros2 node list | grep -E 'flow_node|dsr_controller2'
-ros2 topic hz /flow/state
-```
-
-통과 기준: `/flow_node` · `/dsr01/flow_node_dsr` · `/dsr01/dsr_controller2` 가 보이고 `/flow/state` 가 약 2 Hz, 브라우저 <http://localhost:8000> 의 연결 점이 초록이다.
-
-**⑧ 끝낼 때** — 화면 서버 → GPU PC 의 C(로봇이 멈춘 뒤) → B → A 순서로 Ctrl+C.
-
-</details>
-
-<details>
-<summary><b>문제가 생기면</b></summary>
-
-| 언제 | 증상 | 원인 | 대처 |
-|---|---|---|---|
-| 설치 · 실행 | `ros2: command not found` | 그 터미널에서 `source` 줄을 실행하지 않았다 | 그 단계의 첫 줄(`cd` · `source`)부터 다시 |
-| 설치 · 실행 | `colcon: command not found` | colcon 을 설치하지 않았다 | 2 의 apt 설치를 다시 |
-| 설치 · 실행 | `Package 'prewash_bringup' not found` | `source install/setup.bash` 를 빼먹었거나 빌드 전이다 | 2 의 빌드와 `source` 를 다시 |
-| 설치 · 실행 | 화면 주소에 시험 페이지만 나온다 | 화면을 빌드하지 않았다 | 3 의 `npm install && npm run build` |
-| 설치 · 실행 | 8000 포트가 이미 쓰이고 있다 | 먼저 켠 화면 서버가 남아 있다 | 남은 `hmi_bridge` 를 끄고 다시 켠다 |
-| 실제 로봇 | 브링업이 곧 꺼지거나 먼저 켠 브링업이 멈춘다 | 브링업 · 에뮬레이터가 이미 켜져 있다 | `ss -tlnp \| grep 12345` 로 확인하고, 켜져 있으면 새로 켜지 말고 그것을 쓴다 |
-| 실제 로봇 | 프로그램이 시작하자마자 거부한다(문지기) | 펜던트의 툴 · TCP 이름이 `Tool Weight` · `GripperDA_v1` 이 아니다 | 펜던트에서 툴 · TCP 를 고르고 5-3 ② 로 확인 |
-| PC 1대 | 화면이 "연결 끊김"이다 | 5-4 의 환경변수 줄을 넣은 터미널에서 화면 서버를 켰다 | 화면 서버를 끄고, 새 터미널에서 5-1 의 터미널 준비 줄만 실행한 뒤 다시 켠다 |
-| PC 2대 | 화면이 "연결 끊김"인데 토픽은 보인다 | 화면 서버를 환경변수 없는 새 터미널에서 켰다 | 환경변수 줄을 넣은 터미널에서 다시 켠다 |
-| PC 2대 | `ros2 topic list` 가 비어 있다 | 옛 ros2 데몬이 옛 설정으로 남아 있다 | `ros2 daemon stop && ros2 daemon start` |
-| PC 2대 | PC 끼리 `ping` 이 안 된다 | 기기 사이 통신을 막는 망(손님용 무선 등)에 붙어 있다 | 두 PC 를 서로 통신이 되는 같은 망에 붙인다 |
-| PC 2대 | 두산 드라이버나 새로 켠 노드가 안 보인다 | 터미널 B · C 에 환경변수 줄이 빠졌거나 서버(A)가 꺼졌다 | 서버 → 브링업 → 메인 프로그램 순서로 다시 켠다 |
-| PC 2대 | 화면만 끊기고 로봇은 계속 돈다 | 무선이 끊겼다 | 멈춰야 하면 E-Stop |
-
-두 PC 가 같은 유선 스위치에 있으면 Discovery Server 없이도 된다. 방법은 [환경 설정 문서 10-5](docs/env/M0609_환경설정.md)에 있다.
-
-</details>
 
 ## 개발 환경 · 사용 장비
 
@@ -417,7 +196,7 @@ ros2 topic hz /flow/state
 | OS · ROS | Ubuntu 24.04 LTS · ROS 2 Jazzy · Fast DDS(`rmw_fastrtps_cpp`) + Discovery Server |
 | 로봇 드라이버 | 교육 과정 배포본 `doosan-robot2`(`DSR_ROBOT2` · `DR_init`) · `onrobot_rg_control` · `m0609_rg2_bringup` — 저장소 밖 `~/ws_cobot_pjt/ws_dsr` · 제어기 Dart Platform 2.12.1 |
 | 화면 | FastAPI · uvicorn · WebSocket(`hmi_bridge`, 포트 8000) · Next.js 15 · React 19(정적 빌드) · SQLite · Node.js 18.18 이상 |
-| 의존성 | apt(실행 방법 1~3) · pip [`requirements.txt`](requirements.txt) · npm [`package.json`](src/f4_hmi/web/package.json) |
+| 의존성 | apt([실행 방법 1~3](docs/setup.md)) · pip [`requirements.txt`](requirements.txt) · npm [`package.json`](src/f4_hmi/web/package.json) |
 | 언어 · 도구 | Python 3.12 · JavaScript · colcon · pytest · `node --test` |
 
 | 장비 | 모델명 · 사양 | 수량 | 용도 |
@@ -449,7 +228,7 @@ rokey_pjt01_ws/                ROS 2 워크스페이스 (저장소 루트)
 │   ├── f4_hmi/                운영 화면 hmi_bridge · 웹(Next.js) · 기록 DB(SQLite) · 가짜 흐름
 │   ├── prewash_bringup/       launch 2개 — 실기용 · 로봇 없이(mock)
 │   └── */test/                자동 시험 test_*.py · 단독 시험대 rig_*.py
-├── docs/                      문서 지도는 docs/README.md — 요구사항 · 인터페이스 · 설계 · 결과표 · 결정 기록 · 시험 기록 · 트러블슈팅 · 환경 설정 · 그림
+├── docs/                      문서 지도는 docs/README.md — 실행 절차(setup.md) · 요구사항 · 인터페이스 · 설계 · 결과표 · 결정 기록 · 시험 기록 · 트러블슈팅 · 환경 설정 · 그림
 ├── requirements.txt           pip 의존성 (운영 화면 서버용 가상환경 · 화면 시험)
 ├── LICENSE                    Apache-2.0
 └── README.md
