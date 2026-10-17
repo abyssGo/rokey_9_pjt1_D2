@@ -1,0 +1,900 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "플로우 차트 — 용기 1개의 처리와 예외",
+    "locale": "ko",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-flow-chart-20261017-232712/flow_chart.html",
+    "repository": {
+      "url": "https://github.com/rokey9-d2/rokey_9_pjt1_D2",
+      "provider": "github",
+      "revision": "0e35e3ad1202b7f7b5d16e34ae941de7e229c50a"
+    },
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "사람 · 화면"
+        },
+        "backend": {
+          "label": "로봇 단계 (정상 흐름)"
+        },
+        "messagebus": {
+          "label": "자동 처리 (재시도 · 격리)"
+        },
+        "security": {
+          "label": "사람이 필요한 멈춤"
+        },
+        "database": {
+          "label": "기록"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "person",
+      "label": "사람 — 화면 · 팔 밀기"
+    },
+    {
+      "id": "halt",
+      "label": "사람이 필요한 멈춤"
+    },
+    {
+      "id": "main",
+      "label": "정상 흐름 — 시작 뒤 용기마다 ①~⑤"
+    },
+    {
+      "id": "auto",
+      "label": "자동 처리 — 재시도 · 격리"
+    },
+    {
+      "id": "tail",
+      "label": "정상 흐름 — 적재 · 다음 용기"
+    },
+    {
+      "id": "err",
+      "label": "로봇 오류 — 어느 단계든"
+    }
+  ],
+  "mainPath": [
+    "start",
+    "pick",
+    "weigh",
+    "seat",
+    "tool",
+    "rinse",
+    "rack"
+  ],
+  "nodes": [
+    {
+      "id": "buttons",
+      "lane": "person",
+      "col": 1,
+      "type": "frontend",
+      "icon": "person",
+      "width": 136,
+      "label": "화면 HMI",
+      "sublabel": "일시 정지 · 재개 · 중단",
+      "tag": "잔반통 50 kg 이면 스스로 /flow/stop",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 103,
+          "end_line": 155,
+          "label": "stop · resume · abort"
+        },
+        {
+          "path": "src/f4_hmi/f4_hmi/recorder.py",
+          "line": 119,
+          "end_line": 136,
+          "label": "잔반통 가득 → stop"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 337,
+          "label": "waste_bin_limit_g 50 kg"
+        }
+      ]
+    },
+    {
+      "id": "fix",
+      "lane": "person",
+      "col": 3,
+      "type": "frontend",
+      "icon": "person",
+      "width": 136,
+      "label": "고치고 재개",
+      "sublabel": "케이블 · 툴 정리 → 팔 밀기",
+      "tag": "15 N 0.15 s 밀기 또는 재개 버튼",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 1028,
+          "end_line": 1073,
+          "label": "_after_nudge · 복구"
+        },
+        {
+          "path": "src/cobot_common/config/cell.yaml",
+          "line": 34,
+          "end_line": 41,
+          "label": "넛지 판정"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 124,
+          "end_line": 128,
+          "label": "손 뗄 시간 1.5 s"
+        }
+      ]
+    },
+    {
+      "id": "op_pause",
+      "lane": "halt",
+      "col": 1,
+      "type": "security",
+      "icon": "waiting",
+      "width": 136,
+      "label": "운영자 정지",
+      "sublabel": "재개 이어서 · 중단은 격리",
+      "tag": "닦기 동작 · 무게 대기는 끝난 뒤",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 103,
+          "end_line": 115,
+          "label": "_on_stop"
+        },
+        {
+          "path": "src/cobot_common/cobot_common/motion.py",
+          "line": 18,
+          "end_line": 23,
+          "label": "폴링 이동만 그 자리"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 539,
+          "end_line": 559,
+          "label": "중단 → 격리 정리"
+        }
+      ]
+    },
+    {
+      "id": "hold",
+      "lane": "halt",
+      "col": 3,
+      "type": "security",
+      "icon": "stop",
+      "width": 136,
+      "label": "케이블 · 툴 멈춤",
+      "sublabel": "밀기 또는 재개 버튼으로 풂",
+      "tag": "집기 실패는 툴을 두고 물러난 뒤 섬",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 850,
+          "end_line": 907,
+          "label": "handle_cable_tight"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 354,
+          "end_line": 358,
+          "label": "TOOL_FAIL — 놓고 물러남"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 917,
+          "end_line": 940,
+          "label": "TOOL_FAIL · TOOL_LOST 멈춤"
+        }
+      ]
+    },
+    {
+      "id": "grip",
+      "lane": "halt",
+      "col": 5,
+      "type": "security",
+      "icon": "stop",
+      "width": 136,
+      "label": "용기 놓침 멈춤",
+      "sublabel": "빈손·미끄러짐 → 재개 버튼",
+      "tag": "② 무게 · ⑤ 헹굼 · 그 단계부터 다시",
+      "sources": [
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 278,
+          "label": "GRIP_FAIL: pause"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 396,
+          "end_line": 412,
+          "label": "무게로 본 빈손"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 926,
+          "end_line": 940,
+          "label": "넛지 X · 그 단계부터"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "lane": "main",
+      "col": 0,
+      "type": "backend",
+      "icon": "start",
+      "width": 148,
+      "label": "시작 · 계획",
+      "sublabel": "/flow/start → 그릇2 · 컵2",
+      "tag": "화면 시작 버튼 · IDLE 때만",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 94,
+          "end_line": 101,
+          "label": "_on_start"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 621,
+          "end_line": 665,
+          "label": "run_plan"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 268,
+          "end_line": 273,
+          "label": "plan · rack_order"
+        }
+      ]
+    },
+    {
+      "id": "pick",
+      "lane": "main",
+      "col": 1,
+      "type": "backend",
+      "width": 136,
+      "label": "① 집기",
+      "sublabel": "슬롯 1 → 비면 슬롯 2",
+      "tag": "접근점에서 Z 만 곧게 내려 쥐기",
+      "sources": [
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 104,
+          "end_line": 139,
+          "label": "pick"
+        },
+        {
+          "path": "src/cobot_common/config/cell.yaml",
+          "line": 220,
+          "end_line": 239,
+          "label": "슬롯 2개"
+        }
+      ]
+    },
+    {
+      "id": "weigh",
+      "lane": "main",
+      "col": 2,
+      "type": "backend",
+      "width": 136,
+      "label": "② 무게 재기",
+      "sublabel": "HOME 경유 · 30회 중앙값",
+      "tag": "중앙값 − 빈 용기 기준값 = 잔반",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 346,
+          "end_line": 389,
+          "label": "weigh"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 44,
+          "end_line": 59,
+          "label": "기준값 · 표본"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 436,
+          "end_line": 444,
+          "label": "50 g 판정"
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "lane": "main",
+      "col": 3,
+      "type": "backend",
+      "width": 136,
+      "label": "③ 홈 안착",
+      "sublabel": "스펀지 홈에 Z 만 곧게 놓기",
+      "tag": "그릇 홈 B · 컵 홈 C",
+      "sources": [
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 245,
+          "end_line": 264,
+          "label": "place"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 732,
+          "label": "SEAT 단계"
+        }
+      ]
+    },
+    {
+      "id": "tool",
+      "lane": "main",
+      "col": 4,
+      "type": "backend",
+      "width": 136,
+      "label": "④ 툴 닦기",
+      "sublabel": "툴 → 세제 → 닦기 → 툴 반납",
+      "tag": "그릇 1.5 N 힘 제어 · 컵 주기 운동",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 733,
+          "end_line": 736,
+          "label": "SOAP · WIPE 단계"
+        },
+        {
+          "path": "src/f3_wipe/f3_wipe/wipe.py",
+          "line": 260,
+          "end_line": 312,
+          "label": "wipe_bowl"
+        },
+        {
+          "path": "src/f3_wipe/f3_wipe/wipe.py",
+          "line": 557,
+          "end_line": 684,
+          "label": "wipe_cup"
+        }
+      ]
+    },
+    {
+      "id": "rinse",
+      "lane": "main",
+      "col": 5,
+      "type": "backend",
+      "width": 136,
+      "label": "⑤ 헹굼",
+      "sublabel": "다시 집기 → 담금 → 털기",
+      "tag": "컵은 옆면으로 다시 잡는다",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 737,
+          "end_line": 739,
+          "label": "RINSE 단계"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 142,
+          "end_line": 229,
+          "label": "홈 다시 집기 · GRIP_FAIL"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 638,
+          "end_line": 693,
+          "label": "dip · 미끄러짐"
+        }
+      ]
+    },
+    {
+      "id": "zone",
+      "lane": "auto",
+      "col": 0,
+      "type": "messagebus",
+      "width": 148,
+      "label": "다음 구역으로",
+      "sublabel": "두 슬롯 모두 빈손 → 건너뜀",
+      "tag": "그 구역 나머지 용기도 건너뜀",
+      "sources": [
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 126,
+          "end_line": 139,
+          "label": "슬롯 모두 빈손"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 942,
+          "end_line": 944,
+          "label": "next_zone"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 657,
+          "end_line": 661,
+          "label": "구역 건너뜀"
+        }
+      ]
+    },
+    {
+      "id": "shake",
+      "lane": "auto",
+      "col": 2,
+      "type": "messagebus",
+      "width": 136,
+      "label": "털고 다시 재기",
+      "sublabel": "> 50 g 이면 털기 · 2회까지",
+      "tag": "잔반통 위 털고 HOME 경유 다시 잼",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 446,
+          "end_line": 467,
+          "label": "leftover_loop"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 297,
+          "label": "최대 2회"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 50,
+          "label": "임계 50 g"
+        }
+      ]
+    },
+    {
+      "id": "isolate",
+      "lane": "auto",
+      "col": 3,
+      "type": "messagebus",
+      "width": 136,
+      "label": "격리 정리",
+      "sublabel": "곧게 위로 → 격리 구역에",
+      "tag": "쥔 툴 반납 · 홈 위 용기 다시 집기",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 561,
+          "end_line": 610,
+          "label": "_cleanup_and_isolate"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 276,
+          "end_line": 277,
+          "label": "LEFTOVER_REMAIN: isolate"
+        }
+      ]
+    },
+    {
+      "id": "retry",
+      "lane": "auto",
+      "col": 4,
+      "type": "messagebus",
+      "width": 136,
+      "label": "한 번 더 (그 동작)",
+      "sublabel": "닦기 전 툴 없으면 툴 멈춤",
+      "tag": "곧게 위로 뒤 같은 동작 1번 더",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 783,
+          "end_line": 805,
+          "label": "재시도 · 툴 확인"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 285,
+          "end_line": 286,
+          "label": "retry:1->isolate"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 806,
+          "end_line": 825,
+          "label": "최신 코드로 정책 다시 읽기"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "lane": "tail",
+      "col": 0,
+      "type": "backend",
+      "icon": "success",
+      "width": 148,
+      "label": "완료",
+      "sublabel": "DONE 1 s 유지 → IDLE",
+      "tag": "빈 구역으로 끝나면 HOME 먼저",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 667,
+          "end_line": 703,
+          "label": "HOME 복귀 · DONE"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 306,
+          "label": "done_hold_s"
+        }
+      ]
+    },
+    {
+      "id": "hub",
+      "lane": "tail",
+      "col": 1,
+      "type": "database",
+      "width": 136,
+      "label": "기록 → 다음 용기?",
+      "sublabel": "/flow/event · records.csv",
+      "tag": "DONE · ISOLATED · ERROR · SKIPPED",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 1153,
+          "end_line": 1172,
+          "label": "emit_event"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 638,
+          "end_line": 665,
+          "label": "용기마다 반복"
+        }
+      ]
+    },
+    {
+      "id": "rack",
+      "lane": "tail",
+      "col": 5,
+      "type": "backend",
+      "width": 136,
+      "label": "⑥ 팔레트 적재",
+      "sublabel": "칸에 곧게 내려 놓기 → HOME",
+      "tag": "칸 배정: 그릇 B1·B2 · 컵 C1·C2 차례",
+      "sources": [
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 499,
+          "end_line": 564,
+          "label": "rack_place"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 740,
+          "end_line": 741,
+          "label": "RACK 단계"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 844,
+          "end_line": 848,
+          "label": "칸 배정 = 완료 수"
+        }
+      ]
+    },
+    {
+      "id": "signals",
+      "lane": "err",
+      "col": 1,
+      "type": "frontend",
+      "icon": "person",
+      "width": 136,
+      "label": "오류 2단 신호",
+      "sublabel": "밀기 → 그리퍼 열기 → 재개",
+      "tag": "신호 2 는 버튼만 · 빈손이면 1번",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 951,
+          "end_line": 997,
+          "label": "_robot_error_pause"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 1075,
+          "end_line": 1098,
+          "label": "HOME 최대 3번"
+        }
+      ]
+    },
+    {
+      "id": "roboterr",
+      "lane": "err",
+      "col": 3,
+      "type": "security",
+      "icon": "stop",
+      "width": 136,
+      "label": "로봇 오류 멈춤",
+      "sublabel": "예외 → 곧게 위로 뒤 멈춤",
+      "tag": "이동 미완이면 후퇴 없이 그 자리",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 363,
+          "end_line": 411,
+          "label": "call — 예외 두 갈래"
+        },
+        {
+          "path": "src/cobot_common/cobot_common/force.py",
+          "line": 369,
+          "end_line": 388,
+          "label": "safe_retreat — Z 만"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 145,
+          "end_line": 151,
+          "label": "중단 거부"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-start-pick",
+      "from": "start",
+      "to": "pick",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-pick-weigh",
+      "from": "pick",
+      "to": "weigh",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-weigh-seat",
+      "from": "weigh",
+      "to": "seat",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-seat-tool",
+      "from": "seat",
+      "to": "tool",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-tool-rinse",
+      "from": "tool",
+      "to": "rinse",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-rinse-rack",
+      "from": "rinse",
+      "to": "rack",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-rack-hub",
+      "from": "rack",
+      "to": "hub",
+      "label": "DONE",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-hub-done",
+      "from": "hub",
+      "to": "done",
+      "label": "없음",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-hub-pick",
+      "from": "hub",
+      "to": "pick",
+      "label": "남은 용기",
+      "variant": "default",
+      "role": "return"
+    },
+    {
+      "id": "e-pick-zone",
+      "from": "pick",
+      "to": "zone",
+      "label": "빈손",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-zone-hub",
+      "from": "zone",
+      "to": "hub",
+      "label": "SKIPPED",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-weigh-shake",
+      "from": "weigh",
+      "to": "shake",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-shake-seat",
+      "from": "shake",
+      "to": "seat",
+      "label": "통과",
+      "variant": "default",
+      "role": "return"
+    },
+    {
+      "id": "e-shake-iso",
+      "from": "shake",
+      "to": "isolate",
+      "label": "남음",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-tool-retry",
+      "from": "tool",
+      "to": "retry",
+      "label": "힘 · 시간 상한",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-retry-iso",
+      "from": "retry",
+      "to": "isolate",
+      "label": "실패",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-iso-hub",
+      "from": "isolate",
+      "to": "hub",
+      "label": "ISOLATED",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-buttons-pause",
+      "from": "buttons",
+      "to": "op_pause",
+      "label": "일시 정지 · 잔반통 가득",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-weigh-hold",
+      "from": "weigh",
+      "to": "hold",
+      "label": "케이블 떨림 > 80 g",
+      "variant": "default",
+      "role": "error"
+    },
+    {
+      "id": "e-tool-hold",
+      "from": "tool",
+      "to": "hold",
+      "label": "툴 놓침 · 집기 실패",
+      "variant": "default",
+      "role": "error"
+    },
+    {
+      "id": "e-hold-fix",
+      "from": "hold",
+      "to": "fix",
+      "label": "화면 알림",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-fix-weigh",
+      "from": "fix",
+      "to": "weigh",
+      "label": "② 무게부터",
+      "variant": "default",
+      "role": "return"
+    },
+    {
+      "id": "e-fix-tool",
+      "from": "fix",
+      "to": "tool",
+      "label": "④ 툴 집기부터",
+      "variant": "default",
+      "role": "return"
+    },
+    {
+      "id": "e-rinse-grip",
+      "from": "rinse",
+      "to": "grip",
+      "label": "GRIP_FAIL",
+      "variant": "default",
+      "role": "error"
+    },
+    {
+      "id": "e-err-signals",
+      "from": "roboterr",
+      "to": "signals",
+      "label": "화면 알림",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-signals-hub",
+      "from": "signals",
+      "to": "hub",
+      "label": "HOME → ERROR",
+      "variant": "default",
+      "role": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "slate",
+      "title": "선 읽는 법",
+      "items": [
+        "굵은 초록 선 = 정상 흐름 (용기 1개가 지나가는 길)",
+        "가는 회색 선 = 갈래 · 되돌아감 — 선 라벨이 조건이고, 도착 상자의 종류(범례)가 뜻",
+        "그림의 선은 모두 지금 main 코드에 있는 동작이다"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "정상 흐름 세부",
+      "items": [
+        "시작 버튼(/flow/start)은 IDLE 때만 받음 → 계획: 구역 RET_B 그릇 2개 → RET_C 컵 2개 (회차마다 1번)",
+        "① 슬롯마다 접근점에서 Z 만 곧게 내려 쥐고, 파지 폭으로 '집었나' 판정 — 두 슬롯 모두 빈손이면 EMPTY_ZONE",
+        "② 그릇 · 컵 모두 HOME 경유 → 8 s 정지 → 0.5 s 간격 30회 읽은 중앙값 − 빈 용기 기준값 = 잔반",
+        "④ 그릇 = 수세미: 바닥 나선 → 벽면 원호를 z 1.5 N 힘 제어로 · 컵 = 솔: 위아래 + 손목 회전 주기 운동 (힘 제어 없음)",
+        "⑤ 그릇은 위에서, 컵은 옆면으로 다시 잡음 → 수조 담금 2회 → 물 털기 3회",
+        "⑥ 칸 배정은 완료 수 차례: 그릇 B1 → B2 · 컵 C1 → C2 · 용기마다 칸 하나에 곧게 내려 놓고 HOME"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "멈춤 · 재개 · 중단",
+      "items": [
+        "팔 밀기(넛지) = 힘 변화 15 N 을 0.15 s 유지 → 손 뗄 시간 1.5 s 뒤 이어 감",
+        "밀기로도 풀리는 멈춤: 케이블 · 툴 집기 실패 · 툴 놓침 · 로봇 오류 신호 1 — 운영자 정지 · GRIP_FAIL · 신호 2 는 재개 버튼만",
+        "케이블 · 툴 놓침은 그 자리에서 멈춤 · 툴 집기 실패는 툴을 홀더에 둔 채 놓고 곧게 물러난 뒤 멈춤",
+        "GRIP_FAIL = ② 무게로 본 빈손 · 털기 미끄러짐 · ⑤ 헹굼 앞 다시 집기 빈손 · 담금 · 털기 미끄러짐 → 재개 버튼 → 그 단계부터",
+        "운영자 정지: 폴링으로 보내는 일반 이동은 그 자리에서 섬 · 컵 주기 운동 · 그릇 나선 · 원호 · 그리퍼 · 무게 대기는 끝난 뒤 다음 이동에서 섬",
+        "화면은 버린 잔반 누적이 50 kg 에 닿으면 스스로 /flow/stop 을 1번 보냄 → 잔반통 교체 → 교체 완료 → 재개",
+        "중단(/flow/abort)은 멈춤 중에만 받고 격리 정리와 같은 길로 감 · 로봇 오류 · 케이블 멈춤에서는 거부 · 용기 사이 중단은 치울 것 없이 다음 용기"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "자동 처리 — 실패 코드로 정책을 고름",
+      "items": [
+        "EMPTY_ZONE → 다음 구역 · LEFTOVER_REMAIN → 격리 · FORCE_LIMIT · TIMEOUT → 곧게 위로 → 1번 더 → 격리",
+        "정책은 단계가 아니라 코드로 고르므로 세제 TIMEOUT(60 s)에도 '곧게 위로 → 1번 더 → 격리'가 걸림",
+        "닦기 상한: 누르는 힘 10 N · 옆 힘 25 N · 전체 120 s",
+        "닦기를 다시 하기 전 툴이 손에 없으면 TOOL_LOST → 케이블 · 툴 멈춤 → 툴 집기부터 · 재시도 중 ROBOT_ERROR · 후퇴 실패 → 로봇 오류 멈춤",
+        "격리 정리: 곧게 위로 → HOME → (툴을 쥐었으면) 툴 반납 → (용기가 홈에 있으면) 위에서 다시 집고 HOME → 격리 구역 → HOME → ISOLATED",
+        "잔반 남음은 용기를 든 채라 곧게 위로 → HOME → 격리 구역 → HOME 만 탐 · 격리 뒤 다음 용기는 같은 팔레트 칸을 받음"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "로봇 오류 · 기록",
+      "items": [
+        "함수 예외 → Z 만 safe_z 235 mm 까지 곧게 올린 뒤 멈춤 · 이동 미완(MoveIncomplete)이면 후퇴 없이 힘 · 순응만 끄고 그 자리",
+        "ROBOT_ERROR 코드 · 후퇴 실패도 같은 멈춤 · 격리 구역으로 가지 않음",
+        "쥔 것이 있으면 신호 1 → 그리퍼만 연다 → 사람이 받아 치움 → 신호 2(재개 버튼) → 곧게 위로 → HOME(최대 3번)",
+        "빈손이면 신호 1 번으로 바로 위로 → HOME · ERROR 로 기록하고 다음 용기 (격리 수는 늘리지 않음)",
+        "용기 1개 = /flow/event 1건 + records.csv 1줄 · 화면 상태 /flow/state 는 2 Hz"
+      ]
+    }
+  ]
+}

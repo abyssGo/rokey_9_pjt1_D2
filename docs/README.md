@@ -16,4 +16,4 @@ PreWash-Cell 의 요구사항 · 인터페이스 · 설계 · 결과 문서와 �
 | [troubleshooting/](troubleshooting/) | 개발 중 만난 문제 TS-01~TS-08(증상 · 원인 · 해결 · 재발 방지)과 TS-01 재현 스크립트 |
 | [env/](env/) | M0609 + RG2 개발 환경 설정(Ubuntu 24.04 · ROS 2 Jazzy · 두산 드라이버 · PC 2대 통신) |
 | [research/](research/) | 주제 선정 근거 — 법규 · 산업 조사, 브리핑 자료 정리 |
-| [images/](images/) | 시스템 아키텍처 · 플로우 차트 · 워크셀 배치도 · 운영 화면 캡처 · [시스템 아키텍처 HTML](https://rokey9-d2.github.io/rokey_9_pjt1_D2/images/system_architecture_pc.html)(GitHub Pages) |
+| [images/](images/) | 시스템 아키텍처(draw.io 정본 `system_architecture.drawio` · `.png`) · 플로우 차트 · 워크셀 배치도 · 운영 화면 캡처 · 시연 GIF(`demo/`) · [아키파이 그림 모음](https://rokey9-d2.github.io/rokey_9_pjt1_D2/images/archify/index.html#arch)(GitHub Pages — `archify/`) |

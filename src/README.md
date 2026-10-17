@@ -10,7 +10,7 @@ ROS 2 Jazzy 패키지 8개. 노드는 `flow_node`(메인 프로그램)와 `hmi_b
 | [`f1_handling`](f1_handling/) | ament_python | 한석형 | 집기 · 다시 집기 · 놓기 · 이동 · 툴 집기/반납 · 팔레트 꽂기 — `handling.py` 함수 6개 | 86 · 시험대 1 |
 | [`f2_sense_flow`](f2_sense_flow/) | ament_python | 민범진 · 황인재 | 무게 · 잔반 털기 · 헹굼 · 물 털기 — `sense.py` 함수 4개 + 메인 프로그램 **`flow_node`**(상태 머신 `flow.py` · 움직이기 전 문지기 `preflight.py` · 용기별 기록 `logger.py` · 가짜 기능 `mock/`) | 217 · 시험대 7 |
 | [`f3_wipe`](f3_wipe/) | ament_python | 박진용 | 세제 · 그릇 닦기 · 컵 닦기(힘 제어) — `wipe.py` 함수 3개 · [패키지 README](f3_wipe/README.md) | 63 · 시험대 8 |
-| [`f4_hmi`](f4_hmi/) | ament_python | 황인재 | 운영 화면 서버 **`hmi_bridge`**(FastAPI · WebSocket) · 웹 `web/`(Next.js) · 기록 DB(SQLite 표 5개) · 가짜 흐름 `fake_state_pub` · DB 조회 `hmi_db` · [패키지 README](f4_hmi/README.md) | 50 · 화면 계산 15 |
+| [`f4_hmi`](f4_hmi/) | ament_python | 황인재 | 운영 화면 서버 **`hmi_bridge`**(FastAPI · WebSocket) · 웹 `web/`(Next.js) · 기록 DB(SQLite 표 5개) · 가짜 흐름 `fake_state_pub` · DB 조회 `hmi_db` · [패키지 README](f4_hmi/README.md) | 51 · 화면 계산 15 |
 | [`prewash_bringup`](prewash_bringup/) | ament_python | 황인재 | launch 2개 — `prewash.launch.py`(실기 · `flow_node`) · `prewash_mock.launch.py`(로봇 없이 · 기능 전부 가짜 + 화면) | 6 · 시험대 1 |
 
 시험 열 — 숫자: `pytest` 가 모으는 자동 시험 수(로봇 없이 돈다) · 시험대: 로봇(실기 · 가상)에 붙여 손으로 돌리는 `test/rig_*.py` 수 · 화면 계산: `f4_hmi/web/test/` 의 Node 자동 시험 수.
@@ -33,9 +33,9 @@ colcon build --symlink-install            # Summary: 8 packages finished
 source install/setup.bash
 python3 -m pytest -q src                  # 616 passed, 9 skipped, 1 xfailed
 
-cd src/f4_hmi/web && node --test test/    # 화면 계산 시험(Node 18 내장) — 15 pass
+cd src/f4_hmi/web && node --test test/*.test.mjs    # 화면 계산 시험(Node 18.18 이상 내장) — 15 pass
 ```
 
-- 건너뛴 9개는 운영 화면 부품(`fastapi` 등)이 있어야 도는 시험이다. 설치는 [실행 방법 문서](../docs/setup.md) 3. 3 을 마친 뒤 `~/venvs/hmi/bin/python3 -m pytest -q src/f4_hmi` 로 돌리면 함께 실행된다(51 passed).
+- 건너뛴 9개는 운영 화면 부품(`fastapi` 등)이 있어야 도는 시험이다. 설치는 [실행 방법 문서](../docs/setup.md)의 3(운영 화면 부품)을 마친 뒤 `~/venvs/hmi/bin/python3 -m pytest -q src/f4_hmi` 로 돌리면 함께 실행된다(51 passed).
 - xfailed 1개는 알려진 빈틈(닦기 재시도가 성공해도 기록의 닦기 시간 · 힘 로그 경로가 1회차 값으로 남는다)을 표시해 두는 시험이다 — `f2_sense_flow/test/test_f2_e60_flow.py`.
 - 시험대(`rig_*.py`)는 로봇을 움직인다. 실행법은 각 파일 머리말과 [실행 방법 문서](../docs/setup.md) 5-2 · 5-3 에 있다.

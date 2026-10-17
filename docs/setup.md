@@ -57,7 +57,7 @@ cd ~/rokey_pjt01_ws/src/f4_hmi/web && npm install && npm run build && cd ~/rokey
 
 ```bash
 ~/venvs/hmi/bin/python3 -m pytest -q src/f4_hmi
-cd src/f4_hmi/web && node --test test/ && cd ~/rokey_pjt01_ws
+cd src/f4_hmi/web && node --test test/*.test.mjs && cd ~/rokey_pjt01_ws
 ```
 
 통과 기준은 `51 passed` 와 `pass 15` · `fail 0`.
