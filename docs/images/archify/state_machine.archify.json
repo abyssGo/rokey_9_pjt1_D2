@@ -3,7 +3,7 @@
   "diagram_type": "lifecycle",
   "meta": {
     "title": "흐름 상태 머신 — FlowState.step",
-    "output": ".archify/lifecycle-state-machine-20261018-110815/state_machine.html",
+    "output": ".archify/lifecycle-state-machine-20261018-113051/state_machine.html",
     "locale": "ko",
     "quality_profile": "showcase",
     "legend": {
@@ -78,73 +78,73 @@
       "id": "PICK",
       "type": "start",
       "label": "PICK 집기",
-      "tag": "f1.pick · 슬롯 2개"
+      "icon": "none"
     },
     {
       "id": "WEIGH",
       "type": "decision",
       "label": "WEIGH 무게",
-      "tag": "f2.leftover_loop"
+      "icon": "none"
     },
     {
       "id": "SEAT",
       "type": "active",
       "label": "SEAT 놓기",
-      "tag": "f1.place · 스펀지 홈"
+      "icon": "none"
     },
     {
       "id": "SOAP",
       "type": "active",
       "label": "SOAP 세제",
-      "tag": "f1.tool → f3.soap"
+      "icon": "none"
     },
     {
       "id": "WIPE",
       "type": "active",
       "label": "WIPE 닦기",
-      "tag": "f3.wipe_* → f1.tool"
+      "icon": "none"
     },
     {
       "id": "RINSE",
       "type": "active",
       "label": "RINSE 헹굼",
-      "tag": "pick → dip → shake"
+      "icon": "none"
     },
     {
       "id": "RACK",
       "type": "active",
       "label": "RACK 적재",
-      "tag": "f1.rack_place → HOME"
+      "icon": "none"
     },
     {
       "id": "IDLE",
       "type": "waiting",
       "label": "IDLE 대기",
-      "tag": "처음 값"
+      "icon": "none"
     },
     {
       "id": "NEXT",
       "type": "decision",
       "label": "남은 용기?",
-      "tag": "run_plan 갈림점"
+      "icon": "none"
     },
     {
       "id": "DONE",
       "type": "success",
       "label": "DONE 완료",
-      "tag": "계획 끝 · 1.0 s 유지"
+      "icon": "none"
     },
     {
       "id": "PAUSED",
       "type": "waiting",
       "label": "PAUSED 멈춤",
-      "tag": "재개 기다림"
+      "icon": "none"
     },
     {
       "id": "ISOLATE",
       "type": "failure",
       "label": "ISOLATE 격리",
-      "tag": "_cleanup_and_isolate"
+      "icon": "none"
     }
   ],
   "transitions": [
@@ -378,6 +378,24 @@
         "/flow/resume — step 이 PAUSED 이거나 cc.is_paused() 일 때만. cc.resume() 하고 stop 깃발도 내린다.",
         "/flow/abort — (step 이 PAUSED 이거나 cc.is_paused()) 이고 last_code 가 ROBOT_ERROR 가 아닐 때만. 케이블 멈춤도 last_code 를 ROBOT_ERROR 로 두어 거부된다. 받으면 cc.halt() — 이동 도중이면 그 이동이 MotionHalted 로 끊기고 격리 정리로 간다.",
         "/flow/state 는 2 Hz 타이머로만 나간다. 용기마다 /flow/event 1건 · records.csv 1줄."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "상자별 덧붙임",
+      "items": [
+        "PICK 집기 — f1.pick · 슬롯 2개",
+        "WEIGH 무게 — f2.leftover_loop",
+        "SEAT 놓기 — f1.place · 스펀지 홈",
+        "SOAP 세제 — f1.tool → f3.soap",
+        "WIPE 닦기 — f3.wipe_* → f1.tool",
+        "RINSE 헹굼 — pick → dip → shake",
+        "RACK 적재 — f1.rack_place → HOME",
+        "IDLE 대기 — 처음 값",
+        "남은 용기? — run_plan 갈림점",
+        "DONE 완료 — 계획 끝 · 1.0 s 유지",
+        "PAUSED 멈춤 — 재개 기다림",
+        "ISOLATE 격리 — _cleanup_and_isolate"
       ]
     },
     {
