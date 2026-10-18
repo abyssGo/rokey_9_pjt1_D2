@@ -3,7 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "PreWash-Cell 시스템 아키텍처",
-    "output": ".archify/architecture-system-20261017-232712/system_architecture.html",
+    "output": ".archify/architecture-system-20261018-110925/system_architecture.html",
     "locale": "ko",
     "quality_profile": "showcase",
     "repository": {
@@ -76,7 +76,7 @@
           "forcelog",
           "db"
         ],
-        "note": "숫자는 YAML 두 파일에서 읽는다. 두 PC 는 각자 같은 YAML 사본을 읽는다. 결과는 records.csv · 힘 로그(GPU PC)와 prewash.db(화면 PC)에 남는다."
+        "note": "숫자는 YAML 두 파일에서 읽는다. 두 PC 는 각자 같은 YAML 사본을 읽는다. 결과는 records.csv · 힘 로그(로봇 PC)와 prewash.db(웹 PC)에 남는다."
       },
       {
         "id": "mock-run",
@@ -130,8 +130,7 @@
       "id": "hmi",
       "type": "backend",
       "label": "hmi_bridge",
-      "sublabel": "FastAPI + rclpy 노드 · :8000",
-      "tag": "f4_hmi 패키지",
+      "sublabel": "f4_hmi · FastAPI + rclpy · :8000",
       "pos": [
         480,
         200
@@ -233,8 +232,7 @@
       "id": "disc",
       "type": "messagebus",
       "label": "Discovery Server",
-      "sublabel": "fastdds :11811 · 모든 ROS 노드 등록",
-      "tag": "ROS_DOMAIN_ID 60",
+      "sublabel": "fastdds :11811 · 도메인 60 · 모든 노드",
       "pos": [
         670,
         330
@@ -248,13 +246,13 @@
           "path": "docs/setup.md",
           "line": 221,
           "end_line": 241,
-          "label": "GPU PC 터미널 A · B(브링업도 등록)"
+          "label": "로봇 PC 터미널 A · B(브링업도 등록)"
         },
         {
           "path": "docs/setup.md",
           "line": 262,
           "end_line": 280,
-          "label": "화면 PC 가 붙는 법 · 확인"
+          "label": "웹 PC 가 붙는 법 · 확인"
         },
         {
           "path": "docs/02_인터페이스_IRD.md",
@@ -267,8 +265,7 @@
       "id": "flow",
       "type": "backend",
       "label": "flow_node",
-      "sublabel": "메인 스레드에서 flow.run()",
-      "tag": "f2_sense_flow 패키지",
+      "sublabel": "f2_sense_flow · 메인 스레드 flow.run()",
       "pos": [
         480,
         490
@@ -662,7 +659,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "화면 PC · ROS 2 Jazzy · GPU PC 와 강의실 무선",
+      "label": "웹 PC · ROS 2 Jazzy · 로봇 PC 와 강의실 무선",
       "wraps": [
         "browser",
         "hmi",
@@ -672,7 +669,7 @@
     },
     {
       "kind": "region",
-      "label": "GPU PC · ROS 2 Jazzy · 로봇 제어",
+      "label": "로봇 PC · ROS 2 Jazzy · 로봇 제어",
       "wraps": [
         "disc",
         "flow",
@@ -911,7 +908,7 @@
       "dot": "cyan",
       "title": "구조 원칙",
       "items": [
-        "우리가 만든 실행 노드 2개: flow_node(GPU PC) · hmi_bridge(화면 PC)",
+        "우리가 만든 실행 노드 2개: flow_node(로봇 PC) · hmi_bridge(웹 PC)",
         "f1 · f2 · f3 는 노드가 아닌 함수 모듈 — flow_node 프로세스 안에서 돈다",
         "로봇 명령은 flow_node 메인 스레드에서만 · 서비스 콜백은 깃발만 세운다",
         "기능 함수는 cc.* 만 부르고 DSR_ROBOT2 를 직접 쓰지 않는다",
@@ -934,8 +931,8 @@
       "dot": "violet",
       "title": "실행 방법",
       "items": [
-        "GPU PC: Discovery Server → m0609_rg2_bringup(두산 · RG2 드라이버) → prewash.launch.py · 브링업과 flow_node 모두 같은 서버에 등록",
-        "화면 PC: ros2 run f4_hmi hmi_bridge → 브라우저로 :8000",
+        "로봇 PC: Discovery Server → m0609_rg2_bringup(두산 · RG2 드라이버) → prewash.launch.py · 브링업과 flow_node 모두 같은 서버에 등록",
+        "웹 PC: ros2 run f4_hmi hmi_bridge → 브라우저로 :8000",
         "두 PC 는 강의실 무선 · ROS_DOMAIN_ID 60 · Discovery Server 로 서로 찾는다",
         "flow_node 시작 때(실기) 툴 'Tool Weight' · TCP 'GripperDA_v1' 이름 확인 → 다르면 움직이지 않고 종료(코드 2) · 케이블 장력은 경고만",
         "로봇 없이: prewash_mock.launch.py — PC 1대 · LOCALHOST 탐색 · use_mock f1,f2,f3 + hmi_bridge"
