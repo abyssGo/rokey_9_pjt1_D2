@@ -5,7 +5,7 @@
     "title": "플로우 차트 — 용기 1개의 처리와 예외",
     "locale": "ko",
     "quality_profile": "showcase",
-    "output": ".archify/workflow-flow-chart-20261018-110815/flow_chart.html",
+    "output": ".archify/workflow-flow-chart-20261018-113051/flow_chart.html",
     "legend": {
       "entries": {
         "frontend": {
@@ -70,8 +70,7 @@
       "icon": "person",
       "width": 160,
       "label": "화면 HMI",
-      "sublabel": "일시 정지 · 재개 · 중단",
-      "tag": "잔반통 50 kg 이면 스스로 /flow/stop"
+      "sublabel": "일시 정지 · 재개 · 중단"
     },
     {
       "id": "fix",
@@ -81,8 +80,7 @@
       "icon": "person",
       "width": 160,
       "label": "고치고 재개",
-      "sublabel": "케이블 · 툴 정리 → 팔 밀기",
-      "tag": "15 N 0.15 s 밀기 또는 재개 버튼"
+      "sublabel": "케이블 · 툴 정리 → 팔 밀기"
     },
     {
       "id": "op_pause",
@@ -92,8 +90,7 @@
       "icon": "waiting",
       "width": 160,
       "label": "운영자 정지",
-      "sublabel": "재개 이어서 · 중단은 격리",
-      "tag": "닦기 동작 · 무게 대기는 끝난 뒤"
+      "sublabel": "재개 이어서 · 중단은 격리"
     },
     {
       "id": "hold",
@@ -103,8 +100,7 @@
       "icon": "stop",
       "width": 160,
       "label": "케이블·툴 멈춤",
-      "sublabel": "밀기 또는 재개 버튼으로 풂",
-      "tag": "집기 실패는 툴을 두고 물러난 뒤 섬"
+      "sublabel": "밀기 또는 재개 버튼으로 풂"
     },
     {
       "id": "grip",
@@ -114,8 +110,7 @@
       "icon": "stop",
       "width": 160,
       "label": "용기 놓침 멈춤",
-      "sublabel": "빈손·미끄러짐 → 재개 버튼",
-      "tag": "② 무게 · ⑤ 헹굼 · 그 단계부터 다시"
+      "sublabel": "빈손·미끄러짐 → 재개 버튼"
     },
     {
       "id": "start",
@@ -125,8 +120,7 @@
       "icon": "start",
       "width": 160,
       "label": "시작 · 계획",
-      "sublabel": "/flow/start → 그릇2 · 컵2",
-      "tag": "화면 시작 버튼 · IDLE 때만"
+      "sublabel": "/flow/start → 그릇2 · 컵2"
     },
     {
       "id": "pick",
@@ -135,8 +129,7 @@
       "type": "backend",
       "width": 160,
       "label": "① 집기",
-      "sublabel": "슬롯 1 → 비면 슬롯 2",
-      "tag": "접근점에서 Z 만 곧게 내려 쥐기"
+      "sublabel": "슬롯 1 → 비면 슬롯 2"
     },
     {
       "id": "weigh",
@@ -145,8 +138,7 @@
       "type": "backend",
       "width": 160,
       "label": "② 무게 재기",
-      "sublabel": "HOME 경유 · 30회 중앙값",
-      "tag": "중앙값 − 빈 용기 기준값 = 잔반"
+      "sublabel": "HOME 경유 · 30회 중앙값"
     },
     {
       "id": "seat",
@@ -155,8 +147,7 @@
       "type": "backend",
       "width": 160,
       "label": "③ 홈 안착",
-      "sublabel": "스펀지 홈에 Z 만 곧게 놓기",
-      "tag": "그릇 홈 B · 컵 홈 C"
+      "sublabel": "스펀지 홈에 Z 만 곧게 놓기"
     },
     {
       "id": "tool",
@@ -165,8 +156,7 @@
       "type": "backend",
       "width": 160,
       "label": "④ 툴 닦기",
-      "sublabel": "툴 → 세제 → 닦기 → 툴 반납",
-      "tag": "그릇 1.5 N 힘 제어 · 컵 주기 운동"
+      "sublabel": "툴 → 세제 → 닦기 → 툴 반납"
     },
     {
       "id": "rinse",
@@ -175,8 +165,7 @@
       "type": "backend",
       "width": 160,
       "label": "⑤ 헹굼",
-      "sublabel": "다시 집기 → 담금 → 털기",
-      "tag": "컵은 옆면으로 다시 잡는다"
+      "sublabel": "다시 집기 → 담금 → 털기"
     },
     {
       "id": "zone",
@@ -185,8 +174,7 @@
       "type": "messagebus",
       "width": 160,
       "label": "다음 구역으로",
-      "sublabel": "두 슬롯 모두 빈손 → 건너뜀",
-      "tag": "그 구역 나머지 용기도 건너뜀"
+      "sublabel": "두 슬롯 모두 빈손 → 건너뜀"
     },
     {
       "id": "shake",
@@ -195,8 +183,7 @@
       "type": "messagebus",
       "width": 160,
       "label": "털고 다시 재기",
-      "sublabel": "> 50 g 이면 털기 · 2회까지",
-      "tag": "잔반통 위 털고 HOME 경유 다시 잼"
+      "sublabel": "> 50 g 이면 털기 · 2회까지"
     },
     {
       "id": "isolate",
@@ -205,8 +192,7 @@
       "type": "messagebus",
       "width": 160,
       "label": "격리 정리",
-      "sublabel": "곧게 위로 → 격리 구역에",
-      "tag": "쥔 툴 반납 · 홈 위 용기 다시 집기"
+      "sublabel": "곧게 위로 → 격리 구역에"
     },
     {
       "id": "retry",
@@ -215,8 +201,7 @@
       "type": "messagebus",
       "width": 160,
       "label": "한 번 더 시도",
-      "sublabel": "닦기 전 툴 없으면 툴 멈춤",
-      "tag": "곧게 위로 뒤 같은 동작 1번 더"
+      "sublabel": "닦기 전 툴 없으면 툴 멈춤"
     },
     {
       "id": "done",
@@ -226,8 +211,7 @@
       "icon": "success",
       "width": 160,
       "label": "완료",
-      "sublabel": "DONE 1 s 유지 → IDLE",
-      "tag": "빈 구역으로 끝나면 HOME 먼저"
+      "sublabel": "DONE 1 s 유지 → IDLE"
     },
     {
       "id": "hub",
@@ -236,8 +220,7 @@
       "type": "database",
       "width": 160,
       "label": "기록 → 다음?",
-      "sublabel": "/flow/event · records.csv",
-      "tag": "DONE · ISOLATED · ERROR · SKIPPED"
+      "sublabel": "/flow/event · records.csv"
     },
     {
       "id": "rack",
@@ -246,8 +229,7 @@
       "type": "backend",
       "width": 160,
       "label": "⑥ 팔레트 적재",
-      "sublabel": "칸에 곧게 내려 놓기 → HOME",
-      "tag": "칸 배정: 그릇 B1·B2 · 컵 C1·C2 차례"
+      "sublabel": "칸에 곧게 내려 놓기 → HOME"
     },
     {
       "id": "signals",
@@ -257,8 +239,7 @@
       "icon": "person",
       "width": 160,
       "label": "오류 2단 신호",
-      "sublabel": "밀기 → 그리퍼 열기 → 재개",
-      "tag": "신호 2 는 버튼만 · 빈손이면 1번"
+      "sublabel": "밀기 → 그리퍼 열기 → 재개"
     },
     {
       "id": "roboterr",
@@ -268,8 +249,7 @@
       "icon": "stop",
       "width": 160,
       "label": "로봇 오류 멈춤",
-      "sublabel": "예외 → 곧게 위로 뒤 멈춤",
-      "tag": "이동 미완이면 후퇴 없이 그 자리"
+      "sublabel": "예외 → 곧게 위로 뒤 멈춤"
     }
   ],
   "edges": [
@@ -531,6 +511,32 @@
         "쥔 것이 있으면 신호 1 → 그리퍼만 연다 → 사람이 받아 치움 → 신호 2(재개 버튼) → 곧게 위로 → HOME(최대 3번)",
         "빈손이면 신호 1 번으로 바로 위로 → HOME · ERROR 로 기록하고 다음 용기 (격리 수는 늘리지 않음)",
         "용기 1개 = /flow/event 1건 + records.csv 1줄 · 화면 상태 /flow/state 는 2 Hz"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "상자별 덧붙임",
+      "items": [
+        "화면 HMI — 잔반통 50 kg 이면 스스로 /flow/stop",
+        "고치고 재개 — 15 N 0.15 s 밀기 또는 재개 버튼",
+        "운영자 정지 — 닦기 동작 · 무게 대기는 끝난 뒤",
+        "케이블·툴 멈춤 — 집기 실패는 툴을 두고 물러난 뒤 섬",
+        "용기 놓침 멈춤 — ② 무게 · ⑤ 헹굼 · 그 단계부터 다시",
+        "시작 · 계획 — 화면 시작 버튼 · IDLE 때만",
+        "① 집기 — 접근점에서 Z 만 곧게 내려 쥐기",
+        "② 무게 재기 — 중앙값 − 빈 용기 기준값 = 잔반",
+        "③ 홈 안착 — 그릇 홈 B · 컵 홈 C",
+        "④ 툴 닦기 — 그릇 1.5 N 힘 제어 · 컵 주기 운동",
+        "⑤ 헹굼 — 컵은 옆면으로 다시 잡는다",
+        "다음 구역으로 — 그 구역 나머지 용기도 건너뜀",
+        "털고 다시 재기 — 잔반통 위 털고 HOME 경유 다시 잼",
+        "격리 정리 — 쥔 툴 반납 · 홈 위 용기 다시 집기",
+        "한 번 더 시도 — 곧게 위로 뒤 같은 동작 1번 더",
+        "완료 — 빈 구역으로 끝나면 HOME 먼저",
+        "기록 → 다음? — DONE · ISOLATED · ERROR · SKIPPED",
+        "⑥ 팔레트 적재 — 칸 배정: 그릇 B1·B2 · 컵 C1·C2 차례",
+        "오류 2단 신호 — 신호 2 는 버튼만 · 빈손이면 1번",
+        "로봇 오류 멈춤 — 이동 미완이면 후퇴 없이 그 자리"
       ]
     },
     {
