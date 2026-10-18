@@ -140,10 +140,10 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 
 ## 🛠️ 시스템 구조
 
-**PC 2대 · 노드 2개**(PC 1대로도 돌아갑니다). 기능(집기 · 무게 · 닦기 …)은 노드가 아니라 **파이썬 함수**이고, 메인 프로그램 `flow_node`가 차례로 부르며 로봇 명령도 여기서만 냅니다. 두 PC는 GPU PC의 Fast DDS Discovery Server로 서로를 찾습니다.
+**PC 2대 · 노드 2개**(PC 1대로도 돌아갑니다). 기능(집기 · 무게 · 닦기 …)은 노드가 아니라 **파이썬 함수**이고, 메인 프로그램 `flow_node`가 차례로 부르며 로봇 명령도 여기서만 냅니다. 두 PC는 로봇 PC의 Fast DDS Discovery Server로 서로를 찾습니다.
 
 <p align="center">
-  <img src="docs/images/system_architecture.png" width="900" alt="시스템 아키텍처 — 화면 PC(hmi_bridge · 브라우저 · prewash.db) · GPU PC(flow_node · 두산 · RG2 드라이버 · Discovery Server) · 로봇 셀 장치"><br>
+  <img src="docs/images/system_architecture.png" width="900" alt="시스템 아키텍처 — 웹 PC(hmi_bridge · 브라우저 · prewash.db) · 로봇 PC(flow_node · 두산 · RG2 드라이버 · Discovery Server) · 로봇 셀 장치"><br>
   <sub>프로그램 카드마다 입력 → 처리 → 출력 · 화살표 색 = 데이터 갈래(범례는 그림 맨 위) · 오른쪽은 통신 표와 DB ERD · 그림을 누르면 원본 크기로 열립니다</sub>
 </p>
 
@@ -157,8 +157,8 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 
 | 위치 | 구성 | 역할 |
 |---|---|---|
-| GPU PC (로봇과 유선) | Discovery Server · 두산 · RG2 드라이버 · `flow_node` | 기능 함수 호출 · 실패 처리 · 정지/재개/중단 · 용기별 기록 · 로봇 명령 |
-| 화면 PC (무선) | `hmi_bridge`(FastAPI · WebSocket) · 웹 화면(Next.js) · SQLite | 운영 화면과 기록 DB(`prewash.db`) |
+| 로봇 PC (로봇과 유선) | Discovery Server · 두산 · RG2 드라이버 · `flow_node` | 기능 함수 호출 · 실패 처리 · 정지/재개/중단 · 용기별 기록 · 로봇 명령 |
+| 웹 PC (무선) | `hmi_bridge`(FastAPI · WebSocket) · 웹 화면(Next.js) · SQLite | 운영 화면과 기록 DB(`prewash.db`) |
 
 | 통신 | 종류 | 방향 | 내용 |
 |---|---|---|---|
@@ -349,7 +349,7 @@ https://github.com/user-attachments/assets/fe7334f8-1464-4c8a-8df6-dcc02b2ce02a
 | 셀 구성품 | 반납 구역 2곳(구역마다 고정 슬롯 2개) · 잔반통 · 스펀지 고정틀 · 헹굼 구역 · 격리 구역 · 식기세척기 팔레트 모형(그릇 2칸 · 컵 2칸) | — | 헹굼은 물 없이 모션만(과정 안전 규정) |
 | 처리 대상 | 다회용 그릇 · 컵 | 각 2 | 시연 · 시험 |
 | 잔반 대용품 | 털면 떨어지는 고형물 94 g(시연) · 98 g(9/23 시험) | 각 1 | 잔반 판정 시험 |
-| PC | Ubuntu 24.04 · ROS 2 Jazzy | 2 | GPU PC(로봇 제어 · 유선) · 화면 PC(운영 화면 · 무선) |
+| PC | Ubuntu 24.04 · ROS 2 Jazzy | 2 | 로봇 PC(유선) · 웹 PC(운영 화면 · 무선) |
 
 <p align="center">
   <img src="docs/images/layout_workcell.png" width="640" alt="워크셀 배치도"><br>

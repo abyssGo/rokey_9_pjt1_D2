@@ -5,7 +5,7 @@
 |---|---|
 | 문서 ID | IRD-PREWASH-001 · **v3.2 제출판** (2026-09-29) — v3.0(9/18) + 실패 정책 §8 갱신(E42 · E52 · E54 · E55 · E60~E62 · E64 케이블 멈춤 바로 재개 · E65 격리 한 자리) · 코드 `TOOL_LOST` 추가(E37) · F1 함수 `regrip_top` 추가(E65) · `/flow/resume` 재개 한 번 |
 | 구조 | **스크립트형(9/18 저녁 결정)**: `flow_node`(메인 프로그램)가 f1·f2·f3의 **파이썬 함수**를 차례로 부른다. 기능 사이에 ROS 서비스는 없다. ROS 통신은 flow ↔ HMI와 그리퍼·두산 드라이버뿐이다. 배경은 [TS-01](troubleshooting/TS-01_두산API_초기화_실행기_교착.md), 결정은 [회의록 DSN-02b](decisions/20260918_결정기록_구조_인터페이스.md) |
-| 확정 상태 | ✅ 확정: PC 2대(GPU PC 로봇 제어 · 화면 PC — Discovery Server · §6) · **노드 2개(`flow_node`·`hmi_bridge`)** · F1↔F3 경계(툴 픽업 F1 / 세제 담금 F3) · 닦기 분리(`wipe_bowl`/`wipe_cup`) · `place`가 안착 놓기 · 복귀는 `move_to('HOME')` · 파지 힘 2단계 · 설정 파일 2개 |
+| 확정 상태 | ✅ 확정: PC 2대(로봇 PC 로봇 제어 · 웹 PC — Discovery Server · §6) · **노드 2개(`flow_node`·`hmi_bridge`)** · F1↔F3 경계(툴 픽업 F1 / 세제 담금 F3) · 닦기 분리(`wipe_bowl`/`wipe_cup`) · `place`가 안착 놓기 · 복귀는 `move_to('HOME')` · 파지 힘 2단계 · 설정 파일 2개 |
 | 상위 | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) §5.4 |
 | 정본 파일 | **함수 약속** [`src/cobot_api/cobot_api/contracts.py`](../src/cobot_api/cobot_api/contracts.py) · **메시지** `src/cobot_msgs/msg/*.msg`. 이 문서와 파일이 다르면 **파일이 정본** |
 | 변경 규칙 | 함수 이름·인자·반환 필드·코드, 메시지 필드의 추가·삭제·타입 변경은 이슈 → 4명 확인 → PR. 혼자 바꾸지 않는다. |
@@ -77,11 +77,11 @@
 | `/flow/weigh` | msg `cobot_msgs/WeighLive` | 🆕 E70(9/29) — 무게를 재는 동안 표본을 하나 읽을 때마다 1건 + 다 재면 중앙값 1건. 값은 빈 용기 기준값을 뺀 g. HMI 는 '지금 하는 일' 카드에 칸으로 보여 준다(WebSocket `type=weigh` · `GET /api/state` 의 `weigh`). 가짜 기능만 돌 때는 내지 않는다 |
 | ~~`/cell/force`~~ | ~~msg `std_msgs/Float32` @10 Hz(닦는 동안만)~~ | ❌ **삭제(황인재 9/21 결정 E21)** — main 어디에서도 발행하지 않았다(HMI 가짜 발행기만). F3 힘제어는 그릇 벽면을 도는 몇 초뿐이고 컵은 없어(E17), 실제 로봇에서는 HMI 그래프가 늘 "닦는 중 아님" 이었다 → **HMI 힘 그래프 삭제**. 힘 데이터는 F3 가 용기마다 CSV(`force_log_path`)로 남긴다 — 발표에 힘제어를 보이려면 그 파일로 그래프를 따로 그린다. (9/20 결정: 힘 그래프를 넣는다 → 철회) |
 | ~~`/cell/gripping`~~ | ~~msg `std_msgs/Bool`~~ | ❌ **삭제(황인재 9/21 결정 E21)** — 발행 코드가 한 번도 안 들어왔고, 결정 E19 로 **컵은 쥐었는지 판정하지 않으므로** "파지 중" 을 정확히 낼 수도 없다 → **HMI 파지 표시 삭제**. 대신 HMI 는 **셀 평면도 위에 로봇이 지금 어디서 무엇을 하는지** 그린다(`cell.yaml` 좌표 + `/flow/state` 의 step — 새 인터페이스 없음). 민범진·박진용은 발행을 만들지 않는다 |
-| HMI 브리지 | REST `POST /api/start` `/api/stop` `/api/resume` `/api/abort`, `GET /api/state`, `GET /api/history` · `/api/usage` · `/api/kpi?period=`(`run`·`today`·`all`) · `/api/db/{table}` · `POST /api/replace/{item}`, WS `/ws/state` | FastAPI가 rclpy로 중계 (화면 PC · `hmi.host` 127.0.0.1 → `http://localhost:8000`) |
+| HMI 브리지 | REST `POST /api/start` `/api/stop` `/api/resume` `/api/abort`, `GET /api/state`, `GET /api/history` · `/api/usage` · `/api/kpi?period=`(`run`·`today`·`all`) · `/api/db/{table}` · `POST /api/replace/{item}`, WS `/ws/state` | FastAPI가 rclpy로 중계 (웹 PC · `hmi.host` 127.0.0.1 → `http://localhost:8000`) |
 
 이 서비스·토픽은 `flow_node`의 **통신 노드**(백그라운드 실행기)가 맡는다. 콜백은 값 저장·깃발 세우기만 하고 로봇 함수를 부르지 않는다(SDD §3.2). 하드웨어 비상정지는 로봇 E-Stop이다. HMI 버튼은 소프트 정지이며 화면에 항상 보이게 둔다.
 
-**두 PC 사이 통신**: `flow_node`(GPU PC · 로봇 제어)와 `hmi_bridge`(화면 PC)는 강의실 무선망에서 위 토픽·서비스를 주고받으며, 무선망이 ROS 2 기본 탐색(멀티캐스트)을 막으므로 GPU PC 에 띄운 Fast DDS **Discovery Server**(`172.18.0.101:11811`)로 서로를 찾는다 — 두 PC 의 ROS 터미널 모두 `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` · `ROS_DISCOVERY_SERVER=172.18.0.101:11811` · `ROS_SUPER_CLIENT=TRUE` · `ROS_DOMAIN_ID=60` · `ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET` · `ROS_STATIC_PEERS` 비움(정확한 명령은 SDD §10). 인터페이스의 이름·타입은 그대로다(구성·실행 순서는 SDD §1.2 · §10).
+**두 PC 사이 통신**: `flow_node`(로봇 PC · 로봇 제어)와 `hmi_bridge`(웹 PC)는 강의실 무선망에서 위 토픽·서비스를 주고받으며, 무선망이 ROS 2 기본 탐색(멀티캐스트)을 막으므로 로봇 PC 에 띄운 Fast DDS **Discovery Server**(`172.18.0.101:11811`)로 서로를 찾는다 — 두 PC 의 ROS 터미널 모두 `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` · `ROS_DISCOVERY_SERVER=172.18.0.101:11811` · `ROS_SUPER_CLIENT=TRUE` · `ROS_DOMAIN_ID=60` · `ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET` · `ROS_STATIC_PEERS` 비움(정확한 명령은 SDD §10). 인터페이스의 이름·타입은 그대로다(구성·실행 순서는 SDD §1.2 · §10).
 
 외부 ROS 인터페이스(우리가 정의하지 않음, `cobot_common`만 사용): 두산 드라이버 `/dsr01/dsr_controller2/*`(DSR_ROBOT2 API 경유), 그리퍼 드라이버 `/onrobot/sendCommand`(srv) + 현재 폭을 읽는 `/onrobot_joint_states`(구독). 드라이버(`OnRobotRGControllerServer`)는 `OnRobotRGInput`을 **발행하지 않는다**(9/19 소스 확인: 나가는 것은 `/joint_states`→`/onrobot_joint_states` remap의 `JointState`뿐, 서비스는 `/onrobot/sendCommand`·`/onrobot/pose`·`/onrobot/restartPower`). 그래서 `cobot_common` 이 `/onrobot_joint_states` 의 `finger_joint` 관절각을 드라이버와 같은 식으로 폭(mm)으로 환산해 읽는다(SDD §3.1 `grip`).
 

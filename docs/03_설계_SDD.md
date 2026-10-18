@@ -3,7 +3,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 ID | SDD-PREWASH-001 · **v3.2 제출판** (2026-09-29) — v3.0(9/18 스크립트형 구조 · [DSN-02b](decisions/20260918_결정기록_구조_인터페이스.md)) + 동결 뒤 반영: §3.1 공중 점검 5 N(E58) · §6 운영 화면 9/25~27(E57) · §7 예외 처리(E42~E55 · E60~E63) · 케이블 멈춤 바로 재개(E64) · 격리 한 곳·위에서 다시 잡기(E65) · 지정 좌표 하강 곧게(E44 · E50) · 시연 PC 2대(GPU PC · 화면 PC · Discovery Server — §1.1~1.2 · §10) · §14 향후 개선 |
+| 문서 ID | SDD-PREWASH-001 · **v3.2 제출판** (2026-09-29) — v3.0(9/18 스크립트형 구조 · [DSN-02b](decisions/20260918_결정기록_구조_인터페이스.md)) + 동결 뒤 반영: §3.1 공중 점검 5 N(E58) · §6 운영 화면 9/25~27(E57) · §7 예외 처리(E42~E55 · E60~E63) · 케이블 멈춤 바로 재개(E64) · 격리 한 곳·위에서 다시 잡기(E65) · 지정 좌표 하강 곧게(E44 · E50) · 시연 PC 2대(로봇 PC · 웹 PC · Discovery Server — §1.1~1.2 · §10) · §14 향후 개선 |
 | 상위 | [01_요구사항_BR-SR.md](01_요구사항_BR-SR.md) · [02_인터페이스_IRD.md](02_인터페이스_IRD.md) |
 | 그림 | draw.io 정본 [`images/system_architecture.drawio`](images/system_architecture.drawio)([브라우저에서 보기](https://viewer.diagrams.net/?lightbox=1&nav=1#Uhttps%3A%2F%2Fraw.githubusercontent.com%2Frokey9-d2%2Frokey_9_pjt1_D2%2Fmain%2Fdocs%2Fimages%2Fsystem_architecture.drawio) · 그림 `.png`) · **[아키파이 그림 모음](https://rokey9-d2.github.io/rokey_9_pjt1_D2/images/archify/index.html#arch)**(GitHub Pages — 시스템 아키텍처 · 플로우 차트 · 상태 머신 · DB ERD · 명세 `images/archify/*.archify.json`) |
 
@@ -13,9 +13,9 @@
 
 ## 1. 시스템 아키텍처 (PC 단위)
 
-![시스템 아키텍처 — GPU PC(로봇 제어) · 화면 PC · 로봇 셀](images/system_architecture.png)
+![시스템 아키텍처 — 로봇 PC · 웹 PC · 로봇 셀](images/system_architecture.png)
 
-*그림 1. 시스템 아키텍처 — **GPU PC(로봇 제어)**: Fast DDS Discovery Server · 두산·그리퍼 드라이버(브링업) · `flow_node`(f1·f2·f3·`cobot_common`) · `records.csv` / **화면 PC**: `hmi_bridge` · 브라우저 · 기록 DB `prewash.db` / 두 PC 는 강의실 무선망에서 ROS 2 DDS(`/flow/*`)로, GPU PC 와 로봇 셀(컨트롤러 · RG2)은 유선으로 잇는다.*
+*그림 1. 시스템 아키텍처 — **로봇 PC**: Fast DDS Discovery Server · 두산·그리퍼 드라이버(브링업) · `flow_node`(f1·f2·f3·`cobot_common`) · `records.csv` / **웹 PC**: `hmi_bridge` · 브라우저 · 기록 DB `prewash.db` / 두 PC 는 강의실 무선망에서 ROS 2 DDS(`/flow/*`)로, 로봇 PC 와 로봇 셀(컨트롤러 · RG2)은 유선으로 잇는다.*
 
 위 그림은 draw.io 판이다(정본 `images/system_architecture.drawio` — [브라우저에서 보기](https://viewer.diagrams.net/?lightbox=1&nav=1#Uhttps%3A%2F%2Fraw.githubusercontent.com%2Frokey9-d2%2Frokey_9_pjt1_D2%2Fmain%2Fdocs%2Fimages%2Fsystem_architecture.drawio) · draw.io 에서 열어 고친다). 대화형 그림: **[아키파이 그림 모음](https://rokey9-d2.github.io/rokey_9_pjt1_D2/images/archify/index.html#arch)** — 시스템 아키텍처 · 플로우 차트 · 상태 머신 · DB ERD 를 탭으로(확대 · 경로 추적 · "시연 실행 경로 / 로봇 명령 경로 / 설정 · 기록 / 로봇 없이 실행" 보기 전환). 원본 명세는 `images/archify/*.archify.json`(고친 뒤 `archify finalize` 로 다시 만든다).
 
@@ -24,54 +24,56 @@
 **구조 한 줄 요약(9/18 저녁 결정, [DSN-02b](decisions/20260918_결정기록_구조_인터페이스.md))**: `flow_node`가 **메인 프로그램**이다. f1·f2·f3는 노드가 아니라 **함수를 제공하는 파이썬 패키지**이고, `flow_node`의 메인 스레드가 그 함수를 차례로 부른다. 두산 API가 전제하는 "혼자 도는 스크립트" 방식 그대로다. ROS 통신은 flow ↔ HMI, 그리고 `cobot_common` ↔ 두산·그리퍼 드라이버뿐이다.
 
 ### 1.1 PC 배치 (시연: 2대 · 개발: 4대 각자)
+> PC 이름: **로봇 PC**(로봇과 유선 · 드라이버 · `flow_node`) · **웹 PC**(`hmi_bridge` · 브라우저 · 기록 DB). 작업 당시 결정 · 시험 기록에는 'GPU PC' · '화면 PC' 로 적혀 있다(10/18 이름만 바꿈).
+
 | PC | 역할 | 실행하는 것 | 네트워크 |
 |---|---|---|---|
-| **GPU PC (로봇 제어)** (필수) | Discovery Server + 두산 드라이버 + 셀 프로그램 | Fast DDS **Discovery Server**(`fastdds discovery` · 시연 끝까지 켜 둔다) · `ws_dsr`: `m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 port:=12345 model:=m0609` → `dsr_controller2`(/dsr01) + 그리퍼 드라이버 · `rokey_pjt01_ws`: **`flow_node` 프로세스 1개**(안에서 f1·f2·f3·`cobot_common` 함수 실행 · `hmi:=true` 는 붙이지 않는다) · `records.csv`. 실기 로봇을 움직이는 PC 는 이것 하나뿐 | 컨트롤러와 유선 고정 192.168.1.60/24 · 강의실 무선망 172.18.0.101(= Discovery Server 주소 :11811) · `ROS_DOMAIN_ID=60` |
-| **화면 PC** (권장) | 시스템 모니터 | `rokey_pjt01_ws`: `cobot_msgs` + `f4_hmi/hmi_bridge`(FastAPI + rclpy, :8000 · `hmi.host` 127.0.0.1 — 화면 PC 브라우저에서 `http://localhost:8000`) · 기록 DB `prewash.db`(SQLite) · 브라우저 · 웹 부품(`~/venvs/hmi` · 화면 빌드)은 화면 PC 에만. 브링업·flow 런치는 하지 않는다 | 강의실 무선망 172.18.0.x · 로봇에는 붙지 않는다 · `ROS_DOMAIN_ID=60` · Discovery Server 에 SUPER_CLIENT 로 붙는다 |
+| **로봇 PC (로봇 제어)** (필수) | Discovery Server + 두산 드라이버 + 셀 프로그램 | Fast DDS **Discovery Server**(`fastdds discovery` · 시연 끝까지 켜 둔다) · `ws_dsr`: `m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 port:=12345 model:=m0609` → `dsr_controller2`(/dsr01) + 그리퍼 드라이버 · `rokey_pjt01_ws`: **`flow_node` 프로세스 1개**(안에서 f1·f2·f3·`cobot_common` 함수 실행 · `hmi:=true` 는 붙이지 않는다) · `records.csv`. 실기 로봇을 움직이는 PC 는 이것 하나뿐 | 컨트롤러와 유선 고정 192.168.1.60/24 · 강의실 무선망 172.18.0.101(= Discovery Server 주소 :11811) · `ROS_DOMAIN_ID=60` |
+| **웹 PC** (권장) | 시스템 모니터 | `rokey_pjt01_ws`: `cobot_msgs` + `f4_hmi/hmi_bridge`(FastAPI + rclpy, :8000 · `hmi.host` 127.0.0.1 — 웹 PC 브라우저에서 `http://localhost:8000`) · 기록 DB `prewash.db`(SQLite) · 브라우저 · 웹 부품(`~/venvs/hmi` · 화면 빌드)은 웹 PC 에만. 브링업·flow 런치는 하지 않는다 | 강의실 무선망 172.18.0.x · 로봇에는 붙지 않는다 · `ROS_DOMAIN_ID=60` · Discovery Server 에 SUPER_CLIENT 로 붙는다 |
 | 개발 PC 4대 | 각자 독립 개발 | 한석형: `sodvir` + `rig_f1.py` / 민범진: `sodvir` + `rig_f2.py`, mock으로 `flow_node` / 박진용: `sodvir` + `rig_f3.py` / 황인재: `fake_state_pub` + `hmi_bridge` + 브라우저(드라이버 불필요) | 각자 Virtual(127.0.0.1) |
 
-로봇 동작을 GPU PC 한 프로세스에 두는 이유: 로봇 명령을 내는 곳이 하나여야 명령이 겹치지 않는다(TS-01 §7). HMI만 분리하면 화면을 따로 보여줄 수 있고 네트워크 구성도가 실제 내용이 된다. 두 PC 통신(V-09)이 안 되면 GPU PC 1대에서 전부 실행한다(`hmi:=true` · 기술적으로 동일). 'GPU PC' 는 로봇 제어 PC 의 이름일 뿐이고 셀 프로그램은 GPU 를 쓰지 않는다.
+로봇 동작을 로봇 PC 한 프로세스에 두는 이유: 로봇 명령을 내는 곳이 하나여야 명령이 겹치지 않는다(TS-01 §7). HMI만 분리하면 화면을 따로 보여줄 수 있고 네트워크 구성도가 실제 내용이 된다. 두 PC 통신(V-09)이 안 되면 로봇 PC 1대에서 전부 실행한다(`hmi:=true` · 기술적으로 동일). '로봇 PC' 는 로봇 제어 PC 의 이름일 뿐이고 셀 프로그램은 GPU 를 쓰지 않는다.
 
 ### 1.2 네트워크 구성도
 ```
-[M0609 컨트롤러 192.168.1.100 :12345] ──유선── [스위치 192.168.1.0/24] ──유선── [GPU PC 유선 192.168.1.60]
-[RG2 Compute Box 192.168.1.1 (설정 웹)]                                          [GPU PC 무선 172.18.0.101 · Discovery Server :11811]
+[M0609 컨트롤러 192.168.1.100 :12345] ──유선── [스위치 192.168.1.0/24] ──유선── [로봇 PC 유선 192.168.1.60]
+[RG2 Compute Box 192.168.1.1 (설정 웹)]                                          [로봇 PC 무선 172.18.0.101 · Discovery Server :11811]
                                                                                           │ 강의실 무선망 172.18.0.x
                                                                                           │ ROS 2 DDS · DOMAIN 60 · /flow/*
-                                                                                 [화면 PC 무선 172.18.0.x] ── 브라우저 http://localhost:8000
+                                                                                 [웹 PC 무선 172.18.0.x] ── 브라우저 http://localhost:8000
 ```
-GPU PC ↔ 컨트롤러는 두산 전용 TCP(DDS 아님 · 유선 고정 192.168.1.60/24). GPU PC ↔ 화면 PC 는 강의실 무선망에서 ROS 2 DDS 로 잇는다. 강의실 무선망은 ROS 2 기본 탐색(멀티캐스트)을 막으므로 **Fast DDS Discovery Server** 를 GPU PC 에 띄우고(172.18.0.101:11811), 두 PC 의 ROS 터미널이 모두 그 서버를 통해 서로를 찾는다 — `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` · `ROS_DISCOVERY_SERVER=172.18.0.101:11811` · `ROS_SUPER_CLIENT=TRUE` · `ROS_DOMAIN_ID=60` · `ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET`(실행 순서는 §10). 손님용 무선망은 PC 끼리 ping 도 되지 않아 두 PC 모두 같은 강의실 무선망에 둔다. 무선이 끊기면 화면(일시 정지 버튼 포함)만 끊기고 로봇은 GPU PC 에서 계속 돈다 → 그때 멈추는 수단은 티치펜던트 E-Stop(§8).
+로봇 PC ↔ 컨트롤러는 두산 전용 TCP(DDS 아님 · 유선 고정 192.168.1.60/24). 로봇 PC ↔ 웹 PC 는 강의실 무선망에서 ROS 2 DDS 로 잇는다. 강의실 무선망은 ROS 2 기본 탐색(멀티캐스트)을 막으므로 **Fast DDS Discovery Server** 를 로봇 PC 에 띄우고(172.18.0.101:11811), 두 PC 의 ROS 터미널이 모두 그 서버를 통해 서로를 찾는다 — `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` · `ROS_DISCOVERY_SERVER=172.18.0.101:11811` · `ROS_SUPER_CLIENT=TRUE` · `ROS_DOMAIN_ID=60` · `ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET`(실행 순서는 §10). 손님용 무선망은 PC 끼리 ping 도 되지 않아 두 PC 모두 같은 강의실 무선망에 둔다. 무선이 끊기면 화면(일시 정지 버튼 포함)만 끊기고 로봇은 로봇 PC 에서 계속 돈다 → 그때 멈추는 수단은 티치펜던트 E-Stop(§8).
 
 ### 1.3 통신 정의 (토픽·서비스·네트워크)
 | 이름 | 타입 | 방향 | 구간 |
 |---|---|---|---|
-| `/flow/state` | `cobot_msgs/msg/FlowState` (2 Hz) | flow_node → hmi_bridge | GPU PC → 화면 PC (DDS · Discovery Server) |
-| `/flow/event` | `cobot_msgs/msg/FlowEvent` | flow_node → hmi_bridge | GPU PC → 화면 PC (DDS · Discovery Server) |
-| `/flow/weigh` | `cobot_msgs/msg/WeighLive` (무게를 재는 동안 표본마다 · E70) | flow_node → hmi_bridge | GPU PC → 화면 PC (DDS · Discovery Server) |
+| `/flow/state` | `cobot_msgs/msg/FlowState` (2 Hz) | flow_node → hmi_bridge | 로봇 PC → 웹 PC (DDS · Discovery Server) |
+| `/flow/event` | `cobot_msgs/msg/FlowEvent` | flow_node → hmi_bridge | 로봇 PC → 웹 PC (DDS · Discovery Server) |
+| `/flow/weigh` | `cobot_msgs/msg/WeighLive` (무게를 재는 동안 표본마다 · E70) | flow_node → hmi_bridge | 로봇 PC → 웹 PC (DDS · Discovery Server) |
 | ~~`/cell/force` · `/cell/gripping`~~ | — | — | ❌ **삭제(황인재 9/21 결정 E21)** — 발행한 적이 없고(HMI 가짜만), 힘제어는 몇 초뿐 · 컵은 파지 판정을 안 한다(E19). HMI 는 힘 그래프·파지 표시 대신 **셀 평면도에 로봇 위치·동작**을 그린다(새 인터페이스 없음) · IRD §6 |
-| `/flow/start` `/flow/stop` `/flow/resume` `/flow/abort`(9/20 신설) | `std_srvs/srv/Trigger` | hmi_bridge → flow_node | 화면 PC → GPU PC (DDS · Discovery Server) |
-| **기능 함수 13개** `f1.pick` `regrip_top`(E65) `place` `move_to` `tool` `rack_place` · `f2.weigh` `leftover_loop` `shake` `dip` · `f3.soap` `wipe_bowl` `wipe_cup` | **파이썬 함수 호출** (반환 타입 `cobot_api.*Result`) | flow_node 메인 스레드 → 기능 패키지 | GPU PC 같은 프로세스 (ROS 통신 아님) |
-| `/dsr01/dsr_controller2/motion/move_joint` · `move_line` … | `dsr_msgs2/srv/MoveJoint` · `MoveLine` | cobot_common(DSR_ROBOT2) → dsr_controller2 | GPU PC 내부 |
-| `/dsr01/dsr_controller2/force/task_compliance_ctrl` · `set_desired_force` · `release_force` · `get_workpiece_weight` | `dsr_msgs2/srv/…` | cobot_common → dsr_controller2 | GPU PC 내부 |
-| `/onrobot/sendCommand` · `/onrobot_joint_states` | 그리퍼 드라이버의 srv (강사 배포 `onrobot_rg_control`). 현재 폭은 `/onrobot_joint_states`(JointState)의 `finger_joint` 관절각을 드라이버와 같은 식으로 폭(mm)으로 환산한다(§3.1 `grip`). `OnRobotRGInput` 토픽은 나오지 않는다(9/19 확인) | cobot_common ↔ 그리퍼 드라이버 (명령 / 현재 폭) | GPU PC 내부 |
-| `/dsr01/joint_states` | `sensor_msgs/msg/JointState` | dsr_controller2 → 모니터링 | GPU PC |
-| dsr_controller2 ↔ 컨트롤러 | 두산 전용 TCP, 포트 12345 | | GPU PC ↔ 컨트롤러 (유선) |
-| 브라우저 ↔ hmi_bridge | HTTP `GET /` · `POST /api/start` · `/api/stop` · `/api/resume` · `/api/abort` · `GET /api/state` · `/api/history` · `/api/usage` · `/api/kpi` · `/api/db/{table}` · `POST /api/replace/{item}` · WS `/ws/state` (JSON · IRD §6) | | 화면 PC 내부(`hmi.host` 127.0.0.1 → `http://localhost:8000`) |
-| hmi_bridge → prewash.db | SQLite 🔄 E57(9/27) 표 5개: `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`(소모품 교체) | | 화면 PC 내부 |
+| `/flow/start` `/flow/stop` `/flow/resume` `/flow/abort`(9/20 신설) | `std_srvs/srv/Trigger` | hmi_bridge → flow_node | 웹 PC → 로봇 PC (DDS · Discovery Server) |
+| **기능 함수 13개** `f1.pick` `regrip_top`(E65) `place` `move_to` `tool` `rack_place` · `f2.weigh` `leftover_loop` `shake` `dip` · `f3.soap` `wipe_bowl` `wipe_cup` | **파이썬 함수 호출** (반환 타입 `cobot_api.*Result`) | flow_node 메인 스레드 → 기능 패키지 | 로봇 PC 같은 프로세스 (ROS 통신 아님) |
+| `/dsr01/dsr_controller2/motion/move_joint` · `move_line` … | `dsr_msgs2/srv/MoveJoint` · `MoveLine` | cobot_common(DSR_ROBOT2) → dsr_controller2 | 로봇 PC 내부 |
+| `/dsr01/dsr_controller2/force/task_compliance_ctrl` · `set_desired_force` · `release_force` · `get_workpiece_weight` | `dsr_msgs2/srv/…` | cobot_common → dsr_controller2 | 로봇 PC 내부 |
+| `/onrobot/sendCommand` · `/onrobot_joint_states` | 그리퍼 드라이버의 srv (강사 배포 `onrobot_rg_control`). 현재 폭은 `/onrobot_joint_states`(JointState)의 `finger_joint` 관절각을 드라이버와 같은 식으로 폭(mm)으로 환산한다(§3.1 `grip`). `OnRobotRGInput` 토픽은 나오지 않는다(9/19 확인) | cobot_common ↔ 그리퍼 드라이버 (명령 / 현재 폭) | 로봇 PC 내부 |
+| `/dsr01/joint_states` | `sensor_msgs/msg/JointState` | dsr_controller2 → 모니터링 | 로봇 PC |
+| dsr_controller2 ↔ 컨트롤러 | 두산 전용 TCP, 포트 12345 | | 로봇 PC ↔ 컨트롤러 (유선) |
+| 브라우저 ↔ hmi_bridge | HTTP `GET /` · `POST /api/start` · `/api/stop` · `/api/resume` · `/api/abort` · `GET /api/state` · `/api/history` · `/api/usage` · `/api/kpi` · `/api/db/{table}` · `POST /api/replace/{item}` · WS `/ws/state` (JSON · IRD §6) | | 웹 PC 내부(`hmi.host` 127.0.0.1 → `http://localhost:8000`) |
+| hmi_bridge → prewash.db | SQLite 🔄 E57(9/27) 표 5개: `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`(소모품 교체) | | 웹 PC 내부 |
 
 `/dsr01/*`·`/onrobot/*`의 정확한 이름·필드는 [두산 ROS 2 매뉴얼(jazzy)](https://doosanrobotics.github.io/doosan-robotics-ros-manual/jazzy/services/motion_services.html)과 설치본으로 확인한다. 우리 코드는 `cobot_common`을 통해서만 부르므로 이름이 달라도 한 곳만 고친다.
 
 ### 1.4 서브시스템 (패키지 8 · 노드 2)
 | 패키지 | 종류 | 담당 | 소유 설정 | PC |
 |---|---|---|---|---|
-| `f2_sense_flow` | **노드 `flow_node`**(메인 프로그램: 통신 노드 + 순서 실행) + 함수 모듈 `sense.py` + `mock/` | 민범진(🔄 9/22 E33: 통합 기간 임시 주인 황인재) | `f2`·`flow` 절 | GPU PC |
-| `f1_handling` | 함수 모듈 `handling.py` (노드 아님) + `test/rig_f1.py` | 한석형 | `config/cell.yaml`과 `params.yaml`의 `f1` 절 | GPU PC |
-| `f3_wipe` | 함수 모듈 `wipe.py` (노드 아님) + `test/rig_f3.py` | 박진용 | `f3` 절 | GPU PC |
-| `cobot_common` | 라이브러리: 두산 API를 감싼 공용 로봇 함수 + **초기화(`init`, §3.2)** + 설정 로더·`config/cell.yaml`·`params.yaml` | **네 사람 분담(9/19)**: 초기화·로더 황인재 · 이동·그리퍼 한석형 · `weigh` 민범진 · 힘 함수와 **패키지 정리·리뷰 박진용** · 좌표 값(`cell.yaml`)은 한석형 | 두 파일 | GPU PC |
-| `cobot_api` | 라이브러리: **기능 함수의 약속**(ID·코드·반환 타입·함수 서명, IRD 정본). 로봇 코드 없음 | **황인재(PM)** | IRD | GPU PC · 화면 PC |
-| `cobot_msgs` | 메시지 3개(`FlowState`·`FlowEvent`·`WeighLive`, IRD 정본) | **황인재(PM)** — `src/cobot_msgs/msg/`를 그대로 복사 | IRD | GPU PC · 화면 PC |
-| `f4_hmi` | **노드 `hmi_bridge`** (+ `fake_state_pub` 개발용) | 황인재 | `hmi` 절 | 화면 PC |
-| `prewash_bringup` | launch: `prewash.launch.py` · `prewash_mock.launch.py` | 황인재(PM) | — | GPU PC |
+| `f2_sense_flow` | **노드 `flow_node`**(메인 프로그램: 통신 노드 + 순서 실행) + 함수 모듈 `sense.py` + `mock/` | 민범진(🔄 9/22 E33: 통합 기간 임시 주인 황인재) | `f2`·`flow` 절 | 로봇 PC |
+| `f1_handling` | 함수 모듈 `handling.py` (노드 아님) + `test/rig_f1.py` | 한석형 | `config/cell.yaml`과 `params.yaml`의 `f1` 절 | 로봇 PC |
+| `f3_wipe` | 함수 모듈 `wipe.py` (노드 아님) + `test/rig_f3.py` | 박진용 | `f3` 절 | 로봇 PC |
+| `cobot_common` | 라이브러리: 두산 API를 감싼 공용 로봇 함수 + **초기화(`init`, §3.2)** + 설정 로더·`config/cell.yaml`·`params.yaml` | **네 사람 분담(9/19)**: 초기화·로더 황인재 · 이동·그리퍼 한석형 · `weigh` 민범진 · 힘 함수와 **패키지 정리·리뷰 박진용** · 좌표 값(`cell.yaml`)은 한석형 | 두 파일 | 로봇 PC |
+| `cobot_api` | 라이브러리: **기능 함수의 약속**(ID·코드·반환 타입·함수 서명, IRD 정본). 로봇 코드 없음 | **황인재(PM)** | IRD | 로봇 PC · 웹 PC |
+| `cobot_msgs` | 메시지 3개(`FlowState`·`FlowEvent`·`WeighLive`, IRD 정본) | **황인재(PM)** — `src/cobot_msgs/msg/`를 그대로 복사 | IRD | 로봇 PC · 웹 PC |
+| `f4_hmi` | **노드 `hmi_bridge`** (+ `fake_state_pub` 개발용) | 황인재 | `hmi` 절 | 웹 PC |
+| `prewash_bringup` | launch: `prewash.launch.py` · `prewash_mock.launch.py` | 황인재(PM) | — | 로봇 PC |
 
 `ros2 node list`에는 우리 노드가 `flow_node`·`flow_node_dsr`·`hmi_bridge` 셋으로 보인다. `flow_node_dsr`는 `cobot_common.init()`이 자동으로 만드는 **두산 API 전용 보조 노드**다(서비스·토픽을 제공하지 않고 드라이버에 요청만 보낸다, §3.2).
 
@@ -88,8 +90,8 @@ GPU PC ↔ 컨트롤러는 두산 전용 TCP(DDS 아님 · 유선 고정 192.168
 | 힘제어는 "힘 유지", 깊이 미사용 | 스펀지가 눌리므로 깊이 기준이 흔들림 |
 | 안착 실패 탐색 = Move Periodic | 비전 없이 홈을 찾는 수단. 진폭·시간 한도로 안전 |
 | Virtual + mock 2단 검증 | Virtual엔 힘·무게가 없어 mock이 흐름·HMI를, 실기가 임계값을 담당 |
-| HMI = FastAPI 웹 + SQLite | 브라우저 어디서나, 화면 PC 로 분리 가능. SQLite는 파이썬 내장이라 설치 없음. MQTT는 ROS 토픽과 중복이라 안 씀 |
-| PC 2대 | 로봇 동작은 GPU PC 한 대, 모니터만 화면 PC 로 분리. 강의실 무선망은 ROS 2 기본 탐색(멀티캐스트)을 막아 Fast DDS Discovery Server 로 서로 찾는다(§1.2). 실패 시 1대로 축소 |
+| HMI = FastAPI 웹 + SQLite | 브라우저 어디서나, 웹 PC 로 분리 가능. SQLite는 파이썬 내장이라 설치 없음. MQTT는 ROS 토픽과 중복이라 안 씀 |
+| PC 2대 | 로봇 동작은 로봇 PC 한 대, 모니터만 웹 PC 로 분리. 강의실 무선망은 ROS 2 기본 탐색(멀티캐스트)을 막아 Fast DDS Discovery Server 로 서로 찾는다(§1.2). 실패 시 1대로 축소 |
 
 ---
 
@@ -109,7 +111,7 @@ GPU PC ↔ 컨트롤러는 두산 전용 TCP(DDS 아님 · 유선 고정 192.168
 | `ISOLATE` | 격리 구역 — 로봇 오른쪽(잔반통 아래) | joint | 🔄 E65(9/29): 그릇·컵 **한 자리**(같은 관절값) — 시작 전 비우고, 격리가 생기면 다음 격리 전에 사람이 치운다(§7) |
 | `HOME` | 안전 자세 | joint | 모든 이동의 시작·끝 |
 
-하드웨어 구성: M0609 + 컨트롤러 + RG2(Compute Box) + GPU PC(로봇 제어)·화면 PC + 스위치(GPU PC ↔ 컨트롤러 유선) + 강의실 무선망(두 PC 사이) + 워크셀 기구(반납 구역 트레이, 잔반통, 스펀지 고정틀, 툴 홀더 2(비눗물 컵 · E18 — 세제 수조 없음), 헹굼 구역, 팔레트 모형, 격리 구역). 용기 그릇 2·컵 2, 잔반 대용품(구슬·쌀).
+하드웨어 구성: M0609 + 컨트롤러 + RG2(Compute Box) + 로봇 PC·웹 PC + 스위치(로봇 PC ↔ 컨트롤러 유선) + 강의실 무선망(두 PC 사이) + 워크셀 기구(반납 구역 트레이, 잔반통, 스펀지 고정틀, 툴 홀더 2(비눗물 컵 · E18 — 세제 수조 없음), 헹굼 구역, 팔레트 모형, 격리 구역). 용기 그릇 2·컵 2, 잔반 대용품(구슬·쌀).
 
 ---
 
@@ -160,7 +162,7 @@ rokey_pjt01_ws/                ← 저장소 루트 (rokey_9_pjt1_D2)
 두산 API(`DSR_ROBOT2`)는 **혼자 위에서 아래로 도는 스크립트**를 전제로 만들어졌다. 로봇 명령마다 자기가 실행기를 돌려 응답을 기다리므로, 서비스 콜백 안에서 부르면 교착한다. 그래서 우리는 로봇을 움직이는 코드를 **전부 메인 스레드에서 차례로** 실행한다.
 
 ```
-flow_node 프로세스 (GPU PC)
+flow_node 프로세스 (로봇 PC)
 ├─ 메인 스레드      : flow 순서 실행 → f1.pick() → f2.leftover_loop() → … (두산 함수는 여기서만)
 ├─ 통신 노드 스레드 : /flow/start·stop·resume·abort 서비스, /flow/state 2 Hz 타이머, 그리퍼 폭 구독
 │                     (콜백은 값 저장·깃발 세우기만. 로봇 함수 호출 금지)
@@ -219,8 +221,8 @@ def main():
 ### 4.1 동작 순서도 (그릇 1개)
 ```mermaid
 sequenceDiagram
-  participant H as hmi_bridge (화면 PC)
-  participant W as flow_node 메인 스레드 (GPU PC)
+  participant H as hmi_bridge (웹 PC)
+  participant W as flow_node 메인 스레드 (로봇 PC)
   participant A as f1_handling 함수
   participant B as f2_sense_flow.sense 함수
   participant C as f3_wipe 함수
@@ -245,8 +247,8 @@ sequenceDiagram
 
 ### 4.2 데이터 사전
 - 기능 함수·메시지: IRD §3~7 (정본 `src/cobot_api/cobot_api/contracts.py` · `src/cobot_msgs/msg/*.msg`)
-- `records.csv`(GPU PC) 열: `ts, kind, zone_id, attempts, rack_slot, weight_before_g, weight_after_g, leftover_rounds, seat_offset_mm, wipe_duration_s, force_log_path, result, code, duration_s`
-- 기록 DB `prewash.db`(화면 PC, SQLite · **워크스페이스 루트 `<ws>/prewash.db`** · 어디서 켜도 같은 파일): 🔄 E57(9/27 · F4-04) 표 5개 — `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`. 소모품 사용량 = 마지막 교체 뒤 events. CLI `ros2 run f4_hmi hmi_db tables|dump|usage|kpi|replace|export`(export = CSV 5개) · GUI `sqlitebrowser prewash.db`
+- `records.csv`(로봇 PC) 열: `ts, kind, zone_id, attempts, rack_slot, weight_before_g, weight_after_g, leftover_rounds, seat_offset_mm, wipe_duration_s, force_log_path, result, code, duration_s`
+- 기록 DB `prewash.db`(웹 PC, SQLite · **워크스페이스 루트 `<ws>/prewash.db`** · 어디서 켜도 같은 파일): 🔄 E57(9/27 · F4-04) 표 5개 — `events`(용기 1줄 · 실행 번호 · 버린 잔반 g) · `runs` · `pauses`(원인 · 풀린 방법) · `commands` · `replacements`. 소모품 사용량 = 마지막 교체 뒤 events. CLI `ros2 run f4_hmi hmi_db tables|dump|usage|kpi|replace|export`(export = CSV 5개) · GUI `sqlitebrowser prewash.db`
 - 힘 로그 `force_YYYYMMDD_HHMMSS.csv`: `t, fx, fy, fz, target`
 
 ### 4.3 설정 파일 스키마 — `config/cell.yaml`(공용) + `config/params.yaml`(기능별 절)
@@ -538,7 +540,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 |---|---|---|---|---|
 | **L1 단위기능 테스트** | 각 기능 함수를 단독 시험 스크립트(`rig_f*.py`)에서 함수별 10회, **녹화** | 각 담당 | 실기(F1·F2·F3) / 없음(F4·flow) | 함수별 TC는 구현 직후 바로 · 마무리 9/22 오전(UT-F2·FLOW)~오후(UT-F1·F3) — **G2 9/22 오후** · UT-F4는 9/22 저녁 |
 | **L2 단위기능 통합** | 시나리오 단계 = 기능 2개 조합, flow_node에서 호출하고 나머지 기능은 `use_mock`으로 가짜(예: INT-12a는 `use_mock=[f3]`) | 조합별 주도 | 실기 | 9/22 저녁~9/23 오전(G3) |
-| **L3 셀 통합** | 그릇 1·컵 1 end-to-end + 실제 HMI(화면 PC) | 민범진 | 실기 | 9/23 오전~오후(G4) |
+| **L3 셀 통합** | 그릇 1·컵 1 end-to-end + 실제 HMI(웹 PC) | 민범진 | 실기 | 9/23 오전~오후(G4) |
 | **L4 전체 통합** | 4개 연속 + 실패 주입 4종 + 측정 + 영상 + 동결 | 민범진 | 실기 | 9/23 오후~저녁 |
 
 ### 9.2 사전 검증 (V) — "우리 하드웨어로 되는가"를 TC 전에 확인
@@ -553,7 +555,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 | V-06 | 팔레트 칸 삽입 각도·걸림 힘 판정 | S | 9/22 B (F1-04 첫 단계) | 걸림 시 힘 상승 식별 | 각도 삽입 → 수직 놓기 |
 | V-07 | 털기 진폭·속도에서 충돌 감지 오작동 | M | 9/20 B (F2-01 첫 단계) | 10회 정지 0 | 진폭 축소, 관절 왕복 |
 | V-08 | 툴 홀더 픽업·반납 10회 — 🆕 **시작 때 툴 프리셋(SPONGE·BRUSH 폭·힘·허용 오차 · 영점 10.58)을 `rig_gripper.py` 로 잰다**(9/21 E23) | H(S) — 9/21 F1-03 이 황인재로 옮겨 감 | 9/22 오후 (F1-03 첫 단계) | ≥9/10 | 홀더 깊이·방향 고정 보강 |
-| V-09 | GPU PC↔화면 PC DDS 통신(두 PC만 `team60`, 나머지는 `solo`) · 🔄 시연 구성은 강의실 무선망 + Discovery Server(§1.2) | H(+M) | 9/21 C (INT-4와 한 세션) | 토픽·서비스 왕복 | Discovery Server → 안 되면 PC 1대 |
+| V-09 | 로봇 PC↔웹 PC DDS 통신(두 PC만 `team60`, 나머지는 `solo`) · 🔄 시연 구성은 강의실 무선망 + Discovery Server(§1.2) | H(+M) | 9/21 C (INT-4와 한 세션) | 토픽·서비스 왕복 | Discovery Server → 안 되면 PC 1대 |
 | V-10 | 컵 안쪽 솔 삽입 깊이·충돌 + **닦기 값 4개 확정**(위아래 진폭 `stroke_mm` · 좌우 비틀기 각 `twist_deg` · 주기 `period_s` · 바닥에서 띄우는 양 `lift_mm`) | P | 9/22 A (F3-03 첫 단계) | 정지 0 · 솔이 컵 밖으로 나오지 않음(`keep_in_mm`) · 컵이 딸려 올라오지 않음 · 10회 정상 | 스트로크·비틀기 각 축소 |
 | V-11 | 잔반 대용품 선정(구슬·쌀, ≥100 g, 털면 떨어짐) | 전원 | 9/18 | 확정 | — |
 | V-12 | 스펀지 홈 치수 vs 용기 외경(여유 1~2 mm) | P | 9/19 B (기구 제작 직후) | 둘 다 들어감 | 재커팅 |
@@ -594,7 +596,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 | INT-12a | F1 + F2 | 고정 슬롯 파지 → 무게 → 털기 | `pick→move_to(WEIGH)→leftover_loop` 5회 | 5회 무개입, 판정 정확 | 민범진 |
 | INT-13 | F1 + F3 | 안착 놓기 → 툴 → 세제 → 닦기 → 반납 | `place(안착)→tool→soap→wipe_bowl/wipe_cup→tool` 5회(그릇·컵) | 5회 무개입, 힘 로그 | 박진용 |
 | INT-12b | F1 + F2 | 재파지 → 헹굼 → 물털기 → 적재 | `pick(BED)→dip→shake→rack_place` 5회 | 5회, 낙하 0 | 한석형 |
-| INT-4 | flow + HMI | 시작·정지·재개 | mock에서 실제 HMI(화면 PC) 연결 | 버튼 동작·상태 표시 | 황인재 |
+| INT-4 | flow + HMI | 시작·정지·재개 | mock에서 실제 HMI(웹 PC) 연결 | 버튼 동작·상태 표시 | 황인재 |
 
 ### 9.5 L3 셀 통합
 | INT | 내용 | 통과 기준 |
@@ -629,7 +631,7 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 |---|---|---|
 | 9/19 오후 | V-02 무게 정밀도 미달 | 잔반 임계 100 g, 대용품 무겁게 |
 | 9/19 저녁 | V-03 힘제어 중 이동 불가 | 닦기를 "순응 + 위치 2~3 mm 누르기"로 |
-| 9/20 오전 | V-09 PC 통신 불가 | GPU PC 1대로 통합 |
+| 9/20 오전 | V-09 PC 통신 불가 | 로봇 PC 1대로 통합 |
 | 9/20 오후 | V-14 고정 슬롯 파지 미달 | 슬롯을 구역당 1개로(용기 1개씩 시연) · 그릇 폭 판정이 흔들리면 핑거 패드를 두껍게·허용 오차 재조정 |
 | 9/22 오전 | UT-F1 적재 미통과 | 각도 삽입 → 수직 놓기 |
 | 9/22 오전 | UT-F3 컵 미통과 | 컵 닦기 도전 과제, 그릇만 MVP |
@@ -638,14 +640,14 @@ return EMPTY_ZONE (attempts = 슬롯 수)
 | 9/23 이후 | 신규 기능 | 금지. 버그·파라미터만 |
 
 ## 10. 배포·실행
-시연은 **PC 2대**다(§1.1~1.2): GPU PC 에서 Discovery Server → 브링업 → flow 순서로 터미널 3개, 화면 PC 에서 `hmi_bridge` 터미널 1개. 두 PC 의 ROS 터미널(서버 터미널 제외)은 **먼저 같은 Discovery Server 설정**을 넣는다 — 브링업 터미널에도 넣는다(flow 만 서버를 쓰면 같은 PC 안에서도 두산 드라이버를 못 찾는다). 이 설정은 그 터미널에만 먹고, 새 터미널은 기본(`LOCALHOST` 격리)으로 돌아간다.
+시연은 **PC 2대**다(§1.1~1.2): 로봇 PC 에서 Discovery Server → 브링업 → flow 순서로 터미널 3개, 웹 PC 에서 `hmi_bridge` 터미널 1개. 두 PC 의 ROS 터미널(서버 터미널 제외)은 **먼저 같은 Discovery Server 설정**을 넣는다 — 브링업 터미널에도 넣는다(flow 만 서버를 쓰면 같은 PC 안에서도 두산 드라이버를 못 찾는다). 이 설정은 그 터미널에만 먹고, 새 터미널은 기본(`LOCALHOST` 격리)으로 돌아간다.
 ```bash
-# ── 공통: 두 PC 의 ROS 터미널마다 먼저 (GPU PC 의 서버 터미널 A 는 제외)
+# ── 공통: 두 PC 의 ROS 터미널마다 먼저 (로봇 PC 의 서버 터미널 A 는 제외)
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=172.18.0.101:11811 ROS_SUPER_CLIENT=TRUE \
        ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
 ros2 daemon stop && ros2 daemon start               # 옛 설정으로 떠 있던 ros2 데몬을 새로
 
-# ── GPU PC (로봇 제어) — 터미널 3개 · 순서 A → B → C
+# ── 로봇 PC (로봇 제어) — 터미널 3개 · 순서 A → B → C
 # A. Discovery Server — 시연 끝까지 켜 둔다 (fastdds 명령은 ROS 2 Jazzy 설치에 들어 있다)
 source /opt/ros/jazzy/setup.bash && fastdds discovery --server-id 0 --udp-address 172.18.0.101 --udp-port 11811
 # B. 실기 브링업 (공통 설정 뒤)
@@ -653,17 +655,17 @@ sod && sodreal                                      # = ros2 launch m0609_rg2_br
 # C. flow (공통 설정 뒤) — flow_node 프로세스 1개 · 기본 배속 1.0(E67) · hmi:=true 는 붙이지 않는다
 soc && ros2 launch prewash_bringup prewash.launch.py   # 볼 것: 문지기 통과 → 케이블 확인 ✅ → IDLE
 
-# ── 화면 PC — 터미널 1개 (공통 설정 뒤)
-soc && ros2 run f4_hmi hmi_bridge                   # 화면 PC 브라우저 http://localhost:8000 (hmi.host 127.0.0.1) · 기록 DB prewash.db 는 화면 PC 에 쌓인다
+# ── 웹 PC — 터미널 1개 (공통 설정 뒤)
+soc && ros2 run f4_hmi hmi_bridge                   # 웹 PC 브라우저 http://localhost:8000 (hmi.host 127.0.0.1) · 기록 DB prewash.db 는 웹 PC 에 쌓인다
 
 # ── 로봇·드라이버 없이 (한 PC) — 기능 전부 mock
 soc && ros2 launch prewash_bringup prewash_mock.launch.py
 # ── 내 기능만 단독 시험 (브링업 뒤)
 soc && python3 src/f3_wipe/test/rig_f3.py bowl -n 3     # soap | bowl | cup
 ```
-- **연결 확인**(화면 PC 의 설정한 터미널): `ros2 topic list` 에 `/flow/state` · `/flow/event` · `/dsr01/joint_states`, `ros2 node list` 에 `/flow_node` · `/dsr01/flow_node_dsr` · `/dsr01/dsr_controller2` 가 보이고 `ros2 topic hz /flow/state` ≈ 2 Hz. GPU PC 쪽에 `/hmi_bridge` 는 없어야 한다. 브라우저의 연결 점이 초록이고 시작·정지·재개가 1 s 안에 응답하면 통과. 로봇 PC 의 워크스페이스는 `colcon build --symlink-install` 로 빌드한다(복사 빌드면 코드를 받은 뒤에도 옛 코드로 돈다).
-- **끝낼 때**: 화면 PC `hmi_bridge` Ctrl+C → GPU PC C(flow · 로봇이 멈춘 뒤) → B(브링업) → A(서버). 급하면 E-Stop.
-- **흔한 실패**: 화면이 '연결 끊김'인데 토픽은 보인다 → `hmi_bridge` 를 설정 없는 새 터미널에서 켰다(설정한 터미널에서 다시) · `ros2 topic list` 가 비었거나 설정을 바꿔도 그대로 → 옛 ros2 데몬(`ros2 daemon stop && ros2 daemon start` · `ROS_SUPER_CLIENT=TRUE` 확인) · PC 끼리 ping 이 안 된다 → 손님용 무선망(두 PC 모두 강의실 무선망으로) · flow 가 '두산 드라이버가 안 보인다' → B·C 중 설정 빠짐 또는 서버(A) 꺼짐 → 서버 → 브링업 → flow 순서로 다시 · 8000 포트 사용 중 → 먼저 켠 `hmi_bridge` 가 남아 있다 · GPU PC 에 `hmi:=true` → 웹 서버·DB 가 두 곳이 된다.
+- **연결 확인**(웹 PC 의 설정한 터미널): `ros2 topic list` 에 `/flow/state` · `/flow/event` · `/dsr01/joint_states`, `ros2 node list` 에 `/flow_node` · `/dsr01/flow_node_dsr` · `/dsr01/dsr_controller2` 가 보이고 `ros2 topic hz /flow/state` ≈ 2 Hz. 로봇 PC 쪽에 `/hmi_bridge` 는 없어야 한다. 브라우저의 연결 점이 초록이고 시작·정지·재개가 1 s 안에 응답하면 통과. 로봇 PC 의 워크스페이스는 `colcon build --symlink-install` 로 빌드한다(복사 빌드면 코드를 받은 뒤에도 옛 코드로 돈다).
+- **끝낼 때**: 웹 PC `hmi_bridge` Ctrl+C → 로봇 PC C(flow · 로봇이 멈춘 뒤) → B(브링업) → A(서버). 급하면 E-Stop.
+- **흔한 실패**: 화면이 '연결 끊김'인데 토픽은 보인다 → `hmi_bridge` 를 설정 없는 새 터미널에서 켰다(설정한 터미널에서 다시) · `ros2 topic list` 가 비었거나 설정을 바꿔도 그대로 → 옛 ros2 데몬(`ros2 daemon stop && ros2 daemon start` · `ROS_SUPER_CLIENT=TRUE` 확인) · PC 끼리 ping 이 안 된다 → 손님용 무선망(두 PC 모두 강의실 무선망으로) · flow 가 '두산 드라이버가 안 보인다' → B·C 중 설정 빠짐 또는 서버(A) 꺼짐 → 서버 → 브링업 → flow 순서로 다시 · 8000 포트 사용 중 → 먼저 켠 `hmi_bridge` 가 남아 있다 · 로봇 PC 에 `hmi:=true` → 웹 서버·DB 가 두 곳이 된다.
 
 런치 인자: `use_mock:="f1,f3"`(빈 값이면 전부 실제), `vel_scale:=1.0`(실기·mock 런치 기본 1.0 · E67 — 9/29 1.0 무정지 확인), `hmi:=true`(PC 1대로 돌릴 때 hmi_bridge도 같이 — 두 PC 시연에서는 붙이지 않는다). 인자는 환경변수로 프로그램에 간다(§4.3 실행 인자). 처음 켜는 셀·재티칭 뒤 첫 실행은 `vel_scale:=0.3` 으로 낮춰 확인한다. 🚨 `flow_node`에는 런치에서도 손으로도 **`name=`·`namespace=`·`--ros-args -r __node:=…`를 주지 않는다** — 프로세스 안의 두 노드(`flow_node` · `flow_node_dsr`)에 모두 걸려 이름이 같아진다. 없는 패키지(f2_sense_flow·f4_hmi)는 런치가 경고만 남기고 건너뛴다. `flow_node`를 끌 때는 **멈춰 있을 때** Ctrl+C 한 번. 움직이는 중의 Ctrl+C는 정지 명령을 최선으로 시도할 뿐이다(V-24) — 급하면 Ctrl+C가 아니라 **E-Stop**. 움직이는 중에 죽였으면 브링업부터 다시.
 

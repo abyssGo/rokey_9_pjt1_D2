@@ -216,42 +216,42 @@ ros2 launch prewash_bringup prewash.launch.py hmi:=true
 </details>
 
 <details>
-<summary><b>5-4. 실제 로봇 — PC 2대 (GPU PC + 화면 PC)</b></summary>
+<summary><b>5-4. 실제 로봇 — PC 2대 (로봇 PC + 웹 PC)</b></summary>
 
-PC 두 대가 같은 망에 있을 때 쓴다. GPU PC 는 1 · 2 와 5-1, 화면 PC 는 1 · 2 · 3 을 마쳐 둔다. 5-3 의 주의와 전제는 그대로 적용하고, 5-3 의 ① · ④ 는 실행하지 않는다. 무선망이 ROS 2 기본 탐색(멀티캐스트)을 막으므로 GPU PC 에 Fast DDS Discovery Server 를 띄우고 두 PC 가 거기에 붙는다.
+PC 두 대가 같은 망에 있을 때 쓴다. 로봇 PC 는 1 · 2 와 5-1, 웹 PC 는 1 · 2 · 3 을 마쳐 둔다. 5-3 의 주의와 전제는 그대로 적용하고, 5-3 의 ① · ④ 는 실행하지 않는다. 무선망이 ROS 2 기본 탐색(멀티캐스트)을 막으므로 로봇 PC 에 Fast DDS Discovery Server 를 띄우고 두 PC 가 거기에 붙는다. 작업 당시 결정 · 시험 기록에는 로봇 PC 를 'GPU PC', 웹 PC 를 '화면 PC'라고 적었다.
 
-**① GPU PC 의 주소 확인** — `hostname -I` 로 무선 쪽 주소를 적어 둔다(예: `172.18.0.101`). 아래 명령의 `GPU_IP=172.18.0.101` 을 **이 값으로 바꿔서** 실행한다. `ping -c 3 192.168.1.100`(GPU PC → 로봇)과 `ping -c 3 <GPU_IP>`(화면 PC → GPU PC)가 되어야 한다.
+**① 로봇 PC 의 주소 확인** — `hostname -I` 로 무선 쪽 주소를 적어 둔다(예: `172.18.0.101`). 아래 명령의 `ROBOT_PC_IP=172.18.0.101` 을 **이 값으로 바꿔서** 실행한다. `ping -c 3 192.168.1.100`(로봇 PC → 로봇)과 `ping -c 3 <ROBOT_PC_IP>`(웹 PC → 로봇 PC)가 되어야 한다.
 
-**② GPU PC 터미널 A — Discovery Server** (끝까지 켜 둔다)
+**② 로봇 PC 터미널 A — Discovery Server** (끝까지 켜 둔다)
 
 ```bash
-export GPU_IP=172.18.0.101
+export ROBOT_PC_IP=172.18.0.101
 source /opt/ros/jazzy/setup.bash
-fastdds discovery --server-id 0 --udp-address $GPU_IP --udp-port 11811
+fastdds discovery --server-id 0 --udp-address $ROBOT_PC_IP --udp-port 11811
 ```
 
-**③ GPU PC 터미널 B — 브링업**
+**③ 로봇 PC 터미널 B — 브링업**
 
 ```bash
-export GPU_IP=172.18.0.101
+export ROBOT_PC_IP=172.18.0.101
 source ~/ws_cobot_pjt/ws_dsr/install/setup.bash
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$GPU_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$ROBOT_PC_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
 ros2 daemon stop && ros2 daemon start
 ros2 launch m0609_rg2_bringup bringup.launch.py mode:=real host:=192.168.1.100 port:=12345 model:=m0609
 ```
 
-**④ GPU PC 터미널 C — 준비 · 툴/TCP 확인 · 빈 용기 기준값**
+**④ 로봇 PC 터미널 C — 준비 · 툴/TCP 확인 · 빈 용기 기준값**
 
 ```bash
-export GPU_IP=172.18.0.101
+export ROBOT_PC_IP=172.18.0.101
 cd ~/rokey_pjt01_ws
 source ~/ws_cobot_pjt/ws_dsr/install/setup.bash && source install/setup.bash
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$GPU_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$ROBOT_PC_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
 ```
 
 이 터미널에서 5-3 의 ②(툴 · TCP 확인)와 ③(빈 용기 기준값)을 그대로 한다.
 
-**⑤ GPU PC 터미널 C — 메인 프로그램** (④와 같은 터미널 · `hmi:=true` 는 붙이지 않는다 — 붙이면 화면 서버와 기록 DB 가 두 곳에 생긴다)
+**⑤ 로봇 PC 터미널 C — 메인 프로그램** (④와 같은 터미널 · `hmi:=true` 는 붙이지 않는다 — 붙이면 화면 서버와 기록 DB 가 두 곳에 생긴다)
 
 ```bash
 ros2 launch prewash_bringup prewash.launch.py
@@ -259,18 +259,18 @@ ros2 launch prewash_bringup prewash.launch.py
 
 통과 기준: 시작부에 `[prewash] use_mock=없음(전부 실제) · vel_scale=1 · hmi=False` → 문지기 통과 → 케이블 확인 → `IDLE`.
 
-**⑥ 화면 PC 터미널 — 화면 서버** (GPU PC 의 A · B · C 가 모두 켜진 뒤 · 두산 드라이버는 필요 없다)
+**⑥ 웹 PC 터미널 — 화면 서버** (로봇 PC 의 A · B · C 가 모두 켜진 뒤 · 두산 드라이버는 필요 없다)
 
 ```bash
-export GPU_IP=172.18.0.101
+export ROBOT_PC_IP=172.18.0.101
 cd ~/rokey_pjt01_ws
 source /opt/ros/jazzy/setup.bash && source install/setup.bash
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$GPU_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_DISCOVERY_SERVER=$ROBOT_PC_IP:11811 ROS_SUPER_CLIENT=TRUE ROS_DOMAIN_ID=60 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET && unset ROS_STATIC_PEERS
 ros2 daemon stop && ros2 daemon start
 ros2 run f4_hmi hmi_bridge
 ```
 
-**⑦ 연결 확인** — 화면 PC 에서 새 터미널을 열고 ⑥의 처음 네 줄(`export GPU_IP` · `cd` · `source` · `export`)을 먼저 실행한 뒤:
+**⑦ 연결 확인** — 웹 PC 에서 새 터미널을 열고 ⑥의 처음 네 줄(`export ROBOT_PC_IP` · `cd` · `source` · `export`)을 먼저 실행한 뒤:
 
 ```bash
 ros2 node list | grep -E 'flow_node|dsr_controller2'
@@ -279,7 +279,7 @@ ros2 topic hz /flow/state
 
 통과 기준: `/flow_node` · `/dsr01/flow_node_dsr` · `/dsr01/dsr_controller2` 가 보이고 `/flow/state` 가 약 2 Hz, 브라우저 <http://localhost:8000> 의 연결 점이 초록이다.
 
-**⑧ 끝낼 때** — 화면 서버 → GPU PC 의 C(로봇이 멈춘 뒤) → B → A 순서로 Ctrl+C.
+**⑧ 끝낼 때** — 화면 서버 → 로봇 PC 의 C(로봇이 멈춘 뒤) → B → A 순서로 Ctrl+C.
 
 </details>
 
