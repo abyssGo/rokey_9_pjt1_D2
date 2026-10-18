@@ -67,7 +67,7 @@ npm run illust     # 그림을 고쳤을 때만 — illust/*.py → public/illus
 ```bash
 python3 -m pytest -q src/f4_hmi                 # 웹 부품(fastapi 등)이 없으면 8건은 건너뛴다 — ~/venvs/hmi 의 파이썬으로 돌리면 모두 돈다
 ~/venvs/hmi/bin/python -m pytest -q src/f4_hmi  # 전부 실행
-cd src/f4_hmi/web && node --test test/          # 화면 계산(derive.js — 버튼 규칙 · 멈춤 원인 · 알람 · 이력 원인 · 팔레트 칸 · 무게 측정 칸) · Node 18 내장, 설치 없음
+cd src/f4_hmi/web && node --test test/*.test.mjs  # 화면 계산(derive.js — 버튼 규칙 · 멈춤 원인 · 알람 · 이력 원인 · 팔레트 칸 · 무게 측정 칸) · Node 18.18 이상 내장, 설치 없음
 ```
 
 ## 로봇 없이 화면 확인하는 법
@@ -88,5 +88,5 @@ ros2 bag play <bag 폴더> --topics /flow/state /flow/event --loop --rate 3   # 
 - 화면 "누적" 칸(이번 실행 / 오늘 / 전체): 처리량(그릇·컵·**팔레트 장수**) · 처리율 · 용기당 평균 · 시간당 · 멈춤(횟수·시간·잦은 원인) · 잔반 비율·버린 양. `GET /api/kpi?period=run|today|all`. 팔레트 = 칸(`flow.rack_order` 합 = 4)을 다 채우고 끝난 실행 수(`kpi.pallets`).
 - 터미널에서 보기: `ros2 run f4_hmi hmi_db tables` · `hmi_db dump events --limit 20` · `hmi_db dump pauses` · `hmi_db usage` · `hmi_db kpi --period today` · `hmi_db replace waste_bin`. (`--db 파일` 로 다른 파일)
 - 웹 주소: `/api/usage` · `/api/kpi` · `/api/db/{표}?limit=` · `/api/history?limit=`. 브리지를 기록 없이 띄운 시험 서버는 503.
-- 시험: `pytest src/f4_hmi/test/test_f4_db.py`(DB·기록자 · ROS 없이) · API 시험은 웹 부품 상자로 `~/venvs/hmi/bin/python -m pytest src/f4_hmi` · `node --test web/test/`.
+- 시험: `pytest src/f4_hmi/test/test_f4_db.py`(DB·기록자 · ROS 없이) · API 시험은 웹 부품 상자로 `~/venvs/hmi/bin/python -m pytest src/f4_hmi` · `node --test web/test/*.test.mjs`.
 

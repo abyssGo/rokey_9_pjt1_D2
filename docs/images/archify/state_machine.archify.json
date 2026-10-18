@@ -1,0 +1,610 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "흐름 상태 머신 — FlowState.step",
+    "output": ".archify/lifecycle-state-machine-20261017-232712/state_machine.html",
+    "locale": "ko",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/rokey9-d2/rokey_9_pjt1_D2",
+      "provider": "github",
+      "revision": "0e35e3ad1202b7f7b5d16e34ae941de7e229c50a"
+    },
+    "legend": {
+      "entries": {
+        "start": {
+          "label": "용기 처리 시작점 (처음 상태는 IDLE)"
+        },
+        "decision": {
+          "label": "판단 (조건으로 갈림)"
+        },
+        "failure": {
+          "label": "실패 처리(격리)"
+        }
+      }
+    },
+    "views": [
+      {
+        "id": "view-normal",
+        "label": "정상 흐름",
+        "focus": [
+          "IDLE",
+          "PICK",
+          "WEIGH",
+          "SEAT",
+          "SOAP",
+          "WIPE",
+          "RINSE",
+          "RACK",
+          "NEXT",
+          "DONE"
+        ],
+        "note": "용기 1개는 PICK 부터 RACK 까지 7단계를 돈다. 끝나면 '남은 용기?' 에서 다음 용기 PICK 이나 DONE(1.0 s 뒤 IDLE)으로 간다."
+      },
+      {
+        "id": "view-pause",
+        "label": "멈춤과 재개",
+        "focus": [
+          "PAUSED",
+          "PICK",
+          "SOAP",
+          "ISOLATE",
+          "NEXT"
+        ],
+        "note": "7단계 어디서든 PAUSED 로 갈 수 있다. 재개하면 기본은 멈춘 단계로, 툴 문제는 툴 집기(SOAP)로, 로봇 오류는 '남은 용기?' 로 간다."
+      },
+      {
+        "id": "view-isolate",
+        "label": "격리",
+        "focus": [
+          "ISOLATE",
+          "WEIGH",
+          "SOAP",
+          "WIPE",
+          "PAUSED",
+          "NEXT"
+        ],
+        "note": "잔반 남음 · 재시도 소진 · /flow/abort 는 같은 정리 길을 지나 ISOLATED 로 기록하고 '남은 용기?' 로 간다."
+      }
+    ]
+  },
+  "mainPath": [
+    "PICK",
+    "WEIGH",
+    "SEAT",
+    "SOAP",
+    "WIPE",
+    "RINSE",
+    "RACK"
+  ],
+  "states": [
+    {
+      "id": "PICK",
+      "type": "start",
+      "label": "PICK 집기",
+      "tag": "f1.pick · 슬롯 2개",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 727,
+          "end_line": 728,
+          "label": "단계표 PICK"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 104,
+          "end_line": 139,
+          "label": "pick · EMPTY_ZONE"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 638,
+          "end_line": 669,
+          "label": "용기 사이 정지 · 다음 구역"
+        }
+      ]
+    },
+    {
+      "id": "WEIGH",
+      "type": "decision",
+      "label": "WEIGH 무게",
+      "tag": "f2.leftover_loop",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 729,
+          "end_line": 731,
+          "label": "단계표 WEIGH"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 416,
+          "end_line": 467,
+          "label": "leftover_loop · 잔반 ≤ 50 g"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 850,
+          "end_line": 907,
+          "label": "케이블 이상 멈춤"
+        }
+      ]
+    },
+    {
+      "id": "SEAT",
+      "type": "active",
+      "label": "SEAT 놓기",
+      "tag": "f1.place · 스펀지 홈",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 732,
+          "label": "단계표 SEAT"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 245,
+          "end_line": 264,
+          "label": "place · 일반 놓기"
+        }
+      ]
+    },
+    {
+      "id": "SOAP",
+      "type": "active",
+      "label": "SOAP 세제",
+      "tag": "f1.tool → f3.soap",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 733,
+          "end_line": 734,
+          "label": "단계표 SOAP"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 316,
+          "end_line": 362,
+          "label": "툴 집기 · TOOL_FAIL"
+        },
+        {
+          "path": "src/f3_wipe/f3_wipe/wipe.py",
+          "line": 243,
+          "end_line": 244,
+          "label": "soap TIMEOUT"
+        }
+      ]
+    },
+    {
+      "id": "WIPE",
+      "type": "active",
+      "label": "WIPE 닦기",
+      "tag": "f3.wipe_* → f1.tool",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 735,
+          "end_line": 736,
+          "label": "단계표 WIPE"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 777,
+          "end_line": 825,
+          "label": "재시도 · 정책 다시 읽기"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 274,
+          "end_line": 293,
+          "label": "flow.policy"
+        }
+      ]
+    },
+    {
+      "id": "RINSE",
+      "type": "active",
+      "label": "RINSE 헹굼",
+      "tag": "pick → dip → shake",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 737,
+          "end_line": 739,
+          "label": "단계표 RINSE"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 211,
+          "end_line": 229,
+          "label": "홈 재파지 · GRIP_FAIL"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 637,
+          "end_line": 693,
+          "label": "dip · 미끄러짐 GRIP_FAIL"
+        }
+      ]
+    },
+    {
+      "id": "RACK",
+      "type": "active",
+      "label": "RACK 적재",
+      "tag": "f1.rack_place → HOME",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 740,
+          "end_line": 741,
+          "label": "단계표 RACK"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 826,
+          "end_line": 848,
+          "label": "DONE 기록 · 칸 배정"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 499,
+          "end_line": 564,
+          "label": "rack_place"
+        }
+      ]
+    },
+    {
+      "id": "IDLE",
+      "type": "waiting",
+      "label": "IDLE 대기",
+      "tag": "처음 값",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 208,
+          "end_line": 209,
+          "label": "생성자 step = IDLE"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 613,
+          "end_line": 633,
+          "label": "run · run_plan 시작"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 94,
+          "end_line": 101,
+          "label": "/flow/start 는 IDLE 일 때만"
+        }
+      ]
+    },
+    {
+      "id": "NEXT",
+      "type": "decision",
+      "label": "남은 용기?",
+      "tag": "run_plan 갈림점",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 638,
+          "end_line": 669,
+          "label": "run_plan 용기 반복"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 670,
+          "end_line": 697,
+          "label": "반복 끝 · 마지막 구역 HOME"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 951,
+          "end_line": 997,
+          "label": "로봇 오류 → ERROR 기록"
+        }
+      ]
+    },
+    {
+      "id": "DONE",
+      "type": "success",
+      "label": "DONE 완료",
+      "tag": "계획 끝 · 1.0 s 유지",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 697,
+          "end_line": 703,
+          "label": "DONE → IDLE"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 306,
+          "end_line": 307,
+          "label": "done_hold_s"
+        }
+      ]
+    },
+    {
+      "id": "PAUSED",
+      "type": "waiting",
+      "label": "PAUSED 멈춤",
+      "tag": "재개 기다림",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 451,
+          "end_line": 537,
+          "label": "to_paused · wait_resume"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 302,
+          "end_line": 304,
+          "label": "is_paused 면 PAUSED 로 알림"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 103,
+          "end_line": 155,
+          "label": "stop · resume · abort"
+        }
+      ]
+    },
+    {
+      "id": "ISOLATE",
+      "type": "failure",
+      "label": "ISOLATE 격리",
+      "tag": "_cleanup_and_isolate",
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 539,
+          "end_line": 610,
+          "label": "abort_container · 정리 길"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 909,
+          "end_line": 949,
+          "label": "handle_failure · isolate"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-pick-weigh",
+      "from": "PICK",
+      "to": "WEIGH",
+      "label": "성공"
+    },
+    {
+      "id": "t-weigh-seat",
+      "from": "WEIGH",
+      "to": "SEAT",
+      "label": "잔반 ≤50g"
+    },
+    {
+      "id": "t-seat-soap",
+      "from": "SEAT",
+      "to": "SOAP",
+      "label": "성공"
+    },
+    {
+      "id": "t-soap-wipe",
+      "from": "SOAP",
+      "to": "WIPE",
+      "label": "성공"
+    },
+    {
+      "id": "t-wipe-rinse",
+      "from": "WIPE",
+      "to": "RINSE",
+      "label": "성공"
+    },
+    {
+      "id": "t-rinse-rack",
+      "from": "RINSE",
+      "to": "RACK",
+      "label": "성공"
+    },
+    {
+      "id": "t-idle-pick",
+      "from": "IDLE",
+      "to": "PICK",
+      "label": "/flow/start"
+    },
+    {
+      "id": "t-rack-next",
+      "from": "RACK",
+      "to": "NEXT",
+      "label": "DONE 기록",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t-next-pick",
+      "from": "NEXT",
+      "to": "PICK",
+      "label": "있음",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t-next-done",
+      "from": "NEXT",
+      "to": "DONE",
+      "label": "없음"
+    },
+    {
+      "id": "t-pick-next",
+      "from": "PICK",
+      "to": "NEXT",
+      "label": "구역 빔 · SKIPPED"
+    },
+    {
+      "id": "t-done-idle",
+      "from": "DONE",
+      "to": "IDLE",
+      "label": "1.0 s 뒤"
+    },
+    {
+      "id": "t-pick-paused",
+      "from": "PICK",
+      "to": "PAUSED",
+      "label": "멈춤 (재개 → 그 단계)"
+    },
+    {
+      "id": "t-weigh-paused",
+      "from": "WEIGH",
+      "to": "PAUSED",
+      "label": "멈춤 (재개 → 그 단계)"
+    },
+    {
+      "id": "t-seat-paused",
+      "from": "SEAT",
+      "to": "PAUSED",
+      "label": "멈춤 (재개 → 그 단계)"
+    },
+    {
+      "id": "t-soap-paused",
+      "from": "SOAP",
+      "to": "PAUSED",
+      "label": "멈춤 (재개 → 그 단계)"
+    },
+    {
+      "id": "t-wipe-paused",
+      "from": "WIPE",
+      "to": "PAUSED",
+      "label": "멈춤 (재개 → 그 단계)"
+    },
+    {
+      "id": "t-rinse-paused",
+      "from": "RINSE",
+      "to": "PAUSED",
+      "label": "멈춤 (재개 → 그 단계)"
+    },
+    {
+      "id": "t-rack-paused",
+      "from": "RACK",
+      "to": "PAUSED",
+      "label": "멈춤 (재개 → 그 단계)"
+    },
+    {
+      "id": "t-weigh-isolate",
+      "from": "WEIGH",
+      "to": "ISOLATE",
+      "label": "잔반 남음"
+    },
+    {
+      "id": "t-soap-isolate",
+      "from": "SOAP",
+      "to": "ISOLATE",
+      "label": "soap 재시도 소진"
+    },
+    {
+      "id": "t-wipe-isolate",
+      "from": "WIPE",
+      "to": "ISOLATE",
+      "label": "닦기 재시도 소진"
+    },
+    {
+      "id": "t-paused-soap",
+      "from": "PAUSED",
+      "to": "SOAP",
+      "label": "툴 집기부터"
+    },
+    {
+      "id": "t-paused-isolate",
+      "from": "PAUSED",
+      "to": "ISOLATE",
+      "label": "/flow/abort",
+      "note": "로봇 오류 · 케이블은 거부"
+    },
+    {
+      "id": "t-isolate-paused",
+      "from": "ISOLATE",
+      "to": "PAUSED",
+      "label": "정리 중 멈춤"
+    },
+    {
+      "id": "t-paused-isolate-resume",
+      "from": "PAUSED",
+      "to": "ISOLATE",
+      "label": "재개 → 정리 계속"
+    },
+    {
+      "id": "t-isolate-next",
+      "from": "ISOLATE",
+      "to": "NEXT",
+      "label": "ISOLATED 기록"
+    },
+    {
+      "id": "t-paused-next",
+      "from": "PAUSED",
+      "to": "NEXT",
+      "label": "로봇 오류 · ERROR 기록"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "읽는 법",
+      "items": [
+        "윗줄 7칸은 용기 1개의 step 순서다(flow.py 단계표). 단계 함수가 성공(Result.ok)하면 오른쪽으로 간다.",
+        "점 화살표는 용기마다 처리가 시작되는 PICK 을 가리킨다. 프로그램의 처음 값은 IDLE 이고, /flow/start 를 받으면 계획(RET_B 그릇 2 → RET_C 컵 2)의 첫 용기 PICK 으로 간다.",
+        "'남은 용기?' 는 step 값이 아니라 run_plan 반복의 갈림점이다. 용기 하나가 끝나면(DONE · ISOLATED · ERROR · SKIPPED 기록) 여기서 다음 용기 PICK 이나 DONE 으로 간다.",
+        "7칸을 두른 테두리는 한 묶음이라는 표시다. 어느 단계에서든 '멈춤' 으로 PAUSED 에 가고, 재개하면 기본은 멈춘 그 단계로 돌아온다(step = _prev_step). 다른 곳으로 가는 재개만 따로 그렸다.",
+        "SHAKE · ERROR 는 FlowState.msg 에 있지만 step 에 넣지 않는다. 털기는 WEIGH 안(leftover_loop)에서 돌고, ERROR 는 /flow/event 결과값이다."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "멈춤과 재개 (PAUSED)",
+      "items": [
+        "/flow/stop → stop 깃발 + cc.pause(). 이동 도중이면 그 자리, 아니면 단계 사이 · 용기 사이에서 선다. 재개하면 하던 이동이나 아직 시작하지 않은 그 단계를 이어 간다.",
+        "GRIP_FAIL · 정책에 없는 코드 → 재개 버튼 → 실패한 그 단계부터 다시(RETRY_STEP).",
+        "TOOL_FAIL → 툴 집기부터. TOOL_LOST(닦기 재시도 직전 툴 없음 포함) → 곧게 위로 → 툴 집기 → 세제 → 닦기.",
+        "케이블 이상(무게 떨림 > 80 g) → 후퇴 없이 cc.pause() 로 선다 → 재개하면 WEIGH 를 처음부터 다시 잰다.",
+        "실기에서는 /flow/state 가 step 과 상관없이 cc.is_paused() 면 PAUSED 로 알린다. 그래서 격리 정리 중에 멈춰도 PAUSED 다. IDLE 에서 stop 을 누르면 pause 깃발이 남아 /flow/start 뒤 첫 PICK 앞에서 바로 멈춘다.",
+        "마지막 구역이 비어 HOME 복귀가 실패하면 멈추고, 재개할 때마다 HOME 을 다시 시도한다(횟수 제한 없음) → DONE.",
+        "용기 사이에서 멈춘 뒤 /flow/abort 를 누르면 실기에서는 halt · pause 깃발이 풀리지 않는다. 다음 용기 앞에서 다시 멈추고, 그 뒤 재개 · 중단 어느 쪽이든 빈손으로 격리 정리를 돌아 ISOLATED(OPERATOR_ABORT)로 남긴다. 그 용기는 반납 구역에 남는다(코드로 읽은 동작 · 시험 없음)."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "로봇 오류 · 넛지 재개",
+      "items": [
+        "로봇 오류(함수 예외 · 재시도 중 후퇴 실패) → 그 자리에서 멈춘다. 예외는 safe_retreat 뒤, MoveIncomplete(위치 모름)는 후퇴 없이 force_off 뒤. /flow/abort 는 거부된다.",
+        "쥔 것이 있으면(그리퍼 폭 ≤ 100 mm 도 쥔 것으로 봄): 신호 1(넛지 또는 재개) → 그리퍼만 연다 → 사람이 받아 치움 → 신호 2(재개 버튼만) → 곧게 위로 → HOME → ERROR 기록.",
+        "빈손이면 신호 1번으로 곧게 위로 → HOME → ERROR 기록. HOME 이 실패하면 펜던트로 옮긴 뒤 재개 버튼 → HOME 만 다시(3번까지).",
+        "넛지(로봇팔 가볍게 밀기)를 받는 멈춤: 케이블 · TOOL_FAIL · TOOL_LOST · 로봇 오류 신호 1. stop · GRIP_FAIL · 신호 2 · HOME 복귀 실패는 재개 버튼만.",
+        "넛지 판정: 외력 변화 15 N 이상이 0.15 s 이상(1번 · 창 2.0 s). 힘은 0.2 s 마다 읽는다. wait_resume 은 감시 전 0.5 s 기다리고, 케이블 멈춤(sense.wait_for_nudge)은 기다리지 않는다.",
+        "넛지로 풀면 손 뗄 시간 1.5 s → STANDBY 확인(최대 3 s · 보호정지를 풀었으면 2 s 더). 재개 버튼이면 로봇 오류 · 케이블만 STANDBY 를 확인하고, TOOL_FAIL · TOOL_LOST · GRIP_FAIL 은 바로 이어 간다."
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "실패 정책 · 격리 정리",
+      "items": [
+        "flow.policy 는 단계가 아니라 실패 코드로 고른다.",
+        "EMPTY_ZONE: next_zone — 슬롯 2개가 모두 빈손 → SKIPPED 기록 → 그 구역의 남은 용기는 건너뛴다. 마지막 구역이면 HOME → DONE.",
+        "LEFTOVER_REMAIN: isolate — 2회 털고 다시 재도 50 g 초과.",
+        "FORCE_LIMIT · TIMEOUT: retry:1->isolate — 곧게 위로(safe_z) → 같은 함수 1번 더 → 또 실패면 그때 코드로 정책을 다시 읽는다. 지금 설정에서 나는 곳은 닦기(힘 · 시간 상한)와 soap 의 TIMEOUT(60 s)이다.",
+        "GRIP_FAIL · TOOL_FAIL · TOOL_LOST · ROBOT_ERROR: pause. SEAT_FAIL · RACK_FULL 은 모듈이 만들지 않고, RACK_JAM 은 insert_approach_mm 0 이라 감시 하강이 없어 나지 않는다.",
+        "격리 정리(_cleanup_and_isolate): 곧게 위로 → HOME → 쥔 툴 반납 → 홈 위 용기면 위에서 다시 집고 HOME → 격리 구역에 놓기 → HOME → ISOLATED(코드는 원인 · 중단이면 OPERATOR_ABORT). 한 단계가 실패해도 계속 치운다."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "서비스 /flow/*",
+      "items": [
+        "/flow/start — step 이 IDLE 일 때만. 완료 · 격리 수와 팔레트 칸을 0 으로 둔다(소모품 횟수는 이어 센다).",
+        "/flow/stop — 언제든 받는다. stop 깃발 + cc.pause().",
+        "/flow/resume — step 이 PAUSED 이거나 cc.is_paused() 일 때만. cc.resume() 하고 stop 깃발도 내린다.",
+        "/flow/abort — (step 이 PAUSED 이거나 cc.is_paused()) 이고 last_code 가 ROBOT_ERROR 가 아닐 때만. 케이블 멈춤도 last_code 를 ROBOT_ERROR 로 두어 거부된다. 받으면 cc.halt() — 이동 도중이면 그 이동이 MotionHalted 로 끊기고 격리 정리로 간다.",
+        "/flow/state 는 2 Hz 타이머로만 나간다. 용기마다 /flow/event 1건 · records.csv 1줄."
+      ]
+    }
+  ]
+}

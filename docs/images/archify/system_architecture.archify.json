@@ -1,0 +1,978 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "PreWash-Cell 시스템 아키텍처",
+    "output": ".archify/architecture-system-20261017-232712/system_architecture.html",
+    "locale": "ko",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/rokey9-d2/rokey_9_pjt1_D2",
+      "revision": "0e35e3ad1202b7f7b5d16e34ae941de7e229c50a"
+    },
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "화면"
+        },
+        "backend": {
+          "label": "우리 코드 (노드 · 함수 모듈)"
+        },
+        "database": {
+          "label": "기록 · 설정 파일"
+        },
+        "messagebus": {
+          "label": "ROS 2 탐색 서버"
+        },
+        "external": {
+          "label": "외부 드라이버 · 장비"
+        }
+      }
+    },
+    "views": [
+      {
+        "id": "demo-path",
+        "label": "시연 실행 경로",
+        "focus": [
+          "browser",
+          "hmi",
+          "disc",
+          "flow",
+          "f1",
+          "f2",
+          "f3",
+          "records",
+          "db"
+        ],
+        "note": "버튼 → hmi_bridge → /flow/* 서비스(콜백은 깃발만) → flow_node 메인 스레드가 기능 함수를 부른다. /flow/state 는 통신 스레드 2 Hz 타이머, event · weigh 는 메인 스레드가 보낸다."
+      },
+      {
+        "id": "robot-path",
+        "label": "로봇 명령 경로",
+        "focus": [
+          "flow",
+          "f1",
+          "f2",
+          "f3",
+          "cc",
+          "dsr",
+          "onrobot",
+          "m0609",
+          "rg2"
+        ],
+        "note": "로봇 명령은 cobot_common 을 거쳐 두 드라이버로만 나간다. 이동 · 힘 · 상태는 DSR_ROBOT2, 멈춤 · 재개 · 정지 · 복구는 직접 srv. 내는 곳은 flow_node 메인 스레드뿐."
+      },
+      {
+        "id": "config-records",
+        "label": "설정 · 기록",
+        "focus": [
+          "cfg_gpu",
+          "cfg_screen",
+          "cc",
+          "hmi",
+          "flow",
+          "f3",
+          "records",
+          "forcelog",
+          "db"
+        ],
+        "note": "숫자는 YAML 두 파일에서 읽는다. 두 PC 는 각자 같은 YAML 사본을 읽는다. 결과는 records.csv · 힘 로그(GPU PC)와 prewash.db(화면 PC)에 남는다."
+      },
+      {
+        "id": "mock-run",
+        "label": "로봇 없이 실행",
+        "focus": [
+          "browser",
+          "hmi",
+          "flow",
+          "mock"
+        ],
+        "note": "prewash_mock.launch.py: PC 1대에 flow_node(f1·f2·f3 모두 가짜)와 hmi_bridge. LOCALHOST 탐색이라 Discovery Server · 두산 드라이버 없음 · /flow/weigh 안 나감."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "브라우저 화면",
+      "sublabel": "운영자 · Next.js 정적 페이지",
+      "pos": [
+        48,
+        200
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/f4_hmi/web/app/lib/useHmi.js",
+          "line": 40,
+          "end_line": 94,
+          "label": "WebSocket · 버튼 POST"
+        },
+        {
+          "path": "src/f4_hmi/web/app/Monitor.jsx",
+          "line": 177,
+          "end_line": 205,
+          "label": "화면 구성"
+        },
+        {
+          "path": "src/f4_hmi/web/next.config.mjs",
+          "line": 1,
+          "end_line": 6,
+          "label": "정적 내보내기 web/out"
+        }
+      ]
+    },
+    {
+      "id": "hmi",
+      "type": "backend",
+      "label": "hmi_bridge",
+      "sublabel": "FastAPI + rclpy 노드 · :8000",
+      "tag": "f4_hmi 패키지",
+      "pos": [
+        480,
+        200
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/f4_hmi/f4_hmi/hmi_bridge.py",
+          "line": 38,
+          "end_line": 79,
+          "label": "시작 순서"
+        },
+        {
+          "path": "src/f4_hmi/f4_hmi/ros_link.py",
+          "line": 50,
+          "end_line": 65,
+          "label": "구독 · 서비스 클라이언트"
+        },
+        {
+          "path": "src/f4_hmi/f4_hmi/app.py",
+          "line": 66,
+          "end_line": 153,
+          "label": "REST · /ws/state · web/out"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "prewash.db",
+      "sublabel": "SQLite 표 5개 · KPI · 이력",
+      "pos": [
+        480,
+        40
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/f4_hmi/f4_hmi/db.py",
+          "line": 1,
+          "end_line": 35,
+          "label": "표 5개 스키마"
+        },
+        {
+          "path": "src/f4_hmi/f4_hmi/recorder.py",
+          "line": 43,
+          "end_line": 51,
+          "label": "Recorder 가 기록"
+        },
+        {
+          "path": "src/f4_hmi/f4_hmi/hmi_bridge.py",
+          "line": 62,
+          "end_line": 66,
+          "label": "HmiDb 열기 · 이력 50건 읽기"
+        }
+      ]
+    },
+    {
+      "id": "cfg_screen",
+      "type": "database",
+      "label": "설정 YAML 사본",
+      "sublabel": "cell.yaml · params.yaml",
+      "pos": [
+        720,
+        40
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/f4_hmi/f4_hmi/hmi_bridge.py",
+          "line": 40,
+          "end_line": 65,
+          "label": "config.load() · hmi · flow · f2 절"
+        },
+        {
+          "path": "src/f4_hmi/f4_hmi/app.py",
+          "line": 47,
+          "end_line": 52,
+          "label": "화면에 보낼 계획 · 기준"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 328,
+          "end_line": 337,
+          "label": "hmi 절"
+        }
+      ]
+    },
+    {
+      "id": "disc",
+      "type": "messagebus",
+      "label": "Discovery Server",
+      "sublabel": "fastdds :11811 · 모든 ROS 노드 등록",
+      "tag": "ROS_DOMAIN_ID 60",
+      "pos": [
+        670,
+        330
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "sources": [
+        {
+          "path": "docs/setup.md",
+          "line": 221,
+          "end_line": 241,
+          "label": "GPU PC 터미널 A · B(브링업도 등록)"
+        },
+        {
+          "path": "docs/setup.md",
+          "line": 262,
+          "end_line": 280,
+          "label": "화면 PC 가 붙는 법 · 확인"
+        },
+        {
+          "path": "docs/02_인터페이스_IRD.md",
+          "line": 84,
+          "label": "두 PC 사이 통신 · 강의실 무선"
+        }
+      ]
+    },
+    {
+      "id": "flow",
+      "type": "backend",
+      "label": "flow_node",
+      "sublabel": "메인 스레드에서 flow.run()",
+      "tag": "f2_sense_flow 패키지",
+      "pos": [
+        480,
+        490
+      ],
+      "size": [
+        180,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 78,
+          "end_line": 155,
+          "label": "서비스 4 · 토픽 3 · 콜백은 깃발만"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 205,
+          "end_line": 264,
+          "label": "cc.init · 문지기 · cc 함수 주입 · shutdown"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 727,
+          "end_line": 742,
+          "label": "단계별 기능 함수"
+        }
+      ]
+    },
+    {
+      "id": "records",
+      "type": "database",
+      "label": "records.csv",
+      "sublabel": "용기마다 1줄 · 14칸",
+      "pos": [
+        816,
+        494
+      ],
+      "size": [
+        116,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/logger.py",
+          "line": 20,
+          "end_line": 72,
+          "label": "칸 14개 · 이어 쓰기"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 1164,
+          "end_line": 1172,
+          "label": "용기 끝에 records.write"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 312,
+          "label": "flow.records_path"
+        }
+      ]
+    },
+    {
+      "id": "mock",
+      "type": "backend",
+      "label": "가짜 기능 (mock)",
+      "sublabel": "mock_f1~f3 · 셋 다면 로봇 없이",
+      "pos": [
+        48,
+        430
+      ],
+      "size": [
+        176,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
+          "line": 52,
+          "end_line": 81,
+          "label": "진짜/가짜 모듈 고르기"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
+          "line": 205,
+          "end_line": 214,
+          "label": "셋 다 가짜일 때만 robot=False"
+        },
+        {
+          "path": "src/prewash_bringup/launch/prewash_mock.launch.py",
+          "line": 1,
+          "end_line": 13,
+          "label": "PC 1대 · 로봇 없이 런치"
+        }
+      ]
+    },
+    {
+      "id": "f1",
+      "type": "backend",
+      "label": "f1_handling · 함수 6",
+      "sublabel": "pick·regrip_top·place·move_to·tool·rack_place",
+      "pos": [
+        48,
+        660
+      ],
+      "size": [
+        212,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_api/cobot_api/contracts.py",
+          "line": 112,
+          "end_line": 135,
+          "label": "F1Api 6개"
+        },
+        {
+          "path": "src/f1_handling/f1_handling/handling.py",
+          "line": 1,
+          "end_line": 16,
+          "label": "cc.* 만 쓴다"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "type": "backend",
+      "label": "f2_sense_flow.sense · 함수 4",
+      "sublabel": "weigh·leftover_loop·shake·dip",
+      "pos": [
+        312,
+        660
+      ],
+      "size": [
+        196,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_api/cobot_api/contracts.py",
+          "line": 138,
+          "end_line": 151,
+          "label": "F2Api 4개"
+        },
+        {
+          "path": "src/f2_sense_flow/f2_sense_flow/sense.py",
+          "line": 1,
+          "end_line": 21,
+          "label": "모듈 역할"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "type": "backend",
+      "label": "f3_wipe · 함수 3",
+      "sublabel": "soap · wipe_bowl · wipe_cup",
+      "pos": [
+        612,
+        660
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_api/cobot_api/contracts.py",
+          "line": 154,
+          "end_line": 165,
+          "label": "F3Api 3개"
+        },
+        {
+          "path": "src/f3_wipe/f3_wipe/wipe.py",
+          "line": 1,
+          "end_line": 13,
+          "label": "모듈 역할"
+        }
+      ]
+    },
+    {
+      "id": "forcelog",
+      "type": "database",
+      "label": "힘 로그 CSV",
+      "sublabel": "logs/f3/force_*.csv",
+      "pos": [
+        816,
+        824
+      ],
+      "size": [
+        116,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/f3_wipe/f3_wipe/wipe.py",
+          "line": 687,
+          "end_line": 695,
+          "label": "_save_force_log"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 220,
+          "label": "f3 log_dir"
+        }
+      ]
+    },
+    {
+      "id": "cc",
+      "type": "backend",
+      "label": "cobot_common · 공용 로봇 함수",
+      "sublabel": "motion · gripper · weigh · force · config — DSR_ROBOT2 는 여기서만 import",
+      "pos": [
+        360,
+        820
+      ],
+      "size": [
+        420,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_common/cobot_common/__init__.py",
+          "line": 1,
+          "end_line": 22,
+          "label": "파일별 역할"
+        },
+        {
+          "path": "src/cobot_common/cobot_common/bootstrap.py",
+          "line": 153,
+          "end_line": 190,
+          "label": "dsr() · flow_node_dsr 노드"
+        },
+        {
+          "path": "src/cobot_common/cobot_common/motion.py",
+          "line": 253,
+          "end_line": 276,
+          "label": "move_pause·resume·stop 직접 클라이언트"
+        }
+      ]
+    },
+    {
+      "id": "cfg_gpu",
+      "type": "database",
+      "label": "설정 YAML",
+      "sublabel": "cell.yaml · params.yaml",
+      "pos": [
+        48,
+        1000
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_common/cobot_common/config.py",
+          "line": 85,
+          "end_line": 98,
+          "label": "config.load()"
+        },
+        {
+          "path": "src/cobot_common/config/cell.yaml",
+          "line": 1,
+          "end_line": 17,
+          "label": "cell.yaml"
+        },
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 267,
+          "end_line": 273,
+          "label": "flow 절 · plan"
+        }
+      ]
+    },
+    {
+      "id": "dsr",
+      "type": "external",
+      "label": "dsr_controller2",
+      "sublabel": "두산 드라이버 · 이름공간 /dsr01",
+      "pos": [
+        400,
+        1000
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_common/cobot_common/bootstrap.py",
+          "line": 32,
+          "end_line": 37,
+          "label": "dsr01 · 드라이버 확인"
+        },
+        {
+          "path": "src/cobot_common/cobot_common/motion.py",
+          "line": 58,
+          "end_line": 59,
+          "label": "/dsr01/dsr_controller2/motion/"
+        },
+        {
+          "path": "docs/setup.md",
+          "line": 233,
+          "end_line": 241,
+          "label": "브링업 · 같은 Discovery Server"
+        }
+      ]
+    },
+    {
+      "id": "onrobot",
+      "type": "external",
+      "label": "OnRobotRGControllerServer",
+      "sublabel": "onrobot_rg_control · RG2 드라이버",
+      "pos": [
+        640,
+        1000
+      ],
+      "size": [
+        220,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_common/cobot_common/gripper.py",
+          "line": 98,
+          "end_line": 105,
+          "label": "sendCommand · joint_states"
+        },
+        {
+          "path": "docs/02_인터페이스_IRD.md",
+          "line": 86,
+          "label": "외부 ROS 인터페이스"
+        }
+      ]
+    },
+    {
+      "id": "m0609",
+      "type": "external",
+      "label": "M0609 제어기 · 로봇팔",
+      "sublabel": "두산 6축 협동로봇",
+      "pos": [
+        400,
+        1150
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "sources": [
+        {
+          "path": "docs/03_설계_SDD.md",
+          "line": 58,
+          "label": "두산 전용 TCP · 유선"
+        },
+        {
+          "path": "docs/setup.md",
+          "line": 240,
+          "label": "mode:=real 브링업"
+        }
+      ]
+    },
+    {
+      "id": "rg2",
+      "type": "external",
+      "label": "RG2 그리퍼 · 컴퓨트박스",
+      "sublabel": "OnRobot 그리퍼 · 폭 · 힘",
+      "pos": [
+        640,
+        1150
+      ],
+      "size": [
+        220,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/cobot_common/config/params.yaml",
+          "line": 92,
+          "end_line": 94,
+          "label": "컴퓨트박스 Modbus/TCP"
+        },
+        {
+          "path": "docs/02_인터페이스_IRD.md",
+          "line": 86,
+          "label": "그리퍼 드라이버"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "화면 PC · ROS 2 Jazzy · GPU PC 와 강의실 무선",
+      "wraps": [
+        "browser",
+        "hmi",
+        "db",
+        "cfg_screen"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "GPU PC · ROS 2 Jazzy · 로봇 제어",
+      "wraps": [
+        "disc",
+        "flow",
+        "records",
+        "mock",
+        "f1",
+        "f2",
+        "f3",
+        "forcelog",
+        "cc",
+        "cfg_gpu",
+        "dsr",
+        "onrobot"
+      ],
+      "pad": 28
+    },
+    {
+      "kind": "region",
+      "label": "flow_node 프로세스 1개",
+      "wraps": [
+        "flow",
+        "mock",
+        "f1",
+        "f2",
+        "f3",
+        "cc"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "로봇 셀 · 유선",
+      "wraps": [
+        "m0609",
+        "rg2"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-buttons",
+      "from": "browser",
+      "to": "hmi",
+      "label": "POST /api/start·stop·resume·abort",
+      "variant": "emphasis"
+    },
+    {
+      "id": "hmi-ws",
+      "from": "hmi",
+      "to": "browser",
+      "label": "WebSocket /ws/state"
+    },
+    {
+      "id": "hmi-db-write",
+      "from": "hmi",
+      "to": "db",
+      "label": "HmiDb 기록 쓰기"
+    },
+    {
+      "id": "db-hmi-read",
+      "from": "db",
+      "to": "hmi",
+      "label": "KPI · 이력 읽기"
+    },
+    {
+      "id": "cfg-hmi",
+      "from": "cfg_screen",
+      "to": "hmi",
+      "label": "config.load(): hmi·flow·f2 절",
+      "fromSide": "bottom",
+      "toSide": "right"
+    },
+    {
+      "id": "hmi-disc",
+      "from": "hmi",
+      "to": "disc",
+      "label": "탐색 등록",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "hmi-flow-srv",
+      "from": "hmi",
+      "to": "flow",
+      "label": "/flow/start·stop·resume·abort",
+      "variant": "emphasis"
+    },
+    {
+      "id": "topics-flow-hmi",
+      "from": "flow",
+      "to": "hmi",
+      "label": "/flow/state · event · weigh"
+    },
+    {
+      "id": "flow-disc",
+      "from": "flow",
+      "to": "disc",
+      "label": "탐색 등록",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "flow-records",
+      "from": "flow",
+      "to": "records",
+      "label": "용기마다 1줄 쓰기",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "flow-mock",
+      "from": "flow",
+      "to": "mock",
+      "label": "use_mock 이면 대신",
+      "fromSide": "left",
+      "toSide": "bottom"
+    },
+    {
+      "id": "flow-cc",
+      "from": "flow",
+      "to": "cc",
+      "label": "cc 직접: 멈춤·후퇴·넛지·복구",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 226
+    },
+    {
+      "id": "flow-f1",
+      "from": "flow",
+      "to": "f1",
+      "label": "f1.* 함수 호출",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "top"
+    },
+    {
+      "id": "flow-f2",
+      "from": "flow",
+      "to": "f2",
+      "label": "f2.* 함수 호출",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "flow-f3",
+      "from": "flow",
+      "to": "f3",
+      "label": "f3.* 함수 호출",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "f1-cc",
+      "from": "f1",
+      "to": "cc",
+      "label": "cc.move_to · grip",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "f2-cc",
+      "from": "f2",
+      "to": "cc",
+      "label": "cc.weigh · move_to",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f3-cc",
+      "from": "f3",
+      "to": "cc",
+      "label": "cc.read_force · move_periodic",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f3-forcelog",
+      "from": "f3",
+      "to": "forcelog",
+      "label": "CSV 저장",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "cfg-cc",
+      "from": "cfg_gpu",
+      "to": "cc",
+      "label": "config.load()",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "cc-dsr",
+      "from": "cc",
+      "to": "dsr",
+      "label": "DSR_ROBOT2 · 직접 srv → /dsr01/dsr_controller2/*",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "cc-gripper",
+      "from": "cc",
+      "to": "onrobot",
+      "label": "/onrobot/sendCommand",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "gripper-cc",
+      "from": "onrobot",
+      "to": "cc",
+      "label": "/onrobot_joint_states",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "dsr-robot",
+      "from": "dsr",
+      "to": "m0609",
+      "label": "두산 TCP :12345 · 유선",
+      "variant": "emphasis"
+    },
+    {
+      "id": "gripper-rg2",
+      "from": "onrobot",
+      "to": "rg2",
+      "label": "Modbus/TCP :502 · 유선",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "구조 원칙",
+      "items": [
+        "우리가 만든 실행 노드 2개: flow_node(GPU PC) · hmi_bridge(화면 PC)",
+        "f1 · f2 · f3 는 노드가 아닌 함수 모듈 — flow_node 프로세스 안에서 돈다",
+        "로봇 명령은 flow_node 메인 스레드에서만 · 서비스 콜백은 깃발만 세운다",
+        "기능 함수는 cc.* 만 부르고 DSR_ROBOT2 를 직접 쓰지 않는다",
+        "flow_node 도 cc 를 직접 부른다: pause·resume·halt · safe_retreat·force_off(후퇴) · release · start_nudge_watch·check_nudge(넛지) · robot_state·recover_robot_if_needed·wait_robot_ready(복구) · grip_width · init·set_weigh_listener·shutdown"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "ROS 이름",
+      "items": [
+        "서비스 /flow/start · stop · resume · abort (std_srvs/Trigger)",
+        "토픽 /flow/state 2 Hz · /flow/event 용기마다 · /flow/weigh 무게 표본마다",
+        "메시지 타입은 cobot_msgs 의 FlowState · FlowEvent · WeighLive 3개",
+        "ROS 노드: /flow_node · /dsr01/flow_node_dsr(두산 API 전용) · /hmi_bridge",
+        "이동 · 힘 · 상태 읽기는 DSR_ROBOT2(/dsr01/flow_node_dsr) 경유 · move_pause·resume·stop · set_robot_control 은 /flow_node 에 단 직접 클라이언트로 /dsr01/dsr_controller2/* 호출",
+        "hmi_bridge 의 /cell/force · /cell/gripping 구독은 발행자가 없어 그리지 않음"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "실행 방법",
+      "items": [
+        "GPU PC: Discovery Server → m0609_rg2_bringup(두산 · RG2 드라이버) → prewash.launch.py · 브링업과 flow_node 모두 같은 서버에 등록",
+        "화면 PC: ros2 run f4_hmi hmi_bridge → 브라우저로 :8000",
+        "두 PC 는 강의실 무선 · ROS_DOMAIN_ID 60 · Discovery Server 로 서로 찾는다",
+        "flow_node 시작 때(실기) 툴 'Tool Weight' · TCP 'GripperDA_v1' 이름 확인 → 다르면 움직이지 않고 종료(코드 2) · 케이블 장력은 경고만",
+        "로봇 없이: prewash_mock.launch.py — PC 1대 · LOCALHOST 탐색 · use_mock f1,f2,f3 + hmi_bridge"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "멈춤 · 재개 · 중단",
+      "items": [
+        "/flow/stop → cc.pause() → 이동 중이면 0.05 s 안에 move_pause",
+        "/flow/resume → PAUSED(이동 일시정지 포함)일 때만 받음 · 이동 도중이었으면 move_resume",
+        "/flow/abort → PAUSED 이고 로봇 오류가 아닐 때만 받음 · 케이블 멈춤도 로봇 오류라 거부",
+        "중단: 이동 도중 멈춤이면 move_stop · 용기 처리 중이면 정리(격리) 뒤 다음 용기 · 용기 사이면 정리 없이 다음 용기",
+        "잔반통 누적 50 kg 이면 hmi_bridge 가 /flow/stop 을 스스로 보낸다"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "한 용기 순서 · 기능 함수 13개",
+      "items": [
+        "PICK → WEIGH → SEAT → SOAP → WIPE → RINSE → RACK (계획: 그릇 2 → 컵 2)",
+        "f1_handling: pick · regrip_top · place · move_to · tool · rack_place",
+        "f2_sense_flow.sense: weigh · leftover_loop · shake · dip",
+        "f3_wipe: soap · wipe_bowl · wipe_cup",
+        "함수 이름 · 인자 · Result 약속은 cobot_api — 로봇 코드 없음",
+        "용기가 끝나면 /flow/event 1건 · records.csv 1줄 · prewash.db events 1줄"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "화면이 더 쓰는 길",
+      "items": [
+        "GET / — hmi_bridge 가 web/out 정적 페이지를 준다",
+        "GET /api/usage · /api/kpi · /api/db/pauses — 이벤트마다 · 15 s 마다",
+        "POST /api/replace/{item} — 소모품 · 잔반통 교체 완료",
+        "WebSocket 이 끊기면 GET /api/state 를 0.5 s 마다"
+      ]
+    }
+  ]
+}
