@@ -3,7 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "PreWash-Cell 시스템 아키텍처",
-    "output": ".archify/architecture-system-20261018-104011/system_architecture.html",
+    "output": ".archify/architecture-system-20261018-110925/system_architecture.html",
     "locale": "ko",
     "quality_profile": "showcase",
     "repository": {
@@ -130,8 +130,7 @@
       "id": "hmi",
       "type": "backend",
       "label": "hmi_bridge",
-      "sublabel": "FastAPI + rclpy 노드 · :8000",
-      "tag": "f4_hmi 패키지",
+      "sublabel": "f4_hmi · FastAPI + rclpy · :8000",
       "pos": [
         480,
         200
@@ -233,8 +232,7 @@
       "id": "disc",
       "type": "messagebus",
       "label": "Discovery Server",
-      "sublabel": "fastdds :11811 · 모든 ROS 노드 등록",
-      "tag": "ROS_DOMAIN_ID 60",
+      "sublabel": "fastdds :11811 · 도메인 60 · 모든 노드",
       "pos": [
         670,
         330
@@ -267,8 +265,7 @@
       "id": "flow",
       "type": "backend",
       "label": "flow_node",
-      "sublabel": "메인 스레드에서 flow.run()",
-      "tag": "f2_sense_flow 패키지",
+      "sublabel": "f2_sense_flow · 메인 스레드 flow.run()",
       "pos": [
         480,
         490
