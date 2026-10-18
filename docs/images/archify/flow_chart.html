@@ -5040,7 +5040,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       svg [data-node-id], svg [data-edge-from], svg [data-detail], svg [data-detail-anchor], svg [data-legend-hit], svg { transition: none !important; }
     }
   </style>
-</head>
+<style id="pw-kr-font">/* PreWash 10/18: 그림 글자는 고정폭(JetBrains Mono) + 한글 대체 글꼴이 섞여 줄 높이가 들쭉날쭉해 보여서, 한 가족의 한글 글꼴로 통일한다(협동-2 와 같은 방식) */svg text, svg tspan { font-family: "Noto Sans KR", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif !important; }</style></head>
 <body>
   <!-- Toolbar: theme, live visual style, trace motion, presentation stage, and export.
        Motion appears only for trace-enabled artifacts and has no shortcut;
@@ -5159,7 +5159,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / 도판 04">
-      <svg viewBox="0 0 1078 912" data-reader-fit="width-first" data-layout-contract="readable-v2" role="img" lang="ko" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-node-ui="">
+      <svg viewBox="0 0 1210 912" data-reader-fit="width-first" data-layout-contract="readable-v2" role="img" lang="ko" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-node-ui="">
         <title id="archify-diagram-title">플로우 차트 — 용기 1개의 처리와 예외</title>
         <desc id="archify-diagram-description">Archify로 생성한 워크플로우 다이어그램입니다.</desc>
         <!-- Definitions -->
@@ -5206,22 +5206,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Swimlanes -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="1022" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="1154" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="74" class="t-muted" font-size="10" font-weight="600">01 / 사람 — 화면 · 팔 밀기</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="1022" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="1154" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="200" class="t-muted" font-size="10" font-weight="600">02 / 사람이 필요한 멈춤</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="304" width="1022" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="304" width="1154" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="326" class="t-muted" font-size="10" font-weight="600">03 / 정상 흐름 — 시작 뒤 용기마다 ①~⑤</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="430" width="1022" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="430" width="1154" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="452" class="t-muted" font-size="10" font-weight="600">04 / 자동 처리 — 재시도 · 격리</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-4" x="40" y="556" width="1022" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-4" x="40" y="556" width="1154" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="578" class="t-muted" font-size="10" font-weight="600">05 / 정상 흐름 — 적재 · 다음 용기</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-5" x="40" y="682" width="1022" height="106" rx="10" class="c-lane" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-5" x="40" y="682" width="1154" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="704" class="t-muted" font-size="10" font-weight="600">06 / 로봇 오류 — 어느 단계든</text>
 
         <!-- Phase headers -->
@@ -5231,375 +5231,375 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 
         <!-- Edge paths -->
-        <path data-edge-from="buttons" data-edge-to="op_pause" data-edge-label="일시 정지 · 잔반통 가득" data-edge-key="0" data-edge-id="e-buttons-pause" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="302,154;302,212" d="M 302 154 L 302 212" class="a-default" data-animate="edge" style="--step:7" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="roboterr" data-edge-to="signals" data-edge-label="화면 알림" data-edge-key="1" data-edge-id="e-err-signals" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="576,750;370,750" d="M 576 750 L 370 750" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="fix" data-edge-to="tool" data-edge-label="④ 툴 집기부터" data-edge-key="2" data-edge-id="e-fix-tool" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="712,120;811,120;811,338" d="M 712 120 L 803 120 Q 811 120 811 128 L 811 338" class="a-default" data-animate="edge" style="--step:9" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="fix" data-edge-to="weigh" data-edge-label="② 무게부터" data-edge-key="3" data-edge-id="e-fix-weigh" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="576,120;463,120;463,338" d="M 576 120 L 471 120 Q 463 120 463 128 L 463 338" class="a-default" data-animate="edge" style="--step:10" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="hold" data-edge-to="fix" data-edge-label="화면 알림" data-edge-key="4" data-edge-id="e-hold-fix" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="644,212;644,154" d="M 644 212 L 644 154" class="a-default" data-animate="edge" style="--step:11" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="hub" data-edge-to="done" data-edge-label="없음" data-edge-key="5" data-edge-id="e-hub-done" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="234,624;196,624" d="M 234 624 L 196 624" class="a-emphasis" data-animate="edge" style="--step:12" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="hub" data-edge-to="pick" data-edge-label="남은 용기" data-edge-key="6" data-edge-id="e-hub-pick" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="302,590;302,406" d="M 302 590 L 302 406" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="isolate" data-edge-to="hub" data-edge-label="ISOLATED" data-edge-key="7" data-edge-id="e-iso-hub" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="644,532;644,558;326,558;326,590" d="M 644 532 L 644 550 Q 644 558 636 558 L 334 558 Q 326 558 326 566 L 326 590" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="pick" data-edge-to="weigh" data-edge-key="8" data-edge-id="e-pick-weigh" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="370,372;402,372" d="M 370 372 L 402 372" class="a-emphasis" data-animate="edge" style="--step:1" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="pick" data-edge-to="zone" data-edge-label="빈손" data-edge-key="9" data-edge-id="e-pick-zone" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="278,406;278,422;249,422;249,491;196,491" d="M 278 406 L 278 414 Q 278 422 270 422 L 257 422 Q 249 422 249 430 L 249 483 Q 249 491 241 491 L 196 491" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="rack" data-edge-to="hub" data-edge-label="DONE" data-edge-key="10" data-edge-id="e-rack-hub" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="918,624;370,624" d="M 918 624 L 370 624" class="a-emphasis" data-animate="edge" style="--step:12" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="retry" data-edge-to="isolate" data-edge-label="실패" data-edge-key="11" data-edge-id="e-retry-iso" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="750,498;712,498" d="M 750 498 L 712 498" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="rinse" data-edge-to="grip" data-edge-label="GRIP_FAIL" data-edge-key="12" data-edge-id="e-rinse-grip" data-composition-routing="workflow-v2-auto" data-edge-role="error" data-composition-points="986,338;986,280" d="M 986 338 L 986 280" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="rinse" data-edge-to="rack" data-edge-key="13" data-edge-id="e-rinse-rack" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="986,406;986,590" d="M 986 406 L 986 590" class="a-emphasis" data-animate="edge" style="--step:5" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="seat" data-edge-to="tool" data-edge-key="14" data-edge-id="e-seat-tool" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="712,372;750,372" d="M 712 372 L 750 372" class="a-emphasis" data-animate="edge" style="--step:3" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="shake" data-edge-to="isolate" data-edge-label="남음" data-edge-key="15" data-edge-id="e-shake-iso" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="538,498;576,498" d="M 538 498 L 576 498" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="shake" data-edge-to="seat" data-edge-label="통과" data-edge-key="16" data-edge-id="e-shake-seat" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="494,464;494,432;644,432;644,406" d="M 494 464 L 494 440 Q 494 432 502 432 L 636 432 Q 644 432 644 424 L 644 406" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="signals" data-edge-to="hub" data-edge-label="HOME → ERROR" data-edge-key="17" data-edge-id="e-signals-hub" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="302,716;302,658" d="M 302 716 L 302 658" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="start" data-edge-to="pick" data-edge-key="18" data-edge-id="e-start-pick" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="196,372;234,372" d="M 196 372 L 234 372" class="a-emphasis" data-animate="edge" style="--step:0" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="tool" data-edge-to="hold" data-edge-label="툴 놓침 · 집기 실패" data-edge-key="19" data-edge-id="e-tool-hold" data-composition-routing="workflow-v2-auto" data-edge-role="error" data-composition-points="794,338;794,306;644,306;644,280" d="M 794 338 L 794 314 Q 794 306 786 306 L 652 306 Q 644 306 644 298 L 644 280" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="tool" data-edge-to="retry" data-edge-label="힘 · 시간 상한" data-edge-key="20" data-edge-id="e-tool-retry" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="818,406;818,464" d="M 818 406 L 818 464" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="tool" data-edge-to="rinse" data-edge-key="21" data-edge-id="e-tool-rinse" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="886,372;918,372" d="M 886 372 L 918 372" class="a-emphasis" data-animate="edge" style="--step:4" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="weigh" data-edge-to="hold" data-edge-label="케이블 떨림 &gt; 80 g" data-edge-key="22" data-edge-id="e-weigh-hold" data-composition-routing="workflow-v2-auto" data-edge-role="error" data-composition-points="482,338;482,246;576,246" d="M 482 338 L 482 254 Q 482 246 490 246 L 576 246" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="weigh" data-edge-to="seat" data-edge-key="23" data-edge-id="e-weigh-seat" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="538,372;576,372" d="M 538 372 L 576 372" class="a-emphasis" data-animate="edge" style="--step:2" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="weigh" data-edge-to="shake" data-edge-key="24" data-edge-id="e-weigh-shake" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="470,406;470,464" d="M 470 406 L 470 464" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="zone" data-edge-to="hub" data-edge-label="SKIPPED" data-edge-key="25" data-edge-id="e-zone-hub" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="122,532;122,558;266,558;266,590" d="M 122 532 L 122 550 Q 122 558 130 558 L 258 558 Q 266 558 266 566 L 266 590" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="buttons" data-edge-to="op_pause" data-edge-label="일시 정지 · 잔반통 가득" data-edge-key="0" data-edge-id="e-buttons-pause" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="326,154;326,212" d="M 326 154 L 326 212" class="a-default" data-animate="edge" style="--step:7" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="roboterr" data-edge-to="signals" data-edge-label="화면 알림" data-edge-key="1" data-edge-id="e-err-signals" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="636,750;406,750" d="M 636 750 L 406 750" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="fix" data-edge-to="tool" data-edge-label="④ 툴 집기부터" data-edge-key="2" data-edge-id="e-fix-tool" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="796,120;907,120;907,338" d="M 796 120 L 899 120 Q 907 120 907 128 L 907 338" class="a-default" data-animate="edge" style="--step:9" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="fix" data-edge-to="weigh" data-edge-label="② 무게부터" data-edge-key="3" data-edge-id="e-fix-weigh" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="636,120;511,120;511,338" d="M 636 120 L 519 120 Q 511 120 511 128 L 511 338" class="a-default" data-animate="edge" style="--step:10" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="hold" data-edge-to="fix" data-edge-label="화면 알림" data-edge-key="4" data-edge-id="e-hold-fix" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="716,212;716,154" d="M 716 212 L 716 154" class="a-default" data-animate="edge" style="--step:11" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="hub" data-edge-to="done" data-edge-label="없음" data-edge-key="5" data-edge-id="e-hub-done" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="246,624;208,624" d="M 246 624 L 208 624" class="a-emphasis" data-animate="edge" style="--step:12" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="hub" data-edge-to="pick" data-edge-label="남은 용기" data-edge-key="6" data-edge-id="e-hub-pick" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="326,590;326,406" d="M 326 590 L 326 406" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="isolate" data-edge-to="hub" data-edge-label="ISOLATED" data-edge-key="7" data-edge-id="e-iso-hub" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="716,532;716,558;350,558;350,590" d="M 716 532 L 716 550 Q 716 558 708 558 L 358 558 Q 350 558 350 566 L 350 590" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="pick" data-edge-to="weigh" data-edge-key="8" data-edge-id="e-pick-weigh" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="406,372;438,372" d="M 406 372 L 438 372" class="a-emphasis" data-animate="edge" style="--step:1" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="pick" data-edge-to="zone" data-edge-label="빈손" data-edge-key="9" data-edge-id="e-pick-zone" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="302,406;302,422;267,422;267,491;208,491" d="M 302 406 L 302 414 Q 302 422 294 422 L 275 422 Q 267 422 267 430 L 267 483 Q 267 491 259 491 L 208 491" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="rack" data-edge-to="hub" data-edge-label="DONE" data-edge-key="10" data-edge-id="e-rack-hub" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="1026,624;406,624" d="M 1026 624 L 406 624" class="a-emphasis" data-animate="edge" style="--step:12" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="retry" data-edge-to="isolate" data-edge-label="실패" data-edge-key="11" data-edge-id="e-retry-iso" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="834,498;796,498" d="M 834 498 L 796 498" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="rinse" data-edge-to="grip" data-edge-label="GRIP_FAIL" data-edge-key="12" data-edge-id="e-rinse-grip" data-composition-routing="workflow-v2-auto" data-edge-role="error" data-composition-points="1106,338;1106,280" d="M 1106 338 L 1106 280" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="rinse" data-edge-to="rack" data-edge-key="13" data-edge-id="e-rinse-rack" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="1106,406;1106,590" d="M 1106 406 L 1106 590" class="a-emphasis" data-animate="edge" style="--step:5" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="seat" data-edge-to="tool" data-edge-key="14" data-edge-id="e-seat-tool" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="796,372;834,372" d="M 796 372 L 834 372" class="a-emphasis" data-animate="edge" style="--step:3" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="shake" data-edge-to="isolate" data-edge-label="남음" data-edge-key="15" data-edge-id="e-shake-iso" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="598,498;636,498" d="M 598 498 L 636 498" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="shake" data-edge-to="seat" data-edge-label="통과" data-edge-key="16" data-edge-id="e-shake-seat" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="542,464;542,432;716,432;716,406" d="M 542 464 L 542 440 Q 542 432 550 432 L 708 432 Q 716 432 716 424 L 716 406" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="signals" data-edge-to="hub" data-edge-label="HOME → ERROR" data-edge-key="17" data-edge-id="e-signals-hub" data-composition-routing="workflow-v2-auto" data-edge-role="return" data-composition-points="326,716;326,658" d="M 326 716 L 326 658" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="start" data-edge-to="pick" data-edge-key="18" data-edge-id="e-start-pick" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="208,372;246,372" d="M 208 372 L 246 372" class="a-emphasis" data-animate="edge" style="--step:0" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="tool" data-edge-to="hold" data-edge-label="툴 놓침 · 집기 실패" data-edge-key="19" data-edge-id="e-tool-hold" data-composition-routing="workflow-v2-auto" data-edge-role="error" data-composition-points="890,338;890,306;716,306;716,280" d="M 890 338 L 890 314 Q 890 306 882 306 L 724 306 Q 716 306 716 298 L 716 280" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="tool" data-edge-to="retry" data-edge-label="힘 · 시간 상한" data-edge-key="20" data-edge-id="e-tool-retry" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="914,406;914,464" d="M 914 406 L 914 464" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="tool" data-edge-to="rinse" data-edge-key="21" data-edge-id="e-tool-rinse" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="994,372;1026,372" d="M 994 372 L 1026 372" class="a-emphasis" data-animate="edge" style="--step:4" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="weigh" data-edge-to="hold" data-edge-label="케이블 떨림 &gt; 80 g" data-edge-key="22" data-edge-id="e-weigh-hold" data-composition-routing="workflow-v2-auto" data-edge-role="error" data-composition-points="542,338;542,246;636,246" d="M 542 338 L 542 254 Q 542 246 550 246 L 636 246" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="weigh" data-edge-to="seat" data-edge-key="23" data-edge-id="e-weigh-seat" data-composition-routing="workflow-v2-auto" data-edge-role="main" data-composition-points="598,372;636,372" d="M 598 372 L 636 372" class="a-emphasis" data-animate="edge" style="--step:2" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="weigh" data-edge-to="shake" data-edge-key="24" data-edge-id="e-weigh-shake" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="518,406;518,464" d="M 518 406 L 518 464" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="zone" data-edge-to="hub" data-edge-label="SKIPPED" data-edge-key="25" data-edge-id="e-zone-hub" data-composition-routing="workflow-v2-auto" data-edge-role="branch" data-composition-points="128,532;128,558;290,558;290,590" d="M 128 532 L 128 550 Q 128 558 136 558 L 282 558 Q 290 558 290 566 L 290 590" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.4" marker-end="url(#arrowhead)"/>
 
         <!-- Nodes -->
         <g id="node-buttons" data-node-id="buttons" data-node-label="화면 HMI" tabindex="0" role="button" aria-label="화면 HMI 포커스, 일시 정지 · 재개 · 중단, 사람 — 화면 · 팔 밀기" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="일시 정지 · 재개 · 중단" data-node-tag="잔반통 50 kg 이면 스스로 /flow/stop" data-node-context="사람 — 화면 · 팔 밀기">
           <title>화면 HMI · 일시 정지 · 재개 · 중단 · 사람 — 화면 · 팔 밀기 · 잔반통 50 kg 이면 스스로 /flow/stop</title>
-          <rect x="234" y="86" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="234" y="86" width="136" height="68" rx="8" class="c-frontend" data-animate="node" style="--step:7" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="person" class="semantic-sigil s-frontend" transform="translate(240 92) scale(0.6875)">
+          <rect x="246" y="86" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="246" y="86" width="160" height="68" rx="8" class="c-frontend" data-animate="node" style="--step:7" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="person" class="semantic-sigil s-frontend" transform="translate(252 92) scale(0.6875)">
             <circle cx="8" cy="4.5" r="2.5"/><path d="M3 14v-2a5 5 0 0 1 10 0v2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="301.6" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">화면 HMI</text>
-          <text data-detail="context" x="302" y="124" class="t-muted" font-size="8" text-anchor="middle">일시 정지 · 재개 · 중단</text>
-        <text data-detail="fine" x="302" y="142" class="t-frontend" font-size="6" text-anchor="middle">잔반통 50 kg 이면 스스로 /flow/stop</text>
+          <text data-node-label="" data-detail-anchor="" x="326" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">화면 HMI</text>
+          <text data-detail="context" x="326" y="124" class="t-muted" font-size="8" text-anchor="middle">일시 정지 · 재개 · 중단</text>
+        <text data-detail="fine" x="326" y="142" class="t-frontend" font-size="7" text-anchor="middle">잔반통 50 kg 이면 스스로 /flow/stop</text>
         </g>
 
         <g id="node-fix" data-node-id="fix" data-node-label="고치고 재개" tabindex="0" role="button" aria-label="고치고 재개 포커스, 케이블 · 툴 정리 → 팔 밀기, 사람 — 화면 · 팔 밀기" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="케이블 · 툴 정리 → 팔 밀기" data-node-tag="15 N 0.15 s 밀기 또는 재개 버튼" data-node-context="사람 — 화면 · 팔 밀기">
           <title>고치고 재개 · 케이블 · 툴 정리 → 팔 밀기 · 사람 — 화면 · 팔 밀기 · 15 N 0.15 s 밀기 또는 재개 버튼</title>
-          <rect x="576" y="86" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="576" y="86" width="136" height="68" rx="8" class="c-frontend" data-animate="node" style="--step:8" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="person" class="semantic-sigil s-frontend" transform="translate(582 92) scale(0.6875)">
+          <rect x="636" y="86" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="636" y="86" width="160" height="68" rx="8" class="c-frontend" data-animate="node" style="--step:8" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="person" class="semantic-sigil s-frontend" transform="translate(642 92) scale(0.6875)">
             <circle cx="8" cy="4.5" r="2.5"/><path d="M3 14v-2a5 5 0 0 1 10 0v2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="633.7" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">고치고 재개</text>
-          <text data-detail="context" x="644" y="124" class="t-muted" font-size="8" text-anchor="middle">케이블 · 툴 정리 → 팔 밀기</text>
-        <text data-detail="fine" x="644" y="142" class="t-frontend" font-size="6.8" text-anchor="middle">15 N 0.15 s 밀기 또는 재개 버튼</text>
+          <text data-node-label="" data-detail-anchor="" x="716" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">고치고 재개</text>
+          <text data-detail="context" x="716" y="124" class="t-muted" font-size="8" text-anchor="middle">케이블 · 툴 정리 → 팔 밀기</text>
+        <text data-detail="fine" x="716" y="142" class="t-frontend" font-size="7" text-anchor="middle">15 N 0.15 s 밀기 또는 재개 버튼</text>
         </g>
 
         <g id="node-op_pause" data-node-id="op_pause" data-node-label="운영자 정지" tabindex="0" role="button" aria-label="운영자 정지 포커스, 재개 이어서 · 중단은 격리, 사람이 필요한 멈춤" aria-pressed="false" data-node-kind="security" data-node-sublabel="재개 이어서 · 중단은 격리" data-node-tag="닦기 동작 · 무게 대기는 끝난 뒤" data-node-context="사람이 필요한 멈춤">
           <title>운영자 정지 · 재개 이어서 · 중단은 격리 · 사람이 필요한 멈춤 · 닦기 동작 · 무게 대기는 끝난 뒤</title>
-          <rect x="234" y="212" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="234" y="212" width="136" height="68" rx="8" class="c-security" data-animate="node" style="--step:9" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="waiting" class="semantic-sigil s-security" transform="translate(240 218) scale(0.6875)">
+          <rect x="246" y="212" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="246" y="212" width="160" height="68" rx="8" class="c-security" data-animate="node" style="--step:9" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="waiting" class="semantic-sigil s-security" transform="translate(252 218) scale(0.6875)">
             <path d="M4 2.5h8M4 13.5h8M5 3c0 2.8 2 3.2 3 5-1 1.8-3 2.2-3 5M11 3c0 2.8-2 3.2-3 5 1 1.8 3 2.2 3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="291.7" y="233" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">운영자 정지</text>
-          <text data-detail="context" x="302" y="250" class="t-muted" font-size="8" text-anchor="middle">재개 이어서 · 중단은 격리</text>
-        <text data-detail="fine" x="302" y="268" class="t-security" font-size="6.8" text-anchor="middle">닦기 동작 · 무게 대기는 끝난 뒤</text>
+          <text data-node-label="" data-detail-anchor="" x="326" y="233" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">운영자 정지</text>
+          <text data-detail="context" x="326" y="250" class="t-muted" font-size="8" text-anchor="middle">재개 이어서 · 중단은 격리</text>
+        <text data-detail="fine" x="326" y="268" class="t-security" font-size="7" text-anchor="middle">닦기 동작 · 무게 대기는 끝난 뒤</text>
         </g>
 
-        <g id="node-hold" data-node-id="hold" data-node-label="케이블 · 툴 멈춤" tabindex="0" role="button" aria-label="케이블 · 툴 멈춤 포커스, 밀기 또는 재개 버튼으로 풂, 사람이 필요한 멈춤" aria-pressed="false" data-node-kind="security" data-node-sublabel="밀기 또는 재개 버튼으로 풂" data-node-tag="집기 실패는 툴을 두고 물러난 뒤 섬" data-node-context="사람이 필요한 멈춤">
-          <title>케이블 · 툴 멈춤 · 밀기 또는 재개 버튼으로 풂 · 사람이 필요한 멈춤 · 집기 실패는 툴을 두고 물러난 뒤 섬</title>
-          <rect x="576" y="212" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="576" y="212" width="136" height="68" rx="8" class="c-security" data-animate="node" style="--step:10" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="stop" class="semantic-sigil s-security" transform="translate(582 218) scale(0.6875)">
+        <g id="node-hold" data-node-id="hold" data-node-label="케이블·툴 멈춤" tabindex="0" role="button" aria-label="케이블·툴 멈춤 포커스, 밀기 또는 재개 버튼으로 풂, 사람이 필요한 멈춤" aria-pressed="false" data-node-kind="security" data-node-sublabel="밀기 또는 재개 버튼으로 풂" data-node-tag="집기 실패는 툴을 두고 물러난 뒤 섬" data-node-context="사람이 필요한 멈춤">
+          <title>케이블·툴 멈춤 · 밀기 또는 재개 버튼으로 풂 · 사람이 필요한 멈춤 · 집기 실패는 툴을 두고 물러난 뒤 섬</title>
+          <rect x="636" y="212" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="636" y="212" width="160" height="68" rx="8" class="c-security" data-animate="node" style="--step:10" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="stop" class="semantic-sigil s-security" transform="translate(642 218) scale(0.6875)">
             <circle cx="8" cy="8" r="5.3"/>
             <rect x="6.1" y="6.1" width="3.8" height="3.8" rx=".5" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="644" y="246.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">케이블 · 툴 멈춤</text>
-          <text data-detail="context" x="644" y="261.1" class="t-muted" font-size="8" text-anchor="middle">밀기 또는 재개 버튼으로 풂</text>
-        <text data-detail="fine" x="644" y="273" class="t-security" font-size="6.2" text-anchor="middle">집기 실패는 툴을 두고 물러난 뒤 섬</text>
+          <text data-node-label="" data-detail-anchor="" x="707.8" y="233" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">케이블·툴 멈춤</text>
+          <text data-detail="context" x="716" y="250" class="t-muted" font-size="8" text-anchor="middle">밀기 또는 재개 버튼으로 풂</text>
+        <text data-detail="fine" x="716" y="268" class="t-security" font-size="7" text-anchor="middle">집기 실패는 툴을 두고 물러난 뒤 섬</text>
         </g>
 
         <g id="node-grip" data-node-id="grip" data-node-label="용기 놓침 멈춤" tabindex="0" role="button" aria-label="용기 놓침 멈춤 포커스, 빈손·미끄러짐 → 재개 버튼, 사람이 필요한 멈춤" aria-pressed="false" data-node-kind="security" data-node-sublabel="빈손·미끄러짐 → 재개 버튼" data-node-tag="② 무게 · ⑤ 헹굼 · 그 단계부터 다시" data-node-context="사람이 필요한 멈춤">
           <title>용기 놓침 멈춤 · 빈손·미끄러짐 → 재개 버튼 · 사람이 필요한 멈춤 · ② 무게 · ⑤ 헹굼 · 그 단계부터 다시</title>
-          <rect x="918" y="212" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="918" y="212" width="136" height="68" rx="8" class="c-security" data-animate="node" style="--step:11" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="stop" class="semantic-sigil s-security" transform="translate(924 218) scale(0.6875)">
+          <rect x="1026" y="212" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="1026" y="212" width="160" height="68" rx="8" class="c-security" data-animate="node" style="--step:11" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="stop" class="semantic-sigil s-security" transform="translate(1032 218) scale(0.6875)">
             <circle cx="8" cy="8" r="5.3"/>
             <rect x="6.1" y="6.1" width="3.8" height="3.8" rx=".5" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="986" y="246.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">용기 놓침 멈춤</text>
-          <text data-detail="context" x="986" y="261.1" class="t-muted" font-size="8" text-anchor="middle">빈손·미끄러짐 → 재개 버튼</text>
-        <text data-detail="fine" x="986" y="273" class="t-security" font-size="6.2" text-anchor="middle">② 무게 · ⑤ 헹굼 · 그 단계부터 다시</text>
+          <text data-node-label="" data-detail-anchor="" x="1097.8" y="233" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">용기 놓침 멈춤</text>
+          <text data-detail="context" x="1106" y="250" class="t-muted" font-size="8" text-anchor="middle">빈손·미끄러짐 → 재개 버튼</text>
+        <text data-detail="fine" x="1106" y="268" class="t-security" font-size="7" text-anchor="middle">② 무게 · ⑤ 헹굼 · 그 단계부터 다시</text>
         </g>
 
         <g id="node-start" data-node-id="start" data-node-label="시작 · 계획" tabindex="0" role="button" aria-label="시작 · 계획 포커스, /flow/start → 그릇2 · 컵2, 정상 흐름 — 시작 뒤 용기마다 ①~⑤" aria-pressed="false" data-node-kind="backend" data-node-sublabel="/flow/start → 그릇2 · 컵2" data-node-tag="화면 시작 버튼 · IDLE 때만" data-node-context="정상 흐름 — 시작 뒤 용기마다 ①~⑤">
           <title>시작 · 계획 · /flow/start → 그릇2 · 컵2 · 정상 흐름 — 시작 뒤 용기마다 ①~⑤ · 화면 시작 버튼 · IDLE 때만</title>
-          <rect x="48" y="338" width="148" height="68" rx="8" class="c-mask"/>
-          <rect x="48" y="338" width="148" height="68" rx="8" class="c-backend" data-animate="node" style="--step:0" stroke-width="1.5"/>
+          <rect x="48" y="338" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="48" y="338" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:0" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="start" class="semantic-sigil s-backend" transform="translate(54 344) scale(0.6875)">
             <circle cx="8" cy="8" r="5"/>
             <path d="m7 5.4 3.6 2.6L7 10.6Z" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="117.7" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">시작 · 계획</text>
-          <text data-detail="context" x="122" y="376" class="t-muted" font-size="8" text-anchor="middle">/flow/start → 그릇2 · 컵2</text>
-        <text data-detail="fine" x="122" y="394" class="t-backend" font-size="7" text-anchor="middle">화면 시작 버튼 · IDLE 때만</text>
+          <text data-node-label="" data-detail-anchor="" x="128" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">시작 · 계획</text>
+          <text data-detail="context" x="128" y="376" class="t-muted" font-size="8" text-anchor="middle">/flow/start → 그릇2 · 컵2</text>
+        <text data-detail="fine" x="128" y="394" class="t-backend" font-size="7" text-anchor="middle">화면 시작 버튼 · IDLE 때만</text>
         </g>
 
         <g id="node-pick" data-node-id="pick" data-node-label="① 집기" tabindex="0" role="button" aria-label="① 집기 포커스, 슬롯 1 → 비면 슬롯 2, 정상 흐름 — 시작 뒤 용기마다 ①~⑤" aria-pressed="false" data-node-kind="backend" data-node-sublabel="슬롯 1 → 비면 슬롯 2" data-node-tag="접근점에서 Z 만 곧게 내려 쥐기" data-node-context="정상 흐름 — 시작 뒤 용기마다 ①~⑤">
           <title>① 집기 · 슬롯 1 → 비면 슬롯 2 · 정상 흐름 — 시작 뒤 용기마다 ①~⑤ · 접근점에서 Z 만 곧게 내려 쥐기</title>
-          <rect x="234" y="338" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="234" y="338" width="136" height="68" rx="8" class="c-backend" data-animate="node" style="--step:1" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(240 344) scale(0.6875)">
+          <rect x="246" y="338" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="246" y="338" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:1" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(252 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="302" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">① 집기</text>
-          <text data-detail="context" x="302" y="376" class="t-muted" font-size="8" text-anchor="middle">슬롯 1 → 비면 슬롯 2</text>
-        <text data-detail="fine" x="302" y="394" class="t-backend" font-size="7" text-anchor="middle">접근점에서 Z 만 곧게 내려 쥐기</text>
+          <text data-node-label="" data-detail-anchor="" x="326" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">① 집기</text>
+          <text data-detail="context" x="326" y="376" class="t-muted" font-size="8" text-anchor="middle">슬롯 1 → 비면 슬롯 2</text>
+        <text data-detail="fine" x="326" y="394" class="t-backend" font-size="7" text-anchor="middle">접근점에서 Z 만 곧게 내려 쥐기</text>
         </g>
 
         <g id="node-weigh" data-node-id="weigh" data-node-label="② 무게 재기" tabindex="0" role="button" aria-label="② 무게 재기 포커스, HOME 경유 · 30회 중앙값, 정상 흐름 — 시작 뒤 용기마다 ①~⑤" aria-pressed="false" data-node-kind="backend" data-node-sublabel="HOME 경유 · 30회 중앙값" data-node-tag="중앙값 − 빈 용기 기준값 = 잔반" data-node-context="정상 흐름 — 시작 뒤 용기마다 ①~⑤">
           <title>② 무게 재기 · HOME 경유 · 30회 중앙값 · 정상 흐름 — 시작 뒤 용기마다 ①~⑤ · 중앙값 − 빈 용기 기준값 = 잔반</title>
-          <rect x="402" y="338" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="402" y="338" width="136" height="68" rx="8" class="c-backend" data-animate="node" style="--step:2" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(408 344) scale(0.6875)">
+          <rect x="438" y="338" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="438" y="338" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:2" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(444 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="459.7" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">② 무게 재기</text>
-          <text data-detail="context" x="470" y="376" class="t-muted" font-size="8" text-anchor="middle">HOME 경유 · 30회 중앙값</text>
-        <text data-detail="fine" x="470" y="394" class="t-backend" font-size="7" text-anchor="middle">중앙값 − 빈 용기 기준값 = 잔반</text>
+          <text data-node-label="" data-detail-anchor="" x="518" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">② 무게 재기</text>
+          <text data-detail="context" x="518" y="376" class="t-muted" font-size="8" text-anchor="middle">HOME 경유 · 30회 중앙값</text>
+        <text data-detail="fine" x="518" y="394" class="t-backend" font-size="7" text-anchor="middle">중앙값 − 빈 용기 기준값 = 잔반</text>
         </g>
 
         <g id="node-seat" data-node-id="seat" data-node-label="③ 홈 안착" tabindex="0" role="button" aria-label="③ 홈 안착 포커스, 스펀지 홈에 Z 만 곧게 놓기, 정상 흐름 — 시작 뒤 용기마다 ①~⑤" aria-pressed="false" data-node-kind="backend" data-node-sublabel="스펀지 홈에 Z 만 곧게 놓기" data-node-tag="그릇 홈 B · 컵 홈 C" data-node-context="정상 흐름 — 시작 뒤 용기마다 ①~⑤">
           <title>③ 홈 안착 · 스펀지 홈에 Z 만 곧게 놓기 · 정상 흐름 — 시작 뒤 용기마다 ①~⑤ · 그릇 홈 B · 컵 홈 C</title>
-          <rect x="576" y="338" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="576" y="338" width="136" height="68" rx="8" class="c-backend" data-animate="node" style="--step:3" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(582 344) scale(0.6875)">
+          <rect x="636" y="338" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="636" y="338" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:3" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(642 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="640.3" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">③ 홈 안착</text>
-          <text data-detail="context" x="644" y="376" class="t-muted" font-size="8" text-anchor="middle">스펀지 홈에 Z 만 곧게 놓기</text>
-        <text data-detail="fine" x="644" y="394" class="t-backend" font-size="7" text-anchor="middle">그릇 홈 B · 컵 홈 C</text>
+          <text data-node-label="" data-detail-anchor="" x="716" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">③ 홈 안착</text>
+          <text data-detail="context" x="716" y="376" class="t-muted" font-size="8" text-anchor="middle">스펀지 홈에 Z 만 곧게 놓기</text>
+        <text data-detail="fine" x="716" y="394" class="t-backend" font-size="7" text-anchor="middle">그릇 홈 B · 컵 홈 C</text>
         </g>
 
         <g id="node-tool" data-node-id="tool" data-node-label="④ 툴 닦기" tabindex="0" role="button" aria-label="④ 툴 닦기 포커스, 툴 → 세제 → 닦기 → 툴 반납, 정상 흐름 — 시작 뒤 용기마다 ①~⑤" aria-pressed="false" data-node-kind="backend" data-node-sublabel="툴 → 세제 → 닦기 → 툴 반납" data-node-tag="그릇 1.5 N 힘 제어 · 컵 주기 운동" data-node-context="정상 흐름 — 시작 뒤 용기마다 ①~⑤">
           <title>④ 툴 닦기 · 툴 → 세제 → 닦기 → 툴 반납 · 정상 흐름 — 시작 뒤 용기마다 ①~⑤ · 그릇 1.5 N 힘 제어 · 컵 주기 운동</title>
-          <rect x="750" y="338" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="750" y="338" width="136" height="68" rx="8" class="c-backend" data-animate="node" style="--step:4" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(756 344) scale(0.6875)">
+          <rect x="834" y="338" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="834" y="338" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:4" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(840 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="814.3" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">④ 툴 닦기</text>
-          <text data-detail="context" x="818" y="376" class="t-muted" font-size="8" text-anchor="middle">툴 → 세제 → 닦기 → 툴 반납</text>
-        <text data-detail="fine" x="818" y="394" class="t-backend" font-size="6.4" text-anchor="middle">그릇 1.5 N 힘 제어 · 컵 주기 운동</text>
+          <text data-node-label="" data-detail-anchor="" x="914" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">④ 툴 닦기</text>
+          <text data-detail="context" x="914" y="376" class="t-muted" font-size="8" text-anchor="middle">툴 → 세제 → 닦기 → 툴 반납</text>
+        <text data-detail="fine" x="914" y="394" class="t-backend" font-size="7" text-anchor="middle">그릇 1.5 N 힘 제어 · 컵 주기 운동</text>
         </g>
 
         <g id="node-rinse" data-node-id="rinse" data-node-label="⑤ 헹굼" tabindex="0" role="button" aria-label="⑤ 헹굼 포커스, 다시 집기 → 담금 → 털기, 정상 흐름 — 시작 뒤 용기마다 ①~⑤" aria-pressed="false" data-node-kind="backend" data-node-sublabel="다시 집기 → 담금 → 털기" data-node-tag="컵은 옆면으로 다시 잡는다" data-node-context="정상 흐름 — 시작 뒤 용기마다 ①~⑤">
           <title>⑤ 헹굼 · 다시 집기 → 담금 → 털기 · 정상 흐름 — 시작 뒤 용기마다 ①~⑤ · 컵은 옆면으로 다시 잡는다</title>
-          <rect x="918" y="338" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="918" y="338" width="136" height="68" rx="8" class="c-backend" data-animate="node" style="--step:5" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(924 344) scale(0.6875)">
+          <rect x="1026" y="338" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="1026" y="338" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:5" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1032 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="986" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">⑤ 헹굼</text>
-          <text data-detail="context" x="986" y="376" class="t-muted" font-size="8" text-anchor="middle">다시 집기 → 담금 → 털기</text>
-        <text data-detail="fine" x="986" y="394" class="t-backend" font-size="7" text-anchor="middle">컵은 옆면으로 다시 잡는다</text>
+          <text data-node-label="" data-detail-anchor="" x="1106" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">⑤ 헹굼</text>
+          <text data-detail="context" x="1106" y="376" class="t-muted" font-size="8" text-anchor="middle">다시 집기 → 담금 → 털기</text>
+        <text data-detail="fine" x="1106" y="394" class="t-backend" font-size="7" text-anchor="middle">컵은 옆면으로 다시 잡는다</text>
         </g>
 
         <g id="node-zone" data-node-id="zone" data-node-label="다음 구역으로" tabindex="0" role="button" aria-label="다음 구역으로 포커스, 두 슬롯 모두 빈손 → 건너뜀, 자동 처리 — 재시도 · 격리" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="두 슬롯 모두 빈손 → 건너뜀" data-node-tag="그 구역 나머지 용기도 건너뜀" data-node-context="자동 처리 — 재시도 · 격리">
           <title>다음 구역으로 · 두 슬롯 모두 빈손 → 건너뜀 · 자동 처리 — 재시도 · 격리 · 그 구역 나머지 용기도 건너뜀</title>
-          <rect x="48" y="464" width="148" height="68" rx="8" class="c-mask"/>
-          <rect x="48" y="464" width="148" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <rect x="48" y="464" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="48" y="464" width="160" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(54 470) scale(0.6875)">
             <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
             <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="111.1" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">다음 구역으로</text>
-          <text data-detail="context" x="122" y="502" class="t-muted" font-size="8" text-anchor="middle">두 슬롯 모두 빈손 → 건너뜀</text>
-        <text data-detail="fine" x="122" y="520" class="t-messagebus" font-size="7" text-anchor="middle">그 구역 나머지 용기도 건너뜀</text>
+          <text data-node-label="" data-detail-anchor="" x="123.1" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">다음 구역으로</text>
+          <text data-detail="context" x="128" y="502" class="t-muted" font-size="8" text-anchor="middle">두 슬롯 모두 빈손 → 건너뜀</text>
+        <text data-detail="fine" x="128" y="520" class="t-messagebus" font-size="7" text-anchor="middle">그 구역 나머지 용기도 건너뜀</text>
         </g>
 
         <g id="node-shake" data-node-id="shake" data-node-label="털고 다시 재기" tabindex="0" role="button" aria-label="털고 다시 재기 포커스, &gt; 50 g 이면 털기 · 2회까지, 자동 처리 — 재시도 · 격리" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="&gt; 50 g 이면 털기 · 2회까지" data-node-tag="잔반통 위 털고 HOME 경유 다시 잼" data-node-context="자동 처리 — 재시도 · 격리">
           <title>털고 다시 재기 · &gt; 50 g 이면 털기 · 2회까지 · 자동 처리 — 재시도 · 격리 · 잔반통 위 털고 HOME 경유 다시 잼</title>
-          <rect x="402" y="464" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="402" y="464" width="136" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(408 470) scale(0.6875)">
+          <rect x="438" y="464" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="438" y="464" width="160" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(444 470) scale(0.6875)">
             <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
             <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="470" y="498.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">털고 다시 재기</text>
-          <text data-detail="context" x="470" y="513.1" class="t-muted" font-size="8" text-anchor="middle">&gt; 50 g 이면 털기 · 2회까지</text>
-        <text data-detail="fine" x="470" y="525.5" class="t-messagebus" font-size="6.6" text-anchor="middle">잔반통 위 털고 HOME 경유 다시 잼</text>
+          <text data-node-label="" data-detail-anchor="" x="509.8" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">털고 다시 재기</text>
+          <text data-detail="context" x="518" y="502" class="t-muted" font-size="8" text-anchor="middle">&gt; 50 g 이면 털기 · 2회까지</text>
+        <text data-detail="fine" x="518" y="520" class="t-messagebus" font-size="7" text-anchor="middle">잔반통 위 털고 HOME 경유 다시 잼</text>
         </g>
 
         <g id="node-isolate" data-node-id="isolate" data-node-label="격리 정리" tabindex="0" role="button" aria-label="격리 정리 포커스, 곧게 위로 → 격리 구역에, 자동 처리 — 재시도 · 격리" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="곧게 위로 → 격리 구역에" data-node-tag="쥔 툴 반납 · 홈 위 용기 다시 집기" data-node-context="자동 처리 — 재시도 · 격리">
           <title>격리 정리 · 곧게 위로 → 격리 구역에 · 자동 처리 — 재시도 · 격리 · 쥔 툴 반납 · 홈 위 용기 다시 집기</title>
-          <rect x="576" y="464" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="576" y="464" width="136" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(582 470) scale(0.6875)">
+          <rect x="636" y="464" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="636" y="464" width="160" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(642 470) scale(0.6875)">
             <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
             <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="640.3" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">격리 정리</text>
-          <text data-detail="context" x="644" y="502" class="t-muted" font-size="8" text-anchor="middle">곧게 위로 → 격리 구역에</text>
-        <text data-detail="fine" x="644" y="520" class="t-messagebus" font-size="6.4" text-anchor="middle">쥔 툴 반납 · 홈 위 용기 다시 집기</text>
+          <text data-node-label="" data-detail-anchor="" x="716" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">격리 정리</text>
+          <text data-detail="context" x="716" y="502" class="t-muted" font-size="8" text-anchor="middle">곧게 위로 → 격리 구역에</text>
+        <text data-detail="fine" x="716" y="520" class="t-messagebus" font-size="7" text-anchor="middle">쥔 툴 반납 · 홈 위 용기 다시 집기</text>
         </g>
 
-        <g id="node-retry" data-node-id="retry" data-node-label="한 번 더 (그 동작)" tabindex="0" role="button" aria-label="한 번 더 (그 동작) 포커스, 닦기 전 툴 없으면 툴 멈춤, 자동 처리 — 재시도 · 격리" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="닦기 전 툴 없으면 툴 멈춤" data-node-tag="곧게 위로 뒤 같은 동작 1번 더" data-node-context="자동 처리 — 재시도 · 격리">
-          <title>한 번 더 (그 동작) · 닦기 전 툴 없으면 툴 멈춤 · 자동 처리 — 재시도 · 격리 · 곧게 위로 뒤 같은 동작 1번 더</title>
-          <rect x="750" y="464" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="750" y="464" width="136" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(756 470) scale(0.6875)">
+        <g id="node-retry" data-node-id="retry" data-node-label="한 번 더 시도" tabindex="0" role="button" aria-label="한 번 더 시도 포커스, 닦기 전 툴 없으면 툴 멈춤, 자동 처리 — 재시도 · 격리" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="닦기 전 툴 없으면 툴 멈춤" data-node-tag="곧게 위로 뒤 같은 동작 1번 더" data-node-context="자동 처리 — 재시도 · 격리">
+          <title>한 번 더 시도 · 닦기 전 툴 없으면 툴 멈춤 · 자동 처리 — 재시도 · 격리 · 곧게 위로 뒤 같은 동작 1번 더</title>
+          <rect x="834" y="464" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="834" y="464" width="160" height="68" rx="8" class="c-messagebus" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(840 470) scale(0.6875)">
             <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
             <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="818" y="498.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">한 번 더 (그 동작)</text>
-          <text data-detail="context" x="818" y="513.1" class="t-muted" font-size="8" text-anchor="middle">닦기 전 툴 없으면 툴 멈춤</text>
-        <text data-detail="fine" x="818" y="525.9" class="t-messagebus" font-size="7" text-anchor="middle">곧게 위로 뒤 같은 동작 1번 더</text>
+          <text data-node-label="" data-detail-anchor="" x="909.1" y="485" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">한 번 더 시도</text>
+          <text data-detail="context" x="914" y="502" class="t-muted" font-size="8" text-anchor="middle">닦기 전 툴 없으면 툴 멈춤</text>
+        <text data-detail="fine" x="914" y="520" class="t-messagebus" font-size="7" text-anchor="middle">곧게 위로 뒤 같은 동작 1번 더</text>
         </g>
 
         <g id="node-done" data-node-id="done" data-node-label="완료" tabindex="0" role="button" aria-label="완료 포커스, DONE 1 s 유지 → IDLE, 정상 흐름 — 적재 · 다음 용기" aria-pressed="false" data-node-kind="backend" data-node-sublabel="DONE 1 s 유지 → IDLE" data-node-tag="빈 구역으로 끝나면 HOME 먼저" data-node-context="정상 흐름 — 적재 · 다음 용기">
           <title>완료 · DONE 1 s 유지 → IDLE · 정상 흐름 — 적재 · 다음 용기 · 빈 구역으로 끝나면 HOME 먼저</title>
-          <rect x="48" y="590" width="148" height="68" rx="8" class="c-mask"/>
-          <rect x="48" y="590" width="148" height="68" rx="8" class="c-backend" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <rect x="48" y="590" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="48" y="590" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:12" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="success" class="semantic-sigil s-backend" transform="translate(54 596) scale(0.6875)">
             <circle cx="8" cy="8" r="5.3"/>
             <path d="m5.2 8 1.8 1.8 3.8-4"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="122" y="611" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">완료</text>
-          <text data-detail="context" x="122" y="628" class="t-muted" font-size="8" text-anchor="middle">DONE 1 s 유지 → IDLE</text>
-        <text data-detail="fine" x="122" y="646" class="t-backend" font-size="7" text-anchor="middle">빈 구역으로 끝나면 HOME 먼저</text>
+          <text data-node-label="" data-detail-anchor="" x="128" y="611" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">완료</text>
+          <text data-detail="context" x="128" y="628" class="t-muted" font-size="8" text-anchor="middle">DONE 1 s 유지 → IDLE</text>
+        <text data-detail="fine" x="128" y="646" class="t-backend" font-size="7" text-anchor="middle">빈 구역으로 끝나면 HOME 먼저</text>
         </g>
 
-        <g id="node-hub" data-node-id="hub" data-node-label="기록 → 다음 용기?" tabindex="0" role="button" aria-label="기록 → 다음 용기? 포커스, /flow/event · records.csv, 정상 흐름 — 적재 · 다음 용기" aria-pressed="false" data-node-kind="database" data-node-sublabel="/flow/event · records.csv" data-node-tag="DONE · ISOLATED · ERROR · SKIPPED" data-node-context="정상 흐름 — 적재 · 다음 용기">
-          <title>기록 → 다음 용기? · /flow/event · records.csv · 정상 흐름 — 적재 · 다음 용기 · DONE · ISOLATED · ERROR · SKIPPED</title>
-          <rect x="234" y="590" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="234" y="590" width="136" height="68" rx="8" class="c-database" data-animate="node" style="--step:12" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(240 596) scale(0.6875)">
+        <g id="node-hub" data-node-id="hub" data-node-label="기록 → 다음?" tabindex="0" role="button" aria-label="기록 → 다음? 포커스, /flow/event · records.csv, 정상 흐름 — 적재 · 다음 용기" aria-pressed="false" data-node-kind="database" data-node-sublabel="/flow/event · records.csv" data-node-tag="DONE · ISOLATED · ERROR · SKIPPED" data-node-context="정상 흐름 — 적재 · 다음 용기">
+          <title>기록 → 다음? · /flow/event · records.csv · 정상 흐름 — 적재 · 다음 용기 · DONE · ISOLATED · ERROR · SKIPPED</title>
+          <rect x="246" y="590" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="246" y="590" width="160" height="68" rx="8" class="c-database" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(252 596) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="302" y="624.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">기록 → 다음 용기?</text>
-          <text data-detail="context" x="302" y="639.1" class="t-muted" font-size="8" text-anchor="middle">/flow/event · records.csv</text>
-        <text data-detail="fine" x="302" y="651.2" class="t-database" font-size="6.4" text-anchor="middle">DONE · ISOLATED · ERROR · SKIPPED</text>
+          <text data-node-label="" data-detail-anchor="" x="324.4" y="611" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">기록 → 다음?</text>
+          <text data-detail="context" x="326" y="628" class="t-muted" font-size="8" text-anchor="middle">/flow/event · records.csv</text>
+        <text data-detail="fine" x="326" y="646" class="t-database" font-size="7" text-anchor="middle">DONE · ISOLATED · ERROR · SKIPPED</text>
         </g>
 
         <g id="node-rack" data-node-id="rack" data-node-label="⑥ 팔레트 적재" tabindex="0" role="button" aria-label="⑥ 팔레트 적재 포커스, 칸에 곧게 내려 놓기 → HOME, 정상 흐름 — 적재 · 다음 용기" aria-pressed="false" data-node-kind="backend" data-node-sublabel="칸에 곧게 내려 놓기 → HOME" data-node-tag="칸 배정: 그릇 B1·B2 · 컵 C1·C2 차례" data-node-context="정상 흐름 — 적재 · 다음 용기">
           <title>⑥ 팔레트 적재 · 칸에 곧게 내려 놓기 → HOME · 정상 흐름 — 적재 · 다음 용기 · 칸 배정: 그릇 B1·B2 · 컵 C1·C2 차례</title>
-          <rect x="918" y="590" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="918" y="590" width="136" height="68" rx="8" class="c-backend" data-animate="node" style="--step:6" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(924 596) scale(0.6875)">
+          <rect x="1026" y="590" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="1026" y="590" width="160" height="68" rx="8" class="c-backend" data-animate="node" style="--step:6" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1032 596) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="986" y="624.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">⑥ 팔레트 적재</text>
-          <text data-detail="context" x="986" y="639.1" class="t-muted" font-size="8" text-anchor="middle">칸에 곧게 내려 놓기 → HOME</text>
-        <text data-detail="fine" x="986" y="650.7" class="t-backend" font-size="6" text-anchor="middle">칸 배정: 그릇 B1·B2 · 컵 C1·C2 차례</text>
+          <text data-node-label="" data-detail-anchor="" x="1101.1" y="611" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">⑥ 팔레트 적재</text>
+          <text data-detail="context" x="1106" y="628" class="t-muted" font-size="8" text-anchor="middle">칸에 곧게 내려 놓기 → HOME</text>
+        <text data-detail="fine" x="1106" y="646" class="t-backend" font-size="7" text-anchor="middle">칸 배정: 그릇 B1·B2 · 컵 C1·C2 차례</text>
         </g>
 
         <g id="node-signals" data-node-id="signals" data-node-label="오류 2단 신호" tabindex="0" role="button" aria-label="오류 2단 신호 포커스, 밀기 → 그리퍼 열기 → 재개, 로봇 오류 — 어느 단계든" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="밀기 → 그리퍼 열기 → 재개" data-node-tag="신호 2 는 버튼만 · 빈손이면 1번" data-node-context="로봇 오류 — 어느 단계든">
           <title>오류 2단 신호 · 밀기 → 그리퍼 열기 → 재개 · 로봇 오류 — 어느 단계든 · 신호 2 는 버튼만 · 빈손이면 1번</title>
-          <rect x="234" y="716" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="234" y="716" width="136" height="68" rx="8" class="c-frontend" data-animate="node" style="--step:12" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="person" class="semantic-sigil s-frontend" transform="translate(240 722) scale(0.6875)">
+          <rect x="246" y="716" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="246" y="716" width="160" height="68" rx="8" class="c-frontend" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="person" class="semantic-sigil s-frontend" transform="translate(252 722) scale(0.6875)">
             <circle cx="8" cy="4.5" r="2.5"/><path d="M3 14v-2a5 5 0 0 1 10 0v2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="302" y="750.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">오류 2단 신호</text>
-          <text data-detail="context" x="302" y="765.1" class="t-muted" font-size="8" text-anchor="middle">밀기 → 그리퍼 열기 → 재개</text>
-        <text data-detail="fine" x="302" y="777.7" class="t-frontend" font-size="6.8" text-anchor="middle">신호 2 는 버튼만 · 빈손이면 1번</text>
+          <text data-node-label="" data-detail-anchor="" x="321.1" y="737" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">오류 2단 신호</text>
+          <text data-detail="context" x="326" y="754" class="t-muted" font-size="8" text-anchor="middle">밀기 → 그리퍼 열기 → 재개</text>
+        <text data-detail="fine" x="326" y="772" class="t-frontend" font-size="7" text-anchor="middle">신호 2 는 버튼만 · 빈손이면 1번</text>
         </g>
 
         <g id="node-roboterr" data-node-id="roboterr" data-node-label="로봇 오류 멈춤" tabindex="0" role="button" aria-label="로봇 오류 멈춤 포커스, 예외 → 곧게 위로 뒤 멈춤, 로봇 오류 — 어느 단계든" aria-pressed="false" data-node-kind="security" data-node-sublabel="예외 → 곧게 위로 뒤 멈춤" data-node-tag="이동 미완이면 후퇴 없이 그 자리" data-node-context="로봇 오류 — 어느 단계든">
           <title>로봇 오류 멈춤 · 예외 → 곧게 위로 뒤 멈춤 · 로봇 오류 — 어느 단계든 · 이동 미완이면 후퇴 없이 그 자리</title>
-          <rect x="576" y="716" width="136" height="68" rx="8" class="c-mask"/>
-          <rect x="576" y="716" width="136" height="68" rx="8" class="c-security" data-animate="node" style="--step:12" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="stop" class="semantic-sigil s-security" transform="translate(582 722) scale(0.6875)">
+          <rect x="636" y="716" width="160" height="68" rx="8" class="c-mask"/>
+          <rect x="636" y="716" width="160" height="68" rx="8" class="c-security" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="stop" class="semantic-sigil s-security" transform="translate(642 722) scale(0.6875)">
             <circle cx="8" cy="8" r="5.3"/>
             <rect x="6.1" y="6.1" width="3.8" height="3.8" rx=".5" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="644" y="750.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">로봇 오류 멈춤</text>
-          <text data-detail="context" x="644" y="765.1" class="t-muted" font-size="8" text-anchor="middle">예외 → 곧게 위로 뒤 멈춤</text>
-        <text data-detail="fine" x="644" y="777.7" class="t-security" font-size="6.8" text-anchor="middle">이동 미완이면 후퇴 없이 그 자리</text>
+          <text data-node-label="" data-detail-anchor="" x="707.8" y="737" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">로봇 오류 멈춤</text>
+          <text data-detail="context" x="716" y="754" class="t-muted" font-size="8" text-anchor="middle">예외 → 곧게 위로 뒤 멈춤</text>
+        <text data-detail="fine" x="716" y="772" class="t-security" font-size="7" text-anchor="middle">이동 미완이면 후퇴 없이 그 자리</text>
         </g>
 
         <!-- Edge labels -->
         <g data-detail="context" data-edge-from="buttons" data-edge-to="op_pause" data-edge-label="일시 정지 · 잔반통 가득" data-edge-key="0" data-edge-id="e-buttons-pause">
-          <rect x="241.8" y="173" width="120.39999999999999" height="14" rx="3" class="c-mask"/>
-          <text x="302" y="183" class="t-muted" font-size="8" text-anchor="middle">일시 정지 · 잔반통 가득</text>
+          <rect x="265.8" y="173" width="120.39999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="326" y="183" class="t-muted" font-size="8" text-anchor="middle">일시 정지 · 잔반통 가득</text>
         </g>
         <g data-detail="context" data-edge-from="roboterr" data-edge-to="signals" data-edge-label="화면 알림" data-edge-key="1" data-edge-id="e-err-signals">
-          <rect x="446.4" y="730" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
-          <text x="473" y="740" class="t-muted" font-size="8" text-anchor="middle">화면 알림</text>
+          <rect x="494.4" y="730" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="521" y="740" class="t-muted" font-size="8" text-anchor="middle">화면 알림</text>
         </g>
         <g data-detail="context" data-edge-from="fix" data-edge-to="tool" data-edge-label="④ 툴 집기부터" data-edge-key="2" data-edge-id="e-fix-tool">
-          <rect x="725.3" y="100" width="72.4" height="14" rx="3" class="c-mask"/>
-          <text x="761.5" y="110" class="t-muted" font-size="8" text-anchor="middle">④ 툴 집기부터</text>
+          <rect x="815.3" y="100" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="851.5" y="110" class="t-muted" font-size="8" text-anchor="middle">④ 툴 집기부터</text>
         </g>
         <g data-detail="context" data-edge-from="fix" data-edge-to="weigh" data-edge-label="② 무게부터" data-edge-key="3" data-edge-id="e-fix-weigh">
-          <rect x="490.5" y="100" width="58" height="14" rx="3" class="c-mask"/>
-          <text x="519.5" y="110" class="t-muted" font-size="8" text-anchor="middle">② 무게부터</text>
+          <rect x="544.5" y="100" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="573.5" y="110" class="t-muted" font-size="8" text-anchor="middle">② 무게부터</text>
         </g>
         <g data-detail="context" data-edge-from="hold" data-edge-to="fix" data-edge-label="화면 알림" data-edge-key="4" data-edge-id="e-hold-fix">
-          <rect x="617.4" y="173" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
-          <text x="644" y="183" class="t-muted" font-size="8" text-anchor="middle">화면 알림</text>
+          <rect x="689.4" y="173" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="716" y="183" class="t-muted" font-size="8" text-anchor="middle">화면 알림</text>
         </g>
         <g data-detail="context" data-edge-from="hub" data-edge-to="done" data-edge-label="없음" data-edge-key="5" data-edge-id="e-hub-done">
-          <rect x="200" y="604" width="30" height="14" rx="3" class="c-mask"/>
-          <text x="215" y="614" class="t-edge-emphasis" font-size="8" text-anchor="middle">없음</text>
+          <rect x="212" y="604" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="227" y="614" class="t-edge-emphasis" font-size="8" text-anchor="middle">없음</text>
         </g>
         <g data-detail="context" data-edge-from="hub" data-edge-to="pick" data-edge-label="남은 용기" data-edge-key="6" data-edge-id="e-hub-pick">
-          <rect x="275.4" y="488" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
-          <text x="302" y="498" class="t-muted" font-size="8" text-anchor="middle">남은 용기</text>
+          <rect x="299.4" y="488" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="326" y="498" class="t-muted" font-size="8" text-anchor="middle">남은 용기</text>
         </g>
         <g data-detail="context" data-edge-from="isolate" data-edge-to="hub" data-edge-label="ISOLATED" data-edge-key="7" data-edge-id="e-iso-hub">
-          <rect x="460.8" y="538" width="48.4" height="14" rx="3" class="c-mask"/>
-          <text x="485" y="548" class="t-muted" font-size="8" text-anchor="middle">ISOLATED</text>
+          <rect x="508.8" y="538" width="48.4" height="14" rx="3" class="c-mask"/>
+          <text x="533" y="548" class="t-muted" font-size="8" text-anchor="middle">ISOLATED</text>
         </g>
 
         <g data-detail="context" data-edge-from="pick" data-edge-to="zone" data-edge-label="빈손" data-edge-key="9" data-edge-id="e-pick-zone">
-          <rect x="207.5" y="471" width="30" height="14" rx="3" class="c-mask"/>
-          <text x="222.5" y="481" class="t-muted" font-size="8" text-anchor="middle">빈손</text>
+          <rect x="222.5" y="471" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="237.5" y="481" class="t-muted" font-size="8" text-anchor="middle">빈손</text>
         </g>
         <g data-detail="context" data-edge-from="rack" data-edge-to="hub" data-edge-label="DONE" data-edge-key="10" data-edge-id="e-rack-hub">
-          <rect x="629" y="604" width="30" height="14" rx="3" class="c-mask"/>
-          <text x="644" y="614" class="t-edge-emphasis" font-size="8" text-anchor="middle">DONE</text>
+          <rect x="701" y="604" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="716" y="614" class="t-edge-emphasis" font-size="8" text-anchor="middle">DONE</text>
         </g>
         <g data-detail="context" data-edge-from="retry" data-edge-to="isolate" data-edge-label="실패" data-edge-key="11" data-edge-id="e-retry-iso">
-          <rect x="716" y="478" width="30" height="14" rx="3" class="c-mask"/>
-          <text x="731" y="488" class="t-muted" font-size="8" text-anchor="middle">실패</text>
+          <rect x="800" y="478" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="815" y="488" class="t-muted" font-size="8" text-anchor="middle">실패</text>
         </g>
         <g data-detail="context" data-edge-from="rinse" data-edge-to="grip" data-edge-label="GRIP_FAIL" data-edge-key="12" data-edge-id="e-rinse-grip">
-          <rect x="959.4" y="299" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
-          <text x="986" y="309" class="t-muted" font-size="8" text-anchor="middle">GRIP_FAIL</text>
+          <rect x="1079.4" y="299" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="1106" y="309" class="t-muted" font-size="8" text-anchor="middle">GRIP_FAIL</text>
         </g>
 
 
         <g data-detail="context" data-edge-from="shake" data-edge-to="isolate" data-edge-label="남음" data-edge-key="15" data-edge-id="e-shake-iso">
-          <rect x="542" y="478" width="30" height="14" rx="3" class="c-mask"/>
-          <text x="557" y="488" class="t-muted" font-size="8" text-anchor="middle">남음</text>
+          <rect x="602" y="478" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="617" y="488" class="t-muted" font-size="8" text-anchor="middle">남음</text>
         </g>
         <g data-detail="context" data-edge-from="shake" data-edge-to="seat" data-edge-label="통과" data-edge-key="16" data-edge-id="e-shake-seat">
-          <rect x="554" y="412" width="30" height="14" rx="3" class="c-mask"/>
-          <text x="569" y="422" class="t-muted" font-size="8" text-anchor="middle">통과</text>
+          <rect x="614" y="412" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="629" y="422" class="t-muted" font-size="8" text-anchor="middle">통과</text>
         </g>
         <g data-detail="context" data-edge-from="signals" data-edge-to="hub" data-edge-label="HOME → ERROR" data-edge-key="17" data-edge-id="e-signals-hub">
-          <rect x="268.2" y="677" width="67.6" height="14" rx="3" class="c-mask"/>
-          <text x="302" y="687" class="t-muted" font-size="8" text-anchor="middle">HOME → ERROR</text>
+          <rect x="292.2" y="677" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="326" y="687" class="t-muted" font-size="8" text-anchor="middle">HOME → ERROR</text>
         </g>
 
         <g data-detail="context" data-edge-from="tool" data-edge-to="hold" data-edge-label="툴 놓침 · 집기 실패" data-edge-key="19" data-edge-id="e-tool-hold">
-          <rect x="668.4" y="286" width="101.2" height="14" rx="3" class="c-mask"/>
-          <text x="719" y="296" class="t-muted" font-size="8" text-anchor="middle">툴 놓침 · 집기 실패</text>
+          <rect x="752.4" y="286" width="101.2" height="14" rx="3" class="c-mask"/>
+          <text x="803" y="296" class="t-muted" font-size="8" text-anchor="middle">툴 놓침 · 집기 실패</text>
         </g>
         <g data-detail="context" data-edge-from="tool" data-edge-to="retry" data-edge-label="힘 · 시간 상한" data-edge-key="20" data-edge-id="e-tool-retry">
-          <rect x="779.4" y="425" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="818" y="435" class="t-muted" font-size="8" text-anchor="middle">힘 · 시간 상한</text>
+          <rect x="875.4" y="425" width="77.2" height="14" rx="3" class="c-mask"/>
+          <text x="914" y="435" class="t-muted" font-size="8" text-anchor="middle">힘 · 시간 상한</text>
         </g>
 
         <g data-detail="context" data-edge-from="weigh" data-edge-to="hold" data-edge-label="케이블 떨림 &gt; 80 g" data-edge-key="22" data-edge-id="e-weigh-hold">
-          <rect x="480.8" y="226" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
-          <text x="529" y="236" class="t-muted" font-size="8" text-anchor="middle">케이블 떨림 &gt; 80 g</text>
+          <rect x="540.8" y="226" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="589" y="236" class="t-muted" font-size="8" text-anchor="middle">케이블 떨림 &gt; 80 g</text>
         </g>
 
 
         <g data-detail="context" data-edge-from="zone" data-edge-to="hub" data-edge-label="SKIPPED" data-edge-key="25" data-edge-id="e-zone-hub">
-          <rect x="172.2" y="538" width="43.6" height="14" rx="3" class="c-mask"/>
-          <text x="194" y="548" class="t-muted" font-size="8" text-anchor="middle">SKIPPED</text>
+          <rect x="187.2" y="538" width="43.6" height="14" rx="3" class="c-mask"/>
+          <text x="209" y="548" class="t-muted" font-size="8" text-anchor="middle">SKIPPED</text>
         </g>
 
         <!-- Legend -->
@@ -5855,7 +5855,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>EMPTY_ZONE → 다음 구역 · LEFTOVER_REMAIN → 격리 · FORCE_LIMIT · TIMEOUT → 곧게 위로 → 1번 더 → 격리</li>
           <li>정책은 단계가 아니라 코드로 고르므로 세제 TIMEOUT(60 s)에도 &#39;곧게 위로 → 1번 더 → 격리&#39;가 걸림</li>
           <li>닦기 상한: 누르는 힘 10 N · 옆 힘 25 N · 전체 120 s</li>
-          <li>닦기를 다시 하기 전 툴이 손에 없으면 TOOL_LOST → 케이블 · 툴 멈춤 → 툴 집기부터 · 재시도 중 ROBOT_ERROR · 후퇴 실패 → 로봇 오류 멈춤</li>
+          <li>닦기를 다시 하기 전 툴이 손에 없으면 TOOL_LOST → 케이블·툴 멈춤 → 툴 집기부터 · 재시도 중 ROBOT_ERROR · 후퇴 실패 → 로봇 오류 멈춤</li>
           <li>격리 정리: 곧게 위로 → HOME → (툴을 쥐었으면) 툴 반납 → (용기가 홈에 있으면) 위에서 다시 집고 HOME → 격리 구역 → HOME → ISOLATED</li>
           <li>잔반 남음은 용기를 든 채라 곧게 위로 → HOME → 격리 구역 → HOME 만 탐 · 격리 뒤 다음 용기는 같은 팔레트 칸을 받음</li>
         </ul>
