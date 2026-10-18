@@ -35,7 +35,7 @@
           "NEXT",
           "DONE"
         ],
-        "note": "용기 1개는 PICK 부터 RACK 까지 7단계를 돈다. 끝나면 '남은 용기?' 에서 다음 용기 PICK 이나 DONE(1.0 s 뒤 IDLE)으로 간다."
+        "note": "용기 1개는 PICK 부터 RACK 까지 7단계를 거친다. 끝나면 '남은 용기?' 에서 다음 용기 PICK 이나 DONE(1.0 s 뒤 IDLE)으로 간다."
       },
       {
         "id": "view-pause",
@@ -89,7 +89,7 @@
     {
       "id": "SEAT",
       "type": "active",
-      "label": "SEAT 놓기",
+      "label": "SEAT 안착",
       "icon": "none"
     },
     {
@@ -214,7 +214,7 @@
       "id": "t-pick-next",
       "from": "PICK",
       "to": "NEXT",
-      "label": "구역 빔 · SKIPPED"
+      "label": "빈 구역 · SKIPPED"
     },
     {
       "id": "t-done-idle",
@@ -336,13 +336,13 @@
       "dot": "amber",
       "title": "멈춤과 재개 (PAUSED)",
       "items": [
-        "/flow/stop → stop 깃발 + cc.pause(). 이동 도중이면 그 자리, 아니면 단계 사이 · 용기 사이에서 선다. 재개하면 하던 이동이나 아직 시작하지 않은 그 단계를 이어 간다.",
+        "/flow/stop → stop 플래그 + cc.pause(). 이동 도중이면 그 자리, 아니면 단계 사이 · 용기 사이에서 선다. 재개하면 하던 이동이나 아직 시작하지 않은 그 단계를 이어 간다.",
         "GRIP_FAIL · 정책에 없는 코드 → 재개 버튼 → 실패한 그 단계부터 다시(RETRY_STEP).",
         "TOOL_FAIL → 툴 집기부터. TOOL_LOST(닦기 재시도 직전 툴 없음 포함) → 곧게 위로 → 툴 집기 → 세제 → 닦기.",
         "케이블 이상(무게 떨림 > 80 g) → 후퇴 없이 cc.pause() 로 선다 → 재개하면 WEIGH 를 처음부터 다시 잰다.",
-        "실기에서는 /flow/state 가 step 과 상관없이 cc.is_paused() 면 PAUSED 로 알린다. 그래서 격리 정리 중에 멈춰도 PAUSED 다. IDLE 에서 stop 을 누르면 pause 깃발이 남아 /flow/start 뒤 첫 PICK 앞에서 바로 멈춘다.",
+        "실기에서는 /flow/state 가 step 과 상관없이 cc.is_paused() 면 PAUSED 로 알린다. 그래서 격리 정리 중에 멈춰도 PAUSED 다. IDLE 에서 stop 을 누르면 pause 플래그가 남아 /flow/start 뒤 첫 PICK 앞에서 바로 멈춘다.",
         "마지막 구역이 비어 HOME 복귀가 실패하면 멈추고, 재개할 때마다 HOME 을 다시 시도한다(횟수 제한 없음) → DONE.",
-        "용기 사이에서 멈춘 뒤 /flow/abort 를 누르면 실기에서는 halt · pause 깃발이 풀리지 않는다. 다음 용기 앞에서 다시 멈추고, 그 뒤 재개 · 중단 어느 쪽이든 빈손으로 격리 정리를 돌아 ISOLATED(OPERATOR_ABORT)로 남긴다. 그 용기는 반납 구역에 남는다(코드로 읽은 동작 · 시험 없음)."
+        "용기 사이에서 멈춘 뒤 /flow/abort 를 누르면 실기에서는 halt · pause 플래그가 풀리지 않는다. 다음 용기 앞에서 다시 멈추고, 그 뒤 재개 · 중단 어느 쪽이든 빈손으로 격리 정리를 돌아 ISOLATED(OPERATOR_ABORT)로 남긴다. 그 용기는 반납 구역에 남는다(코드로 읽은 동작 · 시험 없음)."
       ]
     },
     {
@@ -374,8 +374,8 @@
       "title": "서비스 /flow/*",
       "items": [
         "/flow/start — step 이 IDLE 일 때만. 완료 · 격리 수와 팔레트 칸을 0 으로 둔다(소모품 횟수는 이어 센다).",
-        "/flow/stop — 언제든 받는다. stop 깃발 + cc.pause().",
-        "/flow/resume — step 이 PAUSED 이거나 cc.is_paused() 일 때만. cc.resume() 하고 stop 깃발도 내린다.",
+        "/flow/stop — 언제든 받는다. stop 플래그 + cc.pause().",
+        "/flow/resume — step 이 PAUSED 이거나 cc.is_paused() 일 때만. cc.resume() 하고 stop 플래그도 내린다.",
         "/flow/abort — (step 이 PAUSED 이거나 cc.is_paused()) 이고 last_code 가 ROBOT_ERROR 가 아닐 때만. 케이블 멈춤도 last_code 를 ROBOT_ERROR 로 두어 거부된다. 받으면 cc.halt() — 이동 도중이면 그 이동이 MotionHalted 로 끊기고 격리 정리로 간다.",
         "/flow/state 는 2 Hz 타이머로만 나간다. 용기마다 /flow/event 1건 · records.csv 1줄."
       ]
@@ -386,7 +386,7 @@
       "items": [
         "PICK 집기 — f1.pick · 슬롯 2개",
         "WEIGH 무게 — f2.leftover_loop",
-        "SEAT 놓기 — f1.place · 스펀지 홈",
+        "SEAT 안착 — f1.place · 스펀지 홈",
         "SOAP 세제 — f1.tool → f3.soap",
         "WIPE 닦기 — f3.wipe_* → f1.tool",
         "RINSE 헹굼 — pick → dip → shake",
@@ -409,8 +409,8 @@
         "WEIGH 무게 — src/f2_sense_flow/f2_sense_flow/flow.py:729-731 (단계표 WEIGH)",
         "WEIGH 무게 — src/f2_sense_flow/f2_sense_flow/sense.py:416-467 (leftover_loop · 잔반 ≤ 50 g)",
         "WEIGH 무게 — src/f2_sense_flow/f2_sense_flow/flow.py:850-907 (케이블 이상 멈춤)",
-        "SEAT 놓기 — src/f2_sense_flow/f2_sense_flow/flow.py:732 (단계표 SEAT)",
-        "SEAT 놓기 — src/f1_handling/f1_handling/handling.py:245-264 (place · 일반 놓기)",
+        "SEAT 안착 — src/f2_sense_flow/f2_sense_flow/flow.py:732 (단계표 SEAT)",
+        "SEAT 안착 — src/f1_handling/f1_handling/handling.py:245-264 (place · 일반 놓기)",
         "SOAP 세제 — src/f2_sense_flow/f2_sense_flow/flow.py:733-734 (단계표 SOAP)",
         "SOAP 세제 — src/f1_handling/f1_handling/handling.py:316-362 (툴 집기 · TOOL_FAIL)",
         "SOAP 세제 — src/f3_wipe/f3_wipe/wipe.py:243-244 (soap TIMEOUT)",

@@ -266,7 +266,7 @@
     {
       "id": "pauses",
       "label": "pauses",
-      "sublabel": "멈춤 1번 = 1줄 (PAUSED 로 들어갈 때 생기고 나올 때 닫힘 · 원인 갈래 · 어떻게 풀렸나)",
+      "sublabel": "멈춤 1번 = 1줄 (PAUSED 로 들어갈 때 생기고 나올 때 닫힘 · 원인 갈래 · 해제 방법)",
       "tag": "회차·멈춤",
       "row": 1,
       "col": 1,
@@ -435,7 +435,7 @@
         "FK 표시(run_id 2개)는 SQL FK 가 아니다. 같은 값으로 잇는 논리적 연결이라 SQLite 가 값을 검사하지 않는다.",
         "선은 표와 표를 잇는다. 선이 표에 닿는 높이는 뜻이 없고, 잇는 칼럼은 선 라벨과 FK 표시로 읽는다.",
         "replacements.item 값은 파이썬(ITEMS · add_replacement)에서만 검사한다.",
-        "시각 칼럼은 모두 TEXT. 적는 프로그램(hmi_bridge · hmi_db)이 도는 PC 의 로컬 시각을 초 단위 isoformat 으로 적는다."
+        "시각 칼럼은 모두 TEXT. 기록하는 프로그램(hmi_bridge · hmi_db)이 실행되는 PC 의 로컬 시각을 초 단위 isoformat 으로 적는다."
       ]
     },
     {

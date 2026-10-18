@@ -44,7 +44,7 @@
           "records",
           "db"
         ],
-        "note": "버튼 → hmi_bridge → /flow/* 서비스(콜백은 깃발만) → flow_node 메인 스레드가 기능 함수를 부른다. /flow/state 는 통신 스레드 2 Hz 타이머, event · weigh 는 메인 스레드가 보낸다."
+        "note": "버튼 → hmi_bridge → /flow/* 서비스(콜백은 플래그만) → flow_node 메인 스레드가 기능 함수를 부른다. /flow/state 는 통신 스레드 2 Hz 타이머, event · weigh 는 메인 스레드가 보낸다."
       },
       {
         "id": "robot-path",
@@ -87,7 +87,7 @@
           "flow",
           "mock"
         ],
-        "note": "prewash_mock.launch.py: PC 1대에 flow_node(f1·f2·f3 모두 가짜)와 hmi_bridge. LOCALHOST 탐색이라 Discovery Server · 두산 드라이버 없음 · /flow/weigh 안 나감."
+        "note": "prewash_mock.launch.py: PC 1대에 flow_node(f1·f2·f3 모두 모의(mock))와 hmi_bridge. LOCALHOST 탐색이라 Discovery Server · 두산 드라이버 없음 · /flow/weigh 안 나감."
       }
     ]
   },
@@ -279,7 +279,7 @@
           "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
           "line": 78,
           "end_line": 155,
-          "label": "서비스 4 · 토픽 3 · 콜백은 깃발만"
+          "label": "서비스 4 · 토픽 3 · 콜백은 플래그만"
         },
         {
           "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
@@ -331,8 +331,8 @@
     {
       "id": "mock",
       "type": "backend",
-      "label": "가짜 기능 (mock)",
-      "sublabel": "mock_f1~f3 · 셋 다면 로봇 없이",
+      "label": "모의 기능 (mock)",
+      "sublabel": "mock_f1~f3 · 셋 다 모의면 로봇 없이",
       "pos": [
         48,
         430
@@ -346,13 +346,13 @@
           "path": "src/f2_sense_flow/f2_sense_flow/flow.py",
           "line": 52,
           "end_line": 81,
-          "label": "진짜/가짜 모듈 고르기"
+          "label": "실제 · 모의 모듈 선택"
         },
         {
           "path": "src/f2_sense_flow/f2_sense_flow/flow_node.py",
           "line": 205,
           "end_line": 214,
-          "label": "셋 다 가짜일 때만 robot=False"
+          "label": "셋 다 모의일 때만 robot=False"
         },
         {
           "path": "src/prewash_bringup/launch/prewash_mock.launch.py",
@@ -908,9 +908,9 @@
       "dot": "cyan",
       "title": "구조 원칙",
       "items": [
-        "우리가 만든 실행 노드 2개: flow_node(로봇 PC) · hmi_bridge(웹 PC)",
-        "f1 · f2 · f3 는 노드가 아닌 함수 모듈 — flow_node 프로세스 안에서 돈다",
-        "로봇 명령은 flow_node 메인 스레드에서만 · 서비스 콜백은 깃발만 세운다",
+        "팀이 만든 실행 노드 2개: flow_node(로봇 PC) · hmi_bridge(웹 PC)",
+        "f1 · f2 · f3 는 노드가 아닌 함수 모듈 — flow_node 프로세스 안에서 실행된다",
+        "로봇 명령은 flow_node 메인 스레드에서만 · 서비스 콜백은 플래그만 세운다",
         "기능 함수는 cc.* 만 부르고 DSR_ROBOT2 를 직접 쓰지 않는다",
         "flow_node 도 cc 를 직접 부른다: pause·resume·halt · safe_retreat·force_off(후퇴) · release · start_nudge_watch·check_nudge(넛지) · robot_state·recover_robot_if_needed·wait_robot_ready(복구) · grip_width · init·set_weigh_listener·shutdown"
       ]

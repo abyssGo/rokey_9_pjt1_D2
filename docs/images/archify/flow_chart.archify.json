@@ -100,7 +100,7 @@
       "icon": "stop",
       "width": 160,
       "label": "케이블·툴 멈춤",
-      "sublabel": "밀기 또는 재개 버튼으로 풂"
+      "sublabel": "팔 밀기 또는 재개 버튼으로 해제"
     },
     {
       "id": "grip",

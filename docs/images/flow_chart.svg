@@ -3,7 +3,7 @@
 <defs><pattern id="g" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#e2e8f0" stroke-width=".8"/></pattern><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L10 5L0 10z" fill="#4b5563"/></marker></defs>
 <rect width="1000" height="1150" fill="#fff"/><rect width="1000" height="1150" fill="url(#g)"/>
 <text x="500.0" y="30" font-size="18" fill="#0f172a" text-anchor="middle" font-weight="700">PreWash-Cell 플로우 차트 — 시작 버튼 한 번, 용기 1개의 흐름</text>
-<text x="500.0" y="50" font-size="11" fill="#64748b" text-anchor="middle">화면에서 시작을 누르면 그릇 2개 → 컵 2개를 차례로 돈다 · 왼쪽 = 정상 흐름 · 오른쪽 = 어느 단계에서든 걸리는 예외 처리</text>
+<text x="500.0" y="50" font-size="11" fill="#64748b" text-anchor="middle">화면에서 시작을 누르면 그릇 2개 → 컵 2개를 차례로 처리한다 · 왼쪽 = 정상 흐름 · 오른쪽 = 어느 단계에서든 걸리는 예외 처리</text>
 <rect x="140.0" y="77.0" width="220" height="36" rx="18.0" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
 <text x="250" y="100" font-size="13" fill="#14532d" text-anchor="middle" font-weight="700">시작 — 화면 버튼 1번</text>
 <path d="M250 113 L250 143" fill="none" stroke="#4b5563" stroke-width="1.8" marker-end="url(#a)"/>
@@ -105,7 +105,7 @@
 <text x="800" y="769.0" font-size="10.5" fill="#7f1d1d" text-anchor="middle">신호 2 (화면 재개만): 곧게 위로 → HOME → 오류 기록 → 다음 용기</text>
 <text x="800" y="783.0" font-size="10.5" fill="#7f1d1d" text-anchor="middle">급할 때는 펜던트 E-Stop · 실기 시험에서는 제외(자동 시험)</text>
 <rect x="620.0" y="852.0" width="360" height="96" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
-<text x="800" y="875.0" font-size="13" fill="#1e293b" text-anchor="middle" font-weight="700">함께 도는 것</text>
+<text x="800" y="875.0" font-size="13" fill="#1e293b" text-anchor="middle" font-weight="700">함께 실행되는 것</text>
 <text x="800" y="891.0" font-size="10.5" fill="#1e293b" text-anchor="middle">/flow/state 1초에 2번 — 단계 · 진행 수 · 멈춤 원인 → 화면</text>
 <text x="800" y="905.0" font-size="10.5" fill="#1e293b" text-anchor="middle">/flow/weigh — 무게 재는 동안 표본마다 → 화면 눈금</text>
 <text x="800" y="919.0" font-size="10.5" fill="#1e293b" text-anchor="middle">버튼 4개 (시작 · 일시 정지 · 재개 · 중단) → 서비스</text>
